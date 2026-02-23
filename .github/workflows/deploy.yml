@@ -1,0 +1,15 @@
+name: Deploy to Cloud Platform
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Deployment Webhook
+        run: |
+          curl -X POST ${{ secrets.DEPLOY_HOOK_URL }}
+          echo "Deployment triggered successfully!"
