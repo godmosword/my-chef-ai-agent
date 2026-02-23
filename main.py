@@ -112,8 +112,13 @@ def handle_message(event):
     )
     
     # 解析 AI 回傳的 JSON
-    ai_data = json.loads(response.choices[0].message.content)
-    
+    try:
+        ai_data = json.loads(response.choices[0].message.content)
+    except Exception as e:
+        print(f"OpenAI JSON 解析失敗: {e}")
+        print(f"原始內容: {response.choices[0].message.content}")
+        return
+
     # 轉換成 Flex Message 圖卡
     flex_content = generate_flex_message(
         ai_data.get("recipe_name", "神秘料理"),
@@ -121,13 +126,24 @@ def handle_message(event):
         ai_data.get("shopping_list", "清單生成失敗")
     )
     
-    flex_message = FlexMessage(alt_text="您的全聯採買清單來了！", contents=flex_content)
-    
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[flex_message]
-            )
+    # 這裡加上 Exception 捕捉，看 LINE 到底報什麼錯
+    try:
+        from linebot.v3.messaging import FlexContainer
+        
+        # 修正：將 dict 轉換為 SDK 要求的 FlexContainer 物件
+        flex_message = FlexMessage(
+            alt_text="您的全聯採買清單來了！", 
+            contents=FlexContainer.from_dict(flex_content)
         )
+        
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[flex_message]
+                )
+            )
+        print("訊息回傳成功！")
+    except Exception as e:
+        print(f"LINE 回傳失敗，錯誤詳情: {e}")
