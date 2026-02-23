@@ -4,7 +4,12 @@ from fastapi import FastAPI, Request, HTTPException
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, FlexMessage
-from openai import AsyncOpenAI
+
+# 1. 新增 LINE Bot 需要的 Webhook 事件模組
+from linebot.v3.webhooks import MessageEvent, TextMessageContent
+
+# 2. 改為匯入同步版本的 OpenAI
+from openai import OpenAI
 
 app = FastAPI()
 
@@ -15,7 +20,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+# 3. 改為使用同步版本的 OpenAI 客戶端
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_flex_message(recipe_name, veggies, shopping_list):
     """將 AI 產生的資料轉換為 LINE Flex Message JSON 格式"""
@@ -89,7 +96,8 @@ async def callback(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature")
     return "OK"
 
-@handler.add(event=linebot.v3.webhooks.MessageEvent, message=linebot.v3.webhooks.TextMessageContent)
+# 4. 修正裝飾器的呼叫寫法
+@handler.add(event=MessageEvent, message=TextMessageContent)
 def handle_message(event):
     user_message = event.message.text
     
