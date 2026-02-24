@@ -8,6 +8,9 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from openai import OpenAI
 
 app = FastAPI()
+@app.get("/")
+async def health_check():
+    return {"status": "ok", "message": "全聯採買管家伺服器運行中"}
 
 # 環境變數設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
