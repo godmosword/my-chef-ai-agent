@@ -9,7 +9,7 @@ from openai import OpenAI
 
 app = FastAPI()
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "ok", "message": "全聯採買管家伺服器運行中"}
 
