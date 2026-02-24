@@ -194,4 +194,5 @@ async def callback(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature")
     return "OK"
 
-@handler.add(event=MessageEvent
+@handler.add(event=MessageEvent, message=TextMessageContent)
+def handle_message(event):
