@@ -8,6 +8,7 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent
 from openai import OpenAI
 
 app = FastAPI()
+
 @app.get("/")
 async def health_check():
     return {"status": "ok", "message": "全聯採買管家伺服器運行中"}
@@ -21,9 +22,12 @@ configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+# 🌟 新增：對話記憶暫存區
+# 格式：{ "user_id": [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}, ...] }
+user_memory = {}
+
 def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
     """將 AI 產生的資料轉換為包含報價的 LINE Flex Message"""
-    
     def to_str(data):
         if isinstance(data, list):
             return "\n".join(map(str, data)) 
@@ -158,31 +162,47 @@ async def callback(request: Request):
 @handler.add(event=MessageEvent, message=TextMessageContent)
 def handle_message(event):
     user_message = event.message.text
+    user_id = event.source.user_id # 取得使用者的專屬 ID
     
+    # --- 系統提示詞強化 (賦予補腦能力與記憶力) ---
+    system_prompt = (
+        "你是一個專業的『全聯採買管家』。請根據使用者的需求推薦一道合適的料理。"
+        "【重要規則】：如果使用者的需求很模糊（例如：推薦晚餐、肚子餓、再一個），"
+        "請自動假設為『2到3人份家常菜、預算約200-300元、做法簡單』，並直接給出食譜。"
+        "如果有對話紀錄，請根據前文提供『不同』的食譜選項，不要重複。"
+        "請以台灣全聯超市的常見物價，為每項食材估算價格，並計算總花費。"
+        "請嚴格以 JSON 格式回傳，包含以下六個欄位："
+        "'theme' (料理主題), 'recipe_name' (食譜名稱), "
+        "'ingredients' (所需食材、份量與『預估價格』，請條列式), "
+        "'steps' (料理步驟，請標示 1. 2. 3.), 'shopping_list' (全聯分類採買清單), "
+        "'estimated_total_cost' (預估總花費)。"
+    )
+
+    # --- 記憶體管理邏輯 ---
+    # 如果這個使用者是第一次互動，幫他建立一個專屬的記憶陣列
+    if user_id not in user_memory:
+        user_memory[user_id] = [{"role": "system", "content": system_prompt}]
+    
+    # 把使用者剛剛說的話加入記憶中
+    user_memory[user_id].append({"role": "user", "content": user_message})
+
+    # 為了避免對話太長導致浪費 Token，只保留最近的 5 次互動 (1次system + 最後4次對話)
+    if len(user_memory[user_id]) > 5:
+        user_memory[user_id] = [user_memory[user_id][0]] + user_memory[user_id][-4:]
+
     try:
+        # 將整串帶有記憶的對話丟給 OpenAI
         response = client.chat.completions.create(
             model="gpt-4o",
             response_format={ "type": "json_object" },
-            messages=[
-                {
-                    "role": "system", 
-                    "content": (
-                        "你是一個專業的『全聯採買管家』。請根據使用者的需求推薦一道合適的料理。"
-                        "請以台灣全聯超市的常見物價，為每項食材估算價格，並計算總花費。"
-                        "請嚴格以 JSON 格式回傳，包含以下六個欄位："
-                        "'theme' (料理主題), "
-                        "'recipe_name' (食譜名稱), "
-                        "'ingredients' (所需食材、份量與『預估價格』，請條列式，例如：雞胸肉 1盒 約80元), "
-                        "'steps' (料理步驟，請標示 1. 2. 3.), "
-                        "'shopping_list' (全聯分類採買清單), "
-                        "'estimated_total_cost' (預估總花費，例如：約 250 元)。"
-                    )
-                },
-                {"role": "user", "content": user_message}
-            ]
+            messages=user_memory[user_id]
         )
         
-        ai_data = json.loads(response.choices[0].message.content)
+        # 取得 AI 回覆並加入記憶中，這樣它下次才知道自己說過什麼
+        ai_response_content = response.choices[0].message.content
+        user_memory[user_id].append({"role": "assistant", "content": ai_response_content})
+        
+        ai_data = json.loads(ai_response_content)
         
         flex_dict = generate_flex_message(
             ai_data.get("theme"),
