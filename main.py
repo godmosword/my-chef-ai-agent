@@ -3,30 +3,36 @@ import json
 from fastapi import FastAPI, Request, HTTPException
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, FlexMessage
-
-# 1. 新增 LINE Bot 需要的 Webhook 事件模組
+from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, ReplyMessageRequest, FlexMessage, FlexContainer
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-
-# 2. 改為匯入同步版本的 OpenAI
 from openai import OpenAI
 
 app = FastAPI()
 
-# 設定環境變數
+# 環境變數設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-
-# 3. 改為使用同步版本的 OpenAI 客戶端
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_flex_message(recipe_name, veggies, shopping_list):
-    """將 AI 產生的資料轉換為 LINE Flex Message JSON 格式"""
-    return {
+    """將 AI 產生的資料轉換為 LINE Flex Message，並確保型別正確"""
+    
+    # --- 資料清洗：確保所有輸入都是字串 ---
+    def to_str(data):
+        if isinstance(data, list):
+            return "、".join(map(str, data)) # 如果是列表，用「、」接起來
+        return str(data) if data is not None else ""
+
+    safe_recipe_name = to_str(recipe_name)
+    safe_veggies = to_str(veggies)
+    safe_shopping_list = to_str(shopping_list)
+
+    # 建立 Flex Message 字典
+    bubble_content = {
       "type": "bubble",
       "header": {
         "type": "box",
@@ -41,7 +47,7 @@ def generate_flex_message(recipe_name, veggies, shopping_list):
           },
           {
             "type": "text",
-            "text": recipe_name,
+            "text": safe_recipe_name,
             "weight": "bold",
             "size": "xl",
             "margin": "md"
@@ -60,7 +66,7 @@ def generate_flex_message(recipe_name, veggies, shopping_list):
           },
           {
             "type": "text",
-            "text": veggies,
+            "text": safe_veggies,
             "wrap": True,
             "margin": "sm"
           },
@@ -76,7 +82,7 @@ def generate_flex_message(recipe_name, veggies, shopping_list):
           },
           {
             "type": "text",
-            "text": shopping_list,
+            "text": safe_shopping_list,
             "wrap": True,
             "size": "sm",
             "margin": "sm",
@@ -85,6 +91,7 @@ def generate_flex_message(recipe_name, veggies, shopping_list):
         ]
       }
     }
+    return bubble_content
 
 @app.post("/callback")
 async def callback(request: Request):
@@ -96,44 +103,34 @@ async def callback(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature")
     return "OK"
 
-# 4. 修正裝飾器的呼叫寫法
 @handler.add(event=MessageEvent, message=TextMessageContent)
 def handle_message(event):
     user_message = event.message.text
     
-    # 呼叫 OpenAI 產生食譜與清單
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        response_format={ "type": "json_object" },
-        messages=[
-            {"role": "system", "content": "你是一個全聯採買管家。請根據使用者的煩惱，設計一道『隱形蔬菜食譜』。請嚴格以 JSON 格式回傳，包含三個欄位：'recipe_name' (食譜名稱), 'veggies' (藏了哪些蔬菜), 'shopping_list' (全聯分類採買清單，例如：生鮮區、乾貨區)。"},
-            {"role": "user", "content": user_message}
-        ]
-    )
-    
-    # 解析 AI 回傳的 JSON
     try:
-        ai_data = json.loads(response.choices[0].message.content)
-    except Exception as e:
-        print(f"OpenAI JSON 解析失敗: {e}")
-        print(f"原始內容: {response.choices[0].message.content}")
-        return
-
-    # 轉換成 Flex Message 圖卡
-    flex_content = generate_flex_message(
-        ai_data.get("recipe_name", "神秘料理"),
-        ai_data.get("veggies", "找不到蔬菜"),
-        ai_data.get("shopping_list", "清單生成失敗")
-    )
-    
-    # 這裡加上 Exception 捕捉，看 LINE 到底報什麼錯
-    try:
-        from linebot.v3.messaging import FlexContainer
+        # 呼叫 OpenAI
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            response_format={ "type": "json_object" },
+            messages=[
+                {"role": "system", "content": "你是一個全聯採買管家。請根據使用者的煩惱，設計一道『隱形蔬菜食譜』。請以 JSON 格式回傳：'recipe_name', 'veggies', 'shopping_list'。"},
+                {"role": "user", "content": user_message}
+            ]
+        )
         
-        # 修正：將 dict 轉換為 SDK 要求的 FlexContainer 物件
+        ai_data = json.loads(response.choices[0].message.content)
+        
+        # 產生圖卡內容
+        flex_dict = generate_flex_message(
+            ai_data.get("recipe_name"),
+            ai_data.get("veggies"),
+            ai_data.get("shopping_list")
+        )
+        
+        # 使用 FlexContainer.from_dict 確保格式符合 SDK 要求
         flex_message = FlexMessage(
             alt_text="您的全聯採買清單來了！", 
-            contents=FlexContainer.from_dict(flex_content)
+            contents=FlexContainer.from_dict(flex_dict)
         )
         
         with ApiClient(configuration) as api_client:
@@ -144,6 +141,7 @@ def handle_message(event):
                     messages=[flex_message]
                 )
             )
-        print("訊息回傳成功！")
+            
     except Exception as e:
-        print(f"LINE 回傳失敗，錯誤詳情: {e}")
+        print(f"發生錯誤: {e}")
+        # 這裡可以補一個簡單的文字回覆作為備援
