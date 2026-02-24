@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.2 暖色食慾版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.3 終極防呆不漏接版)"}
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -52,7 +52,7 @@ def save_user_memory(user_id: str, history: list):
     memory_cache[user_id] = history
 
 def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """暖色調法式餐廳風格 (Warm Gourmet) 的 Flex Message"""
+    """暖色調法式餐廳風格的 Flex Message (具備嚴格空字串防護)"""
     
     # 萬能轉換器：無論 AI 給什麼格式，都強制作為 List 處理
     def parse_to_list(data):
@@ -62,7 +62,12 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         if isinstance(data, str): return [line for line in data.split('\n') if line.strip()]
         return [str(data)]
 
-    # 1. 廚房對話防呆解析 (暖色系角色設定)
+    # 絕對防護：確保字串絕對不為空 ("")
+    def safe_str(val, fallback="-"):
+        s = str(val).strip()
+        return s if s else fallback
+
+    # 1. 廚房對話防呆解析
     talk_components = []
     for talk in parse_to_list(kitchen_talk):
         role, content = "團隊討論", str(talk)
@@ -74,14 +79,17 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
             for sep in ["：", ":", " - "]:
                 if sep in talk_str:
                     parts = talk_str.split(sep, 1)
-                    role, content = parts[0].strip(), parts[1].strip()
+                    role, content = parts[0], parts[1]
                     break
         
-        # 角色代表色更新為溫暖/食物相關色系
-        color = "#78350F" # 預設暖棕色
-        if "行政主廚" in role: color = "#9F1239" # 勃根地酒紅
-        elif "副主廚" in role: color = "#B45309" # 焦糖琥珀
-        elif "食材總管" in role: color = "#166534" # 羅勒鮮綠
+        # 加上防空字串裝甲
+        role = safe_str(role, "團隊")
+        content = safe_str(content, "思考中...")
+        
+        color = "#78350F"
+        if "行政主廚" in role: color = "#9F1239"
+        elif "副主廚" in role: color = "#B45309"
+        elif "食材總管" in role: color = "#166534"
         
         talk_components.append({
             "type": "box", "layout": "baseline", "spacing": "sm", "margin": "md",
@@ -104,8 +112,13 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
             for sep in ["：", ":", " - "]:
                 if sep in item_str:
                     parts = item_str.split(sep, 1)
-                    name, price = parts[0].strip(), parts[1].strip()
+                    name, price = parts[0], parts[1]
                     break
+                    
+        # 加上防空字串裝甲：沒有價格就顯示「-」
+        name = safe_str(name, "未知食材")
+        price = safe_str(price, "-")
+
         ingredient_components.append({
             "type": "box", "layout": "horizontal", "margin": "md",
             "contents": [
@@ -119,17 +132,23 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
     step_components = []
     for i, step in enumerate(parse_to_list(steps)):
         step_str = str(step).strip().lstrip('1234567890.、 ')
+        step_str = safe_str(step_str, "步驟處理中...")
+        
         step_components.append({
             "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
             "contents": [
-                {"type": "text", "text": f"{i+1:02d}", "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0}, # 亮橘色數字
-                {"type": "text", "text": step_str, "color": "#431407", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "5px"} # 濃縮咖啡色文字
+                {"type": "text", "text": f"{i+1:02d}", "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0},
+                {"type": "text", "text": step_str, "color": "#431407", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "5px"}
             ]
         })
     if not step_components: step_components.append({"type": "text", "text": "依常規方式烹調", "size": "sm", "color": "#D97706"})
 
     # 4. 採買清單防呆解析
-    shopping_components = [{"type": "text", "text": f"• {item}", "size": "sm", "color": "#78350F", "margin": "sm"} for item in parse_to_list(shopping_list)]
+    shopping_components = []
+    for item in parse_to_list(shopping_list):
+        item_str = safe_str(item, "生鮮區")
+        shopping_components.append({"type": "text", "text": f"• {item_str}", "size": "sm", "color": "#78350F", "margin": "sm"})
+        
     if not shopping_components: shopping_components.append({"type": "text", "text": "• 全聯生鮮區", "size": "sm", "color": "#D97706"})
 
     bubble_content = {
@@ -138,19 +157,18 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
       "body": {
         "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
         "contents": [
-          # 頂部裝飾線：開胃的暖橘紅色
           {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": "#EA580C", "contents": []},
           
           # 標題區塊
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingBottom": "lg",
             "contents": [
-              {"type": "text", "text": str(theme or "CHEF'S SELECTION").upper(), "size": "xs", "color": "#D97706", "weight": "bold", "letterSpacing": "2px"},
-              {"type": "text", "text": str(recipe_name or "主廚特製料理"), "size": "xxl", "weight": "bold", "color": "#431407", "margin": "md", "wrap": True}
+              {"type": "text", "text": safe_str(theme, "CHEF'S SELECTION").upper(), "size": "xs", "color": "#D97706", "weight": "bold", "letterSpacing": "2px"},
+              {"type": "text", "text": safe_str(recipe_name, "主廚特製料理"), "size": "xxl", "weight": "bold", "color": "#431407", "margin": "md", "wrap": True}
             ]
           },
 
-          # 專業研發會議 (香草奶油底色 #FFFBEB)
+          # 專業研發會議
           {
             "type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": "#FFFBEB", "cornerRadius": "lg",
             "contents": [
@@ -168,7 +186,7 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
             ]
           },
 
-          # 食材與報價 (淺橘奶油底色 #FFF7ED，帶暖金邊框)
+          # 食材與報價
           {
             "type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "backgroundColor": "#FFF7ED", "borderColor": "#FED7AA", "borderWidth": "1px", "cornerRadius": "lg",
             "contents": [
@@ -179,7 +197,7 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
                 "type": "box", "layout": "horizontal", "margin": "lg",
                 "contents": [
                   {"type": "text", "text": "TOTAL", "size": "xs", "weight": "bold", "color": "#9A3412", "flex": 0, "gravity": "center"},
-                  {"type": "text", "text": f"NT$ {estimated_total_cost or '估算中'}", "size": "xl", "weight": "bold", "color": "#431407", "align": "end", "gravity": "center"}
+                  {"type": "text", "text": f"NT$ {safe_str(estimated_total_cost, '估算中')}", "size": "xl", "weight": "bold", "color": "#431407", "align": "end", "gravity": "center"}
                 ]
               }
             ]
@@ -195,7 +213,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
           }
         ]
       },
-      # 互動按鈕：溫暖色系配搭
       "footer": {
         "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
         "contents": [
