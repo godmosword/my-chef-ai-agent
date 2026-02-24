@@ -22,12 +22,11 @@ configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# 🌟 新增：對話記憶暫存區
-# 格式：{ "user_id": [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}, ...] }
+# 對話記憶暫存區
 user_memory = {}
 
 def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """將 AI 產生的資料轉換為包含報價的 LINE Flex Message"""
+    """將 AI 產生的資料轉換為高質感的 LINE Flex Message"""
     def to_str(data):
         if isinstance(data, list):
             return "\n".join(map(str, data)) 
@@ -40,109 +39,150 @@ def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list,
     safe_shopping_list = to_str(shopping_list)
     safe_estimated_total_cost = to_str(estimated_total_cost) or "價格估算中..."
 
+    # 全新視覺化 Flex Message JSON
     bubble_content = {
       "type": "bubble",
       "size": "giga",
       "header": {
         "type": "box",
         "layout": "vertical",
+        "paddingAll": "none",
         "contents": [
           {
-            "type": "text",
-            "text": f"🍳 {safe_theme}",
-            "weight": "bold",
-            "color": "#1DB446",
-            "size": "sm"
+            "type": "box",
+            "layout": "vertical",
+            "height": "6px",
+            "backgroundColor": "#EE1C24",
+            "contents": []
           },
           {
-            "type": "text",
-            "text": safe_recipe_name,
-            "weight": "bold",
-            "size": "xl",
-            "margin": "md",
-            "wrap": True
+            "type": "box",
+            "layout": "vertical",
+            "paddingAll": "xl",
+            "paddingBottom": "md",
+            "contents": [
+              {
+                "type": "text",
+                "text": f"👨‍🍳 {safe_theme}",
+                "color": "#1DB446",
+                "weight": "bold",
+                "size": "sm"
+              },
+              {
+                "type": "text",
+                "text": safe_recipe_name,
+                "weight": "bold",
+                "size": "xxl",
+                "margin": "md",
+                "color": "#333333",
+                "wrap": True
+              }
+            ]
           }
         ]
       },
       "body": {
         "type": "box",
         "layout": "vertical",
-        "spacing": "md",
+        "spacing": "xl",
+        "paddingAll": "xl",
+        "paddingTop": "none",
         "contents": [
           {
-            "type": "text",
-            "text": "🛒 採買清單與預估費用",
-            "weight": "bold",
-            "size": "md",
-            "color": "#1DB446"
-          },
-          {
-            "type": "text",
-            "text": safe_shopping_list,
-            "wrap": True,
-            "size": "sm",
-            "color": "#666666"
-          },
-          {
-            "type": "separator",
-            "margin": "lg"
-          },
-          {
-            "type": "text",
-            "text": "🥬 食材清單 (含報價)",
-            "weight": "bold",
-            "size": "md",
-            "margin": "lg",
-            "color": "#1DB446"
-          },
-          {
-            "type": "text",
-            "text": safe_ingredients,
-            "wrap": True,
-            "size": "sm",
-            "color": "#666666"
-          },
-          {
             "type": "box",
-            "layout": "horizontal",
-            "margin": "xl",
+            "layout": "vertical",
+            "spacing": "sm",
             "contents": [
               {
                 "type": "text",
-                "text": "💰 預估總花費",
+                "text": "🛒 全聯分類採買",
+                "color": "#1DB446",
                 "weight": "bold",
-                "size": "md",
-                "color": "#FF5722",
-                "flex": 0
+                "size": "sm"
               },
               {
                 "type": "text",
-                "text": safe_estimated_total_cost,
-                "weight": "bold",
-                "size": "md",
-                "color": "#FF5722",
-                "align": "end"
+                "text": safe_shopping_list,
+                "wrap": True,
+                "size": "sm",
+                "color": "#666666"
               }
             ]
           },
           {
-            "type": "separator",
-            "margin": "lg"
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#F6F6F6",
+            "cornerRadius": "md",
+            "paddingAll": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "🥬 所需食材 (含報價)",
+                "color": "#1DB446",
+                "weight": "bold",
+                "size": "sm"
+              },
+              {
+                "type": "text",
+                "text": safe_ingredients,
+                "wrap": True,
+                "size": "sm",
+                "color": "#666666"
+              },
+              {
+                "type": "separator",
+                "margin": "md",
+                "color": "#DDDDDD"
+              },
+              {
+                "type": "box",
+                "layout": "horizontal",
+                "margin": "md",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "💰 預估總花費",
+                    "color": "#FF5722",
+                    "weight": "bold",
+                    "size": "sm",
+                    "flex": 0,
+                    "gravity": "center"
+                  },
+                  {
+                    "type": "text",
+                    "text": safe_estimated_total_cost,
+                    "color": "#FF5722",
+                    "weight": "bold",
+                    "size": "lg",
+                    "align": "end",
+                    "gravity": "center"
+                  }
+                ]
+              }
+            ]
           },
           {
-            "type": "text",
-            "text": "👨‍🍳 料理步驟",
-            "weight": "bold",
-            "size": "md",
-            "margin": "lg",
-            "color": "#1DB446"
-          },
-          {
-            "type": "text",
-            "text": safe_steps,
-            "wrap": True,
-            "size": "sm",
-            "color": "#666666"
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "👨‍🍳 料理步驟",
+                "color": "#1DB446",
+                "weight": "bold",
+                "size": "sm"
+              },
+              {
+                "type": "text",
+                "text": safe_steps,
+                "wrap": True,
+                "size": "sm",
+                "color": "#666666"
+              }
+            ]
           }
         ]
       }
@@ -162,9 +202,8 @@ async def callback(request: Request):
 @handler.add(event=MessageEvent, message=TextMessageContent)
 def handle_message(event):
     user_message = event.message.text
-    user_id = event.source.user_id # 取得使用者的專屬 ID
+    user_id = event.source.user_id 
     
-    # --- 系統提示詞強化 (賦予補腦能力與記憶力) ---
     system_prompt = (
         "你是一個專業的『全聯採買管家』。請根據使用者的需求推薦一道合適的料理。"
         "【重要規則】：如果使用者的需求很模糊（例如：推薦晚餐、肚子餓、再一個），"
@@ -178,27 +217,21 @@ def handle_message(event):
         "'estimated_total_cost' (預估總花費)。"
     )
 
-    # --- 記憶體管理邏輯 ---
-    # 如果這個使用者是第一次互動，幫他建立一個專屬的記憶陣列
     if user_id not in user_memory:
         user_memory[user_id] = [{"role": "system", "content": system_prompt}]
     
-    # 把使用者剛剛說的話加入記憶中
     user_memory[user_id].append({"role": "user", "content": user_message})
 
-    # 為了避免對話太長導致浪費 Token，只保留最近的 5 次互動 (1次system + 最後4次對話)
     if len(user_memory[user_id]) > 5:
         user_memory[user_id] = [user_memory[user_id][0]] + user_memory[user_id][-4:]
 
     try:
-        # 將整串帶有記憶的對話丟給 OpenAI
         response = client.chat.completions.create(
             model="gpt-4o",
             response_format={ "type": "json_object" },
             messages=user_memory[user_id]
         )
         
-        # 取得 AI 回覆並加入記憶中，這樣它下次才知道自己說過什麼
         ai_response_content = response.choices[0].message.content
         user_memory[user_id].append({"role": "assistant", "content": ai_response_content})
         
