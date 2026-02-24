@@ -18,25 +18,24 @@ configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list):
-    """將 AI 產生的資料轉換為更豐富的 LINE Flex Message 格式"""
+def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
+    """將 AI 產生的資料轉換為包含報價的 LINE Flex Message"""
     
-    # --- 資料清洗：確保所有輸入都是字串 ---
     def to_str(data):
         if isinstance(data, list):
-            return "\n".join(map(str, data)) # 如果是列表，用換行符號接起來
+            return "\n".join(map(str, data)) 
         return str(data) if data is not None else ""
 
-    safe_theme = to_str(theme) or "主廚隨機推薦"
+    safe_theme = to_str(theme) or "主廚推薦"
     safe_recipe_name = to_str(recipe_name)
     safe_ingredients = to_str(ingredients)
     safe_steps = to_str(steps)
     safe_shopping_list = to_str(shopping_list)
+    safe_estimated_total_cost = to_str(estimated_total_cost) or "價格估算中..."
 
-    # 建立 Flex Message 字典 (版面升級版)
     bubble_content = {
       "type": "bubble",
-      "size": "giga", # 加大圖卡尺寸以容納食譜
+      "size": "giga",
       "header": {
         "type": "box",
         "layout": "vertical",
@@ -65,7 +64,7 @@ def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list)
         "contents": [
           {
             "type": "text",
-            "text": "🛒 全聯分類採買",
+            "text": "🛒 採買清單與預估費用",
             "weight": "bold",
             "size": "md",
             "color": "#1DB446"
@@ -83,7 +82,7 @@ def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list)
           },
           {
             "type": "text",
-            "text": "🥬 所需食材與份量",
+            "text": "🥬 食材清單 (含報價)",
             "weight": "bold",
             "size": "md",
             "margin": "lg",
@@ -95,6 +94,29 @@ def generate_flex_message(theme, recipe_name, ingredients, steps, shopping_list)
             "wrap": True,
             "size": "sm",
             "color": "#666666"
+          },
+          {
+            "type": "box",
+            "layout": "horizontal",
+            "margin": "xl",
+            "contents": [
+              {
+                "type": "text",
+                "text": "💰 預估總花費",
+                "weight": "bold",
+                "size": "md",
+                "color": "#FF5722",
+                "flex": 0
+              },
+              {
+                "type": "text",
+                "text": safe_estimated_total_cost,
+                "weight": "bold",
+                "size": "md",
+                "color": "#FF5722",
+                "align": "end"
+              }
+            ]
           },
           {
             "type": "separator",
@@ -135,7 +157,6 @@ def handle_message(event):
     user_message = event.message.text
     
     try:
-        # 呼叫 OpenAI (系統指令大升級！)
         response = client.chat.completions.create(
             model="gpt-4o",
             response_format={ "type": "json_object" },
@@ -143,14 +164,15 @@ def handle_message(event):
                 {
                     "role": "system", 
                     "content": (
-                        "你是一個專業的『全聯採買管家』。請根據使用者的需求（例如：挑食、下班太累、想減脂等）推薦一道合適的料理。"
-                        "如果使用者沒有特定要求，請隨機發揮創意，推薦一道美味的家常菜。"
-                        "請嚴格以 JSON 格式回傳，包含以下五個欄位："
-                        "'theme' (料理主題，例如：快速上菜、挑食剋星、週末大餐), "
+                        "你是一個專業的『全聯採買管家』。請根據使用者的需求推薦一道合適的料理。"
+                        "請以台灣全聯超市的常見物價，為每項食材估算價格，並計算總花費。"
+                        "請嚴格以 JSON 格式回傳，包含以下六個欄位："
+                        "'theme' (料理主題), "
                         "'recipe_name' (食譜名稱), "
-                        "'ingredients' (所需食材與份量，請條列式), "
-                        "'steps' (簡明扼要的料理步驟，請標示 1. 2. 3.), "
-                        "'shopping_list' (全聯分類採買清單，例如 生鮮區、乾貨區)。"
+                        "'ingredients' (所需食材、份量與『預估價格』，請條列式，例如：雞胸肉 1盒 約80元), "
+                        "'steps' (料理步驟，請標示 1. 2. 3.), "
+                        "'shopping_list' (全聯分類採買清單), "
+                        "'estimated_total_cost' (預估總花費，例如：約 250 元)。"
                     )
                 },
                 {"role": "user", "content": user_message}
@@ -159,13 +181,13 @@ def handle_message(event):
         
         ai_data = json.loads(response.choices[0].message.content)
         
-        # 產生圖卡內容 (傳入新的五個欄位)
         flex_dict = generate_flex_message(
             ai_data.get("theme"),
             ai_data.get("recipe_name"),
             ai_data.get("ingredients"),
             ai_data.get("steps"),
-            ai_data.get("shopping_list")
+            ai_data.get("shopping_list"),
+            ai_data.get("estimated_total_cost")
         )
         
         flex_message = FlexMessage(
