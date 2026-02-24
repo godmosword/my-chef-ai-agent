@@ -12,14 +12,12 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.0 終極排版版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.2 暖色食慾版)"}
 
-# 環境變數設定
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Supabase 設定 (防呆安全機制)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = None
@@ -28,157 +26,181 @@ if SUPABASE_URL and SUPABASE_KEY and SUPABASE_URL.strip() and SUPABASE_KEY.strip
     try:
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
-        print(f"初始化 Supabase 客戶端失敗: {e}")
+        print(f"初始化 Supabase 失敗: {e}")
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# 記憶體暫存區 (備用方案)
 memory_cache = {}
 
 def get_user_memory(user_id: str):
-    """取得使用者對話歷史（優先讀取 Supabase）"""
     if supabase:
         try:
             response = supabase.table("user_memory").select("history").eq("user_id", user_id).execute()
-            if response.data:
-                return response.data[0]["history"]
-        except Exception as e:
-            print(f"Supabase 讀取錯誤: {e}")
+            if response.data: return response.data[0]["history"]
+        except Exception:
+            pass
     return memory_cache.get(user_id, [])
 
 def save_user_memory(user_id: str, history: list):
-    """儲存使用者對話歷史（寫入 Supabase 與本機快取）"""
     if supabase:
         try:
             supabase.table("user_memory").upsert({"user_id": user_id, "history": history}).execute()
-        except Exception as e:
-            print(f"Supabase 寫入錯誤: {e}")
+        except Exception:
+            pass
     memory_cache[user_id] = history
 
 def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """具備極致排版細節 (Typography) 的雜誌風 Flex Message"""
+    """暖色調法式餐廳風格 (Warm Gourmet) 的 Flex Message"""
     
-    # 1. 處理廚房對話 (講者與內容分離，懸掛對齊)
+    # 萬能轉換器：無論 AI 給什麼格式，都強制作為 List 處理
+    def parse_to_list(data):
+        if not data: return []
+        if isinstance(data, list): return data
+        if isinstance(data, dict): return [data]
+        if isinstance(data, str): return [line for line in data.split('\n') if line.strip()]
+        return [str(data)]
+
+    # 1. 廚房對話防呆解析 (暖色系角色設定)
     talk_components = []
-    if isinstance(kitchen_talk, list):
-        for talk in kitchen_talk:
-            role = talk.get('role', '') if isinstance(talk, dict) else ''
-            content = talk.get('content', str(talk)) if isinstance(talk, dict) else str(talk)
-            
-            color = "#64748B"
-            if "行政主廚" in role: color = "#991B1B"
-            elif "副主廚" in role: color = "#1D4ED8"
-            elif "食材總管" in role: color = "#047857"
-            
-            talk_components.append({
-                "type": "box", "layout": "baseline", "spacing": "sm", "margin": "md",
-                "contents": [
-                    {"type": "text", "text": role, "color": color, "weight": "bold", "size": "xs", "flex": 0},
-                    {"type": "text", "text": content, "color": "#334155", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "4px"}
-                ]
-            })
+    for talk in parse_to_list(kitchen_talk):
+        role, content = "團隊討論", str(talk)
+        if isinstance(talk, dict):
+            role = talk.get('role', talk.get('角色', '團隊討論'))
+            content = talk.get('content', talk.get('內容', str(talk)))
+        else:
+            talk_str = str(talk)
+            for sep in ["：", ":", " - "]:
+                if sep in talk_str:
+                    parts = talk_str.split(sep, 1)
+                    role, content = parts[0].strip(), parts[1].strip()
+                    break
+        
+        # 角色代表色更新為溫暖/食物相關色系
+        color = "#78350F" # 預設暖棕色
+        if "行政主廚" in role: color = "#9F1239" # 勃根地酒紅
+        elif "副主廚" in role: color = "#B45309" # 焦糖琥珀
+        elif "食材總管" in role: color = "#166534" # 羅勒鮮綠
+        
+        talk_components.append({
+            "type": "box", "layout": "baseline", "spacing": "sm", "margin": "md",
+            "contents": [
+                {"type": "text", "text": role, "color": color, "weight": "bold", "size": "xs", "flex": 0},
+                {"type": "text", "text": content, "color": "#431407", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "4px"}
+            ]
+        })
+    if not talk_components: talk_components.append({"type": "text", "text": "研發團隊默契確認中...", "size": "sm", "color": "#D97706"})
 
-    # 2. 處理食材與精準報價 (會計級左右完美切分)
+    # 2. 食材報價防呆解析
     ingredient_components = []
-    if isinstance(ingredients, list):
-        for item in ingredients:
-            name = item.get('name', '') if isinstance(item, dict) else str(item)
-            price = item.get('price', '') if isinstance(item, dict) else ''
-            ingredient_components.append({
-                "type": "box", "layout": "horizontal", "margin": "md",
-                "contents": [
-                    {"type": "text", "text": name, "color": "#475569", "size": "sm", "flex": 1},
-                    {"type": "text", "text": price, "color": "#0F172A", "size": "sm", "weight": "bold", "align": "end", "flex": 0}
-                ]
-            })
+    for item in parse_to_list(ingredients):
+        name, price = str(item), ""
+        if isinstance(item, dict):
+            name = item.get('name', item.get('食材', str(item)))
+            price = item.get('price', item.get('價格', ''))
+        else:
+            item_str = str(item)
+            for sep in ["：", ":", " - "]:
+                if sep in item_str:
+                    parts = item_str.split(sep, 1)
+                    name, price = parts[0].strip(), parts[1].strip()
+                    break
+        ingredient_components.append({
+            "type": "box", "layout": "horizontal", "margin": "md",
+            "contents": [
+                {"type": "text", "text": name, "color": "#522504", "size": "sm", "flex": 1, "wrap": True},
+                {"type": "text", "text": price, "color": "#431407", "size": "sm", "weight": "bold", "align": "end", "flex": 0}
+            ]
+        })
+    if not ingredient_components: ingredient_components.append({"type": "text", "text": "請參閱步驟說明", "size": "sm", "color": "#D97706"})
 
-    # 3. 處理料理步驟 (生成具備懸掛縮排的雜誌風數字清單)
+    # 3. 料理步驟防呆解析
     step_components = []
-    if isinstance(steps, list):
-        for i, step in enumerate(steps):
-            step_components.append({
-                "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
-                "contents": [
-                    {"type": "text", "text": f"{i+1:02d}", "color": "#94A3B8", "weight": "bold", "size": "sm", "flex": 0},
-                    {"type": "text", "text": str(step), "color": "#334155", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "5px"}
-                ]
-            })
+    for i, step in enumerate(parse_to_list(steps)):
+        step_str = str(step).strip().lstrip('1234567890.、 ')
+        step_components.append({
+            "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
+            "contents": [
+                {"type": "text", "text": f"{i+1:02d}", "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0}, # 亮橘色數字
+                {"type": "text", "text": step_str, "color": "#431407", "size": "sm", "wrap": True, "flex": 1, "lineSpacing": "5px"} # 濃縮咖啡色文字
+            ]
+        })
+    if not step_components: step_components.append({"type": "text", "text": "依常規方式烹調", "size": "sm", "color": "#D97706"})
 
-    # 4. 處理採買清單 (簡約標籤)
-    shopping_components = [{"type": "text", "text": f"• {item}", "size": "sm", "color": "#64748B", "margin": "sm"} for item in shopping_list] if isinstance(shopping_list, list) else []
+    # 4. 採買清單防呆解析
+    shopping_components = [{"type": "text", "text": f"• {item}", "size": "sm", "color": "#78350F", "margin": "sm"} for item in parse_to_list(shopping_list)]
+    if not shopping_components: shopping_components.append({"type": "text", "text": "• 全聯生鮮區", "size": "sm", "color": "#D97706"})
 
     bubble_content = {
       "type": "bubble",
       "size": "giga",
       "body": {
-        "type": "box",
-        "layout": "vertical",
-        "paddingAll": "none",
-        "backgroundColor": "#FFFFFF",
+        "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
         "contents": [
-          {"type": "box", "layout": "vertical", "height": "4px", "backgroundColor": "#1E293B", "contents": []},
+          # 頂部裝飾線：開胃的暖橘紅色
+          {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": "#EA580C", "contents": []},
           
           # 標題區塊
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingBottom": "lg",
             "contents": [
-              {"type": "text", "text": str(theme or "CHEF'S SELECTION").upper(), "size": "xs", "color": "#94A3B8", "weight": "bold", "letterSpacing": "2px"},
-              {"type": "text", "text": str(recipe_name), "size": "xxl", "weight": "bold", "color": "#0F172A", "margin": "md", "wrap": True}
+              {"type": "text", "text": str(theme or "CHEF'S SELECTION").upper(), "size": "xs", "color": "#D97706", "weight": "bold", "letterSpacing": "2px"},
+              {"type": "text", "text": str(recipe_name or "主廚特製料理"), "size": "xxl", "weight": "bold", "color": "#431407", "margin": "md", "wrap": True}
             ]
           },
 
-          # 專業研發會議區塊
+          # 專業研發會議 (香草奶油底色 #FFFBEB)
           {
-            "type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": "#F8FAFC", "cornerRadius": "lg",
+            "type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": "#FFFBEB", "cornerRadius": "lg",
             "contents": [
-              {"type": "text", "text": "EXECUTIVE KITCHEN TALK", "size": "xxs", "weight": "bold", "color": "#94A3B8", "letterSpacing": "1px", "margin": "xs"},
+              {"type": "text", "text": "EXECUTIVE KITCHEN TALK", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px", "margin": "xs"},
               {"type": "box", "layout": "vertical", "margin": "lg", "contents": talk_components}
             ]
           },
 
-          # 採買分類區塊
+          # 採買分類
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl",
             "contents": [
-              {"type": "text", "text": "SHOPPING CATEGORIES", "size": "xxs", "weight": "bold", "color": "#94A3B8", "letterSpacing": "1px"},
+              {"type": "text", "text": "SHOPPING CATEGORIES", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
               {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": shopping_components}
             ]
           },
 
-          # 食材與報價區塊
+          # 食材與報價 (淺橘奶油底色 #FFF7ED，帶暖金邊框)
           {
-            "type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "borderColor": "#E2E8F0", "borderWidth": "1px", "cornerRadius": "lg",
+            "type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "backgroundColor": "#FFF7ED", "borderColor": "#FED7AA", "borderWidth": "1px", "cornerRadius": "lg",
             "contents": [
-              {"type": "text", "text": "INGREDIENTS & COST", "size": "xxs", "weight": "bold", "color": "#94A3B8", "letterSpacing": "1px"},
+              {"type": "text", "text": "INGREDIENTS & COST", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
               {"type": "box", "layout": "vertical", "margin": "md", "contents": ingredient_components},
-              {"type": "separator", "margin": "xl", "color": "#E2E8F0"},
+              {"type": "separator", "margin": "xl", "color": "#FED7AA"},
               {
                 "type": "box", "layout": "horizontal", "margin": "lg",
                 "contents": [
-                  {"type": "text", "text": "TOTAL", "size": "xs", "weight": "bold", "color": "#64748B", "flex": 0, "gravity": "center"},
-                  {"type": "text", "text": f"NT$ {estimated_total_cost}", "size": "xl", "weight": "bold", "color": "#0F172A", "align": "end", "gravity": "center"}
+                  {"type": "text", "text": "TOTAL", "size": "xs", "weight": "bold", "color": "#9A3412", "flex": 0, "gravity": "center"},
+                  {"type": "text", "text": f"NT$ {estimated_total_cost or '估算中'}", "size": "xl", "weight": "bold", "color": "#431407", "align": "end", "gravity": "center"}
                 ]
               }
             ]
           },
 
-          # 步驟區塊
+          # 步驟
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingTop": "none",
             "contents": [
-              {"type": "text", "text": "PREPARATION STEPS", "size": "xxs", "weight": "bold", "color": "#94A3B8", "letterSpacing": "1px"},
+              {"type": "text", "text": "PREPARATION STEPS", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
               {"type": "box", "layout": "vertical", "margin": "sm", "contents": step_components}
             ]
           }
         ]
       },
+      # 互動按鈕：溫暖色系配搭
       "footer": {
         "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
         "contents": [
-          {"type": "button", "style": "secondary", "height": "sm", "color": "#F1F5F9", "action": {"type": "message", "label": "重新構思", "text": "團隊，請為我重新構思一套不同風味的提案。"}},
-          {"type": "button", "style": "primary", "height": "sm", "color": "#1E293B", "action": {"type": "message", "label": "追加配菜", "text": "這套食譜很棒，請團隊再推薦一道能完美搭配的副菜。"}}
+          {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "團隊，請為我重新構思一套不同風味的提案。"}},
+          {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": {"type": "message", "label": "追加配菜", "text": "這套食譜很棒，請團隊再推薦一道能完美搭配的副菜。"}}
         ]
       }
     }
@@ -199,33 +221,29 @@ def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id 
     
-    # 強制使用陣列 (Array) 與物件 (Object) 輸出，供前端進行精準排版
     system_prompt = (
-        "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位具備極高專業素養的角色："
-        "1. 【行政主廚】：追求極致的味覺層次與料理美學，語氣優雅、沉穩且充滿職人精神。"
-        "2. 【副主廚】：講究執行精準度與營養科學，語氣冷靜客觀。"
-        "3. 【食材總管】：對台灣全聯的當季食材與物價瞭若指掌，負責預算控管，語氣專業且務實。"
-        "【任務】：進行一段 3 到 4 句的『專業研發會議』，討論食材特性、風味或預算，最後給出一道完美料理。"
-        "【排版與輸出格式絕對要求】：為了讓前端 UI 能完美對齊渲染，請嚴格使用以下 JSON 格式回傳，不可隨意合併字串："
+        "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位角色："
+        "1. 【行政主廚】：語氣優雅沉穩。"
+        "2. 【副主廚】：語氣冷靜客觀。"
+        "3. 【食材總管】：對台灣全聯物價瞭若指掌，語氣專業。"
+        "【任務】：進行一段3句的專業會議，最後給出一道完美料理。"
+        "【輸出格式】：請以純 JSON 格式回傳，不可包裝在 markdown 語法中。"
         "{"
-        "  \"kitchen_talk\": [{\"role\": \"食材總管\", \"content\": \"...\"}, {\"role\": \"行政主廚\", \"content\": \"...\"}],"
+        "  \"kitchen_talk\": [{\"role\": \"角色\", \"content\": \"內容\"}],"
         "  \"theme\": \"料理主題\","
         "  \"recipe_name\": \"食譜名稱\","
-        "  \"ingredients\": [{\"name\": \"食材名稱與份量\", \"price\": \"價格 (例如: 80元)\"}],"
-        "  \"steps\": [\"將食材洗淨切塊...\", \"放入鍋中悶煮...\"],"
+        "  \"ingredients\": [{\"name\": \"食材名稱與份量\", \"price\": \"價格\"}],"
+        "  \"steps\": [\"步驟一\", \"步驟二\"],"
         "  \"shopping_list\": [\"生鮮區\", \"調味料區\"],"
         "  \"estimated_total_cost\": \"總計數字\""
         "}"
     )
 
     history = get_user_memory(user_id)
-    if not history:
-        history = [{"role": "system", "content": system_prompt}]
+    if not history: history = [{"role": "system", "content": system_prompt}]
     
     history.append({"role": "user", "content": user_message})
-
-    if len(history) > 5:
-        history = [history[0]] + history[-4:]
+    if len(history) > 5: history = [history[0]] + history[-4:]
 
     try:
         response = client.chat.completions.create(
@@ -234,6 +252,9 @@ def handle_message(event):
             messages=history
         )
         ai_response_content = response.choices[0].message.content
+        
+        # 強制清理 Markdown 殘留符號，避免 json.loads 崩潰
+        ai_response_content = ai_response_content.replace('```json', '').replace('```', '').strip()
         
         try:
             ai_data = json.loads(ai_response_content)
