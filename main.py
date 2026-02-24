@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.3 終極防呆不漏接版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.4 終極 AI 幻覺免疫版)"}
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -52,24 +52,24 @@ def save_user_memory(user_id: str, history: list):
     memory_cache[user_id] = history
 
 def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """暖色調法式餐廳風格的 Flex Message (具備嚴格空字串防護)"""
+    """暖色調法式餐廳風格的 Flex Message (具備字典/陣列雙重免疫防護)"""
     
-    # 萬能轉換器：無論 AI 給什麼格式，都強制作為 List 處理
-    def parse_to_list(data):
-        if not data: return []
-        if isinstance(data, list): return data
-        if isinstance(data, dict): return [data]
-        if isinstance(data, str): return [line for line in data.split('\n') if line.strip()]
-        return [str(data)]
-
-    # 絕對防護：確保字串絕對不為空 ("")
     def safe_str(val, fallback="-"):
         s = str(val).strip()
-        return s if s else fallback
+        return s if s and s != "{}" and s != "[]" else fallback
 
     # 1. 廚房對話防呆解析
     talk_components = []
-    for talk in parse_to_list(kitchen_talk):
+    # 處理 AI 亂塞字典的情況 {"行政主廚": "內容"}
+    if isinstance(kitchen_talk, dict):
+        if "role" not in kitchen_talk:
+            kitchen_talk = [{"role": k, "content": str(v)} for k, v in kitchen_talk.items()]
+        else:
+            kitchen_talk = [kitchen_talk]
+    elif not isinstance(kitchen_talk, list):
+        kitchen_talk = [kitchen_talk] if kitchen_talk else []
+
+    for talk in kitchen_talk:
         role, content = "團隊討論", str(talk)
         if isinstance(talk, dict):
             role = talk.get('role', talk.get('角色', '團隊討論'))
@@ -82,7 +82,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
                     role, content = parts[0], parts[1]
                     break
         
-        # 加上防空字串裝甲
         role = safe_str(role, "團隊")
         content = safe_str(content, "思考中...")
         
@@ -102,7 +101,16 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 2. 食材報價防呆解析
     ingredient_components = []
-    for item in parse_to_list(ingredients):
+    # 處理 AI 亂塞字典的情況 {"雞蛋": "60元", "餅皮": "40元"}
+    if isinstance(ingredients, dict):
+        if "name" not in ingredients:
+            ingredients = [{"name": k, "price": str(v)} for k, v in ingredients.items()]
+        else:
+            ingredients = [ingredients]
+    elif not isinstance(ingredients, list):
+        ingredients = [ingredients] if ingredients else []
+
+    for item in ingredients:
         name, price = str(item), ""
         if isinstance(item, dict):
             name = item.get('name', item.get('食材', str(item)))
@@ -115,7 +123,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
                     name, price = parts[0], parts[1]
                     break
                     
-        # 加上防空字串裝甲：沒有價格就顯示「-」
         name = safe_str(name, "未知食材")
         price = safe_str(price, "-")
 
@@ -130,7 +137,13 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 3. 料理步驟防呆解析
     step_components = []
-    for i, step in enumerate(parse_to_list(steps)):
+    # 處理 AI 亂塞字典的情況 {"1": "洗蔥", "2": "打蛋"}
+    if isinstance(steps, dict):
+        steps = list(steps.values())
+    elif not isinstance(steps, list):
+        steps = [steps] if steps else []
+
+    for i, step in enumerate(steps):
         step_str = str(step).strip().lstrip('1234567890.、 ')
         step_str = safe_str(step_str, "步驟處理中...")
         
@@ -145,7 +158,19 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 4. 採買清單防呆解析
     shopping_components = []
-    for item in parse_to_list(shopping_list):
+    # 處理 AI 亂塞字典的情況 {"蛋類": ["雞蛋"], "蔬菜": ["蔥"]}
+    if isinstance(shopping_list, dict):
+        flat_list = []
+        for k, v in shopping_list.items():
+            if isinstance(v, list):
+                flat_list.append(f"{k}: {', '.join(map(str, v))}")
+            else:
+                flat_list.append(f"{k}: {v}")
+        shopping_list = flat_list
+    elif not isinstance(shopping_list, list):
+        shopping_list = [shopping_list] if shopping_list else []
+
+    for item in shopping_list:
         item_str = safe_str(item, "生鮮區")
         shopping_components.append({"type": "text", "text": f"• {item_str}", "size": "sm", "color": "#78350F", "margin": "sm"})
         
@@ -158,8 +183,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
         "contents": [
           {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": "#EA580C", "contents": []},
-          
-          # 標題區塊
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingBottom": "lg",
             "contents": [
@@ -167,8 +190,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
               {"type": "text", "text": safe_str(recipe_name, "主廚特製料理"), "size": "xxl", "weight": "bold", "color": "#431407", "margin": "md", "wrap": True}
             ]
           },
-
-          # 專業研發會議
           {
             "type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": "#FFFBEB", "cornerRadius": "lg",
             "contents": [
@@ -176,8 +197,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
               {"type": "box", "layout": "vertical", "margin": "lg", "contents": talk_components}
             ]
           },
-
-          # 採買分類
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl",
             "contents": [
@@ -185,8 +204,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
               {"type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm", "contents": shopping_components}
             ]
           },
-
-          # 食材與報價
           {
             "type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "backgroundColor": "#FFF7ED", "borderColor": "#FED7AA", "borderWidth": "1px", "cornerRadius": "lg",
             "contents": [
@@ -202,8 +219,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
               }
             ]
           },
-
-          # 步驟
           {
             "type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingTop": "none",
             "contents": [
@@ -238,20 +253,21 @@ def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id 
     
+    # 強化版提示詞：用極度嚴格的語氣阻止 AI 把陣列換成字典
     system_prompt = (
         "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位角色："
         "1. 【行政主廚】：語氣優雅沉穩。"
         "2. 【副主廚】：語氣冷靜客觀。"
         "3. 【食材總管】：對台灣全聯物價瞭若指掌，語氣專業。"
         "【任務】：進行一段3句的專業會議，最後給出一道完美料理。"
-        "【輸出格式】：請以純 JSON 格式回傳，不可包裝在 markdown 語法中。"
+        "【絕對格式要求】：請務必回傳純 JSON，並且嚴格遵守以下『陣列(Array)』格式，絕對不可擅自更改為物件字典(Dictionary)！"
         "{"
-        "  \"kitchen_talk\": [{\"role\": \"角色\", \"content\": \"內容\"}],"
+        "  \"kitchen_talk\": [{\"role\": \"行政主廚\", \"content\": \"...\"}], (必須是陣列包物件)"
         "  \"theme\": \"料理主題\","
         "  \"recipe_name\": \"食譜名稱\","
-        "  \"ingredients\": [{\"name\": \"食材名稱與份量\", \"price\": \"價格\"}],"
-        "  \"steps\": [\"步驟一\", \"步驟二\"],"
-        "  \"shopping_list\": [\"生鮮區\", \"調味料區\"],"
+        "  \"ingredients\": [{\"name\": \"雞蛋\", \"price\": \"60元\"}], (必須是陣列包物件)"
+        "  \"steps\": [\"步驟一\", \"步驟二\"], (必須是純字串陣列)"
+        "  \"shopping_list\": [\"生鮮區\", \"調味料區\"], (必須是純字串陣列)"
         "  \"estimated_total_cost\": \"總計數字\""
         "}"
     )
@@ -270,7 +286,7 @@ def handle_message(event):
         )
         ai_response_content = response.choices[0].message.content
         
-        # 強制清理 Markdown 殘留符號，避免 json.loads 崩潰
+        # 強制清理 Markdown 殘留符號
         ai_response_content = ai_response_content.replace('```json', '').replace('```', '').strip()
         
         try:
