@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.4 終極 AI 幻覺免疫版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.5 終極完美版)"}
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -52,7 +52,7 @@ def save_user_memory(user_id: str, history: list):
     memory_cache[user_id] = history
 
 def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """暖色調法式餐廳風格的 Flex Message (具備字典/陣列雙重免疫防護)"""
+    """暖色調法式餐廳風格的 Flex Message (具備字典/陣列雙重免疫與空字串防護)"""
     
     def safe_str(val, fallback="-"):
         s = str(val).strip()
@@ -60,7 +60,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 1. 廚房對話防呆解析
     talk_components = []
-    # 處理 AI 亂塞字典的情況 {"行政主廚": "內容"}
     if isinstance(kitchen_talk, dict):
         if "role" not in kitchen_talk:
             kitchen_talk = [{"role": k, "content": str(v)} for k, v in kitchen_talk.items()]
@@ -101,7 +100,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 2. 食材報價防呆解析
     ingredient_components = []
-    # 處理 AI 亂塞字典的情況 {"雞蛋": "60元", "餅皮": "40元"}
     if isinstance(ingredients, dict):
         if "name" not in ingredients:
             ingredients = [{"name": k, "price": str(v)} for k, v in ingredients.items()]
@@ -137,7 +135,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 3. 料理步驟防呆解析
     step_components = []
-    # 處理 AI 亂塞字典的情況 {"1": "洗蔥", "2": "打蛋"}
     if isinstance(steps, dict):
         steps = list(steps.values())
     elif not isinstance(steps, list):
@@ -158,7 +155,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
 
     # 4. 採買清單防呆解析
     shopping_components = []
-    # 處理 AI 亂塞字典的情況 {"蛋類": ["雞蛋"], "蔬菜": ["蔥"]}
     if isinstance(shopping_list, dict):
         flat_list = []
         for k, v in shopping_list.items():
@@ -253,19 +249,19 @@ def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id 
     
-    # 強化版提示詞：用極度嚴格的語氣阻止 AI 把陣列換成字典
+    # 嚴厲督工版提示詞：用極度強烈的語氣，逼迫 AI 每次都必須產出對話與遵守陣列格式
     system_prompt = (
         "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位角色："
         "1. 【行政主廚】：語氣優雅沉穩。"
         "2. 【副主廚】：語氣冷靜客觀。"
         "3. 【食材總管】：對台灣全聯物價瞭若指掌，語氣專業。"
-        "【任務】：進行一段3句的專業會議，最後給出一道完美料理。"
-        "【絕對格式要求】：請務必回傳純 JSON，並且嚴格遵守以下『陣列(Array)』格式，絕對不可擅自更改為物件字典(Dictionary)！"
+        "【核心強制任務】：每次回覆『絕對必須』包含一段 3 到 4 句的專業會議對話，互相討論這道菜的做法或食材亮點。對話內容絕對不可省略、不可留空！最後再給出食譜。"
+        "【絕對格式要求】：請務必回傳純 JSON，嚴格遵守以下『陣列(Array)』格式，不可擅自更改為物件字典！"
         "{"
-        "  \"kitchen_talk\": [{\"role\": \"行政主廚\", \"content\": \"...\"}], (必須是陣列包物件)"
+        "  \"kitchen_talk\": [{\"role\": \"行政主廚\", \"content\": \"...\"}, {\"role\": \"副主廚\", \"content\": \"...\"}], (此陣列必須有內容，嚴禁空白)"
         "  \"theme\": \"料理主題\","
         "  \"recipe_name\": \"食譜名稱\","
-        "  \"ingredients\": [{\"name\": \"雞蛋\", \"price\": \"60元\"}], (必須是陣列包物件)"
+        "  \"ingredients\": [{\"name\": \"五花肉\", \"price\": \"120元/200克\"}], (必須是陣列包物件)"
         "  \"steps\": [\"步驟一\", \"步驟二\"], (必須是純字串陣列)"
         "  \"shopping_list\": [\"生鮮區\", \"調味料區\"], (必須是純字串陣列)"
         "  \"estimated_total_cost\": \"總計數字\""
