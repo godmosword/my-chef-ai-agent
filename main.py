@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.6 記憶重置版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.7 純淨提示詞版)"}
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -264,20 +264,25 @@ def handle_message(event):
             line_bot_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=[reply_message]))
         return
     
+    # 完美純淨版提示詞：提供毫無瑕疵的 JSON 範例，絕不添加會干擾解析的備註
     system_prompt = (
         "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位角色："
         "1. 【行政主廚】：語氣優雅沉穩。"
         "2. 【副主廚】：語氣冷靜客觀。"
         "3. 【食材總管】：對台灣全聯物價瞭若指掌，語氣專業。"
-        "【核心強制任務】：每次回覆『絕對必須』包含一段 3 到 4 句的專業會議對話，互相討論這道菜的做法或食材亮點。對話內容絕對不可省略、不可留空！最後再給出食譜。"
-        "【絕對格式要求】：請務必回傳純 JSON，嚴格遵守以下『陣列(Array)』格式，不可擅自更改為物件字典！"
+        "【絕對強制任務】：你『必須』先讓三位主廚進行一段專業對話，互相討論做法或食材，再給出食譜。對話絕對不可以空白！"
+        "【輸出格式】：請務必回傳純 JSON，不可有任何 markdown 標記。請嚴格照抄以下結構填寫資料："
         "{"
-        "  \"kitchen_talk\": [{\"role\": \"行政主廚\", \"content\": \"...\"}, {\"role\": \"副主廚\", \"content\": \"...\"}], (此陣列必須有內容，嚴禁空白)"
+        "  \"kitchen_talk\": ["
+        "    {\"role\": \"行政主廚\", \"content\": \"這道菜的靈魂在於火候的掌控...\"},"
+        "    {\"role\": \"副主廚\", \"content\": \"沒錯，我們可以使用低溫烹調來鎖住肉汁...\"},"
+        "    {\"role\": \"食材總管\", \"content\": \"全聯現在剛好有進口的特級初榨橄欖油...\"}"
+        "  ],"
         "  \"theme\": \"料理主題\","
         "  \"recipe_name\": \"食譜名稱\","
-        "  \"ingredients\": [{\"name\": \"五花肉\", \"price\": \"120元/200克\"}], (必須是陣列包物件)"
-        "  \"steps\": [\"步驟一\", \"步驟二\"], (必須是純字串陣列)"
-        "  \"shopping_list\": [\"生鮮區\", \"調味料區\"], (必須是純字串陣列)"
+        "  \"ingredients\": [{\"name\": \"五花肉\", \"price\": \"120元/200克\"}],"
+        "  \"steps\": [\"步驟一\", \"步驟二\"],"
+        "  \"shopping_list\": [\"生鮮區\", \"調味料區\"],"
         "  \"estimated_total_cost\": \"總計數字\""
         "}"
     )
