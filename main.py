@@ -12,7 +12,7 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.5 終極完美版)"}
+    return {"status": "ok", "message": "米其林智能研發廚房伺服器運行中 (v4.6 記憶重置版)"}
 
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -51,14 +51,23 @@ def save_user_memory(user_id: str, history: list):
             pass
     memory_cache[user_id] = history
 
+# 清除記憶功能
+def clear_user_memory(user_id: str):
+    if supabase:
+        try:
+            supabase.table("user_memory").delete().eq("user_id", user_id).execute()
+        except Exception:
+            pass
+    if user_id in memory_cache:
+        del memory_cache[user_id]
+
 def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost):
-    """暖色調法式餐廳風格的 Flex Message (具備字典/陣列雙重免疫與空字串防護)"""
+    """暖色調法式餐廳風格的 Flex Message"""
     
     def safe_str(val, fallback="-"):
         s = str(val).strip()
         return s if s and s != "{}" and s != "[]" else fallback
 
-    # 1. 廚房對話防呆解析
     talk_components = []
     if isinstance(kitchen_talk, dict):
         if "role" not in kitchen_talk:
@@ -98,7 +107,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         })
     if not talk_components: talk_components.append({"type": "text", "text": "研發團隊默契確認中...", "size": "sm", "color": "#D97706"})
 
-    # 2. 食材報價防呆解析
     ingredient_components = []
     if isinstance(ingredients, dict):
         if "name" not in ingredients:
@@ -133,7 +141,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         })
     if not ingredient_components: ingredient_components.append({"type": "text", "text": "請參閱步驟說明", "size": "sm", "color": "#D97706"})
 
-    # 3. 料理步驟防呆解析
     step_components = []
     if isinstance(steps, dict):
         steps = list(steps.values())
@@ -153,7 +160,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         })
     if not step_components: step_components.append({"type": "text", "text": "依常規方式烹調", "size": "sm", "color": "#D97706"})
 
-    # 4. 採買清單防呆解析
     shopping_components = []
     if isinstance(shopping_list, dict):
         flat_list = []
@@ -248,8 +254,16 @@ async def callback(request: Request):
 def handle_message(event):
     user_message = event.message.text
     user_id = event.source.user_id 
+
+    # 隱藏指令：清除記憶，讓 AI 重新做人
+    if user_message.strip() in ["清除記憶", "重新開始", "洗腦"]:
+        clear_user_memory(user_id)
+        reply_message = TextMessage(text="🧹 廚房已經打掃乾淨，主廚團隊的舊記憶已消除！現在是一張白紙，請告訴我們你想吃什麼？")
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=[reply_message]))
+        return
     
-    # 嚴厲督工版提示詞：用極度強烈的語氣，逼迫 AI 每次都必須產出對話與遵守陣列格式
     system_prompt = (
         "你現在是一個頂級米其林餐廳的『菜單研發團隊』，包含三位角色："
         "1. 【行政主廚】：語氣優雅沉穩。"
