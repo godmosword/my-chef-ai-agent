@@ -14,14 +14,15 @@ app = FastAPI()
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林職人大腦 (OpenRouter 鈦合金防護版)"}
+    return {"status": "ok", "message": "米其林職人大腦 (OpenRouter Claude 修復版)"}
 
 # 環境變數
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-# 鎖定目前地表極致推理之王：Claude Opus 4.6
-MODEL_NAME = os.getenv("MODEL_NAME", "anthropic/claude-opus-4.6")
+
+# 【修復 1】使用正確的 OpenRouter 模型 ID，這裡預設使用目前邏輯與排版最強的 Claude 3.5 Sonnet
+MODEL_NAME = os.getenv("MODEL_NAME", "anthropic/claude-3.5-sonnet")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -66,7 +67,6 @@ def generate_flex_message(kitchen_talk, theme, recipe_name, ingredients, steps, 
         s = str(val).strip()
         return s if s and s not in ["{}", "[]", "None"] else fallback
 
-    # 鈦合金整骨器：對付字串亂碼
     def parse_to_list(data):
         if not data: return []
         if isinstance(data, list): return data
@@ -227,7 +227,7 @@ def handle_message(event):
 
     if user_message.strip() in ["清除記憶", "重新開始", "洗腦", "你好", "嗨"]:
         clear_user_memory(user_id)
-        reply = TextMessage(text="👨‍🍳 歡迎！廚房已打掃乾淨，頂級 Claude Opus 大腦已就緒。請問今天想點什麼？")
+        reply = TextMessage(text="👨‍🍳 歡迎！廚房已打掃乾淨，頂級 Claude 3.5 大腦已就緒。請問今天想點什麼？")
         with ApiClient(configuration) as api_client:
             MessagingApi(api_client).reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=[reply]))
         return
@@ -244,6 +244,7 @@ def handle_message(event):
     if len(history) > 6: history = [history[0]] + history[-5:]
 
     try:
+        # 【修復 2】移除了會讓 OpenRouter + Anthropic 崩潰的 response_format={ "type": "json_object" }
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=history
@@ -266,7 +267,7 @@ def handle_message(event):
         msg = FlexMessage(alt_text=f"職人提案：{ai_data.get('recipe_name', '美味食譜')}", contents=FlexContainer.from_dict(flex_dict))
             
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}") # Render 的 Logs 裡現在會顯示真正出錯的原因
         msg = TextMessage(text="👨‍🍳 抱歉，研發團隊剛才討論得太激烈，食譜寫亂了。請對我輸入「清除記憶」後再換個說法試試好嗎？")
 
     with ApiClient(configuration) as api_client:
