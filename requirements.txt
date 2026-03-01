@@ -1,5 +1,5 @@
-fastapi
-uvicorn
-line-bot-sdk
-openai
-supabase
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+line-bot-sdk>=3.12.0
+openai>=1.65.0
+supabase>=2.10.0
