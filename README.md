@@ -24,7 +24,7 @@
 | AI 模型 | Claude Sonnet（透過 OpenRouter.ai） |
 | 訊息平台 | LINE Bot SDK v3 |
 | 資料庫 | Supabase（可選） |
-| 部署 | Render.com + GitHub Actions |
+| 部署 | GCP Cloud Run + GitHub Actions |
 
 ---
 
@@ -113,15 +113,70 @@ create table favorite_recipes (
 
 ---
 
-## 部署到 Render.com
+## 部署到 GCP Cloud Run
 
-1. Fork 此 repo 並在 Render.com 建立新的 Web Service
-2. 在 Render 的 Environment 頁面填入所有必要環境變數
-3. 設定 Start Command：
-   ```
-   uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
-4. 推送到 `main` 分支，GitHub Actions 將自動觸發 Render 重新部署
+> 📖 **逐步教學**：若需更詳細的圖文步驟，請參考 [docs/DEPLOY_GCP.md](docs/DEPLOY_GCP.md)
+
+### 前置準備
+
+1. GCP 專案已建立，並啟用 **Cloud Run API**、**Artifact Registry API**
+2. 建立 Service Account，授予：
+   - `Cloud Run Admin`
+   - `Service Account User`
+   - `Storage Admin`（Cloud Build 需上傳 image）
+3. 下載該 Service Account 的 JSON 金鑰
+
+### GitHub Secrets 設定
+
+在 GitHub repo → **Settings → Secrets and variables → Actions** 新增：
+
+| Secret 名稱 | 說明 |
+|-------------|------|
+| `GCP_SA_KEY` | Service Account 的 JSON 金鑰內容（整個檔案） |
+| `GCP_PROJECT_ID` | GCP 專案 ID（建議設定，確保部署到正確專案） |
+| `CLOUD_RUN_SERVICE` | Cloud Run 服務名稱，如 `my-chef-ai-agent` |
+| `CLOUD_RUN_REGION` | 區域，如 `asia-east1` |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Channel Access Token |
+| `LINE_CHANNEL_SECRET` | LINE Channel Secret |
+| `OPENROUTER_API_KEY` | OpenRouter API 金鑰 |
+| `SUPABASE_URL` | Supabase URL（選填） |
+| `SUPABASE_KEY` | Supabase anon key（選填） |
+
+### 部署流程
+
+推送到 `main` 分支後，GitHub Actions 會自動：
+
+1. 使用 Dockerfile 建置映像
+2. 部署到 Cloud Run
+3. 將上述 secrets 設為環境變數
+
+### LINE Webhook 設定
+
+部署完成後，Cloud Run 會提供 URL，格式如：
+
+```
+https://<CLOUD_RUN_SERVICE>-xxxxx-uc.a.run.app
+```
+
+在 LINE Developer Console 的 Webhook URL 填入：
+
+```
+https://<你的 Cloud Run URL>/callback
+```
+
+### 手動部署（選用）
+
+若需在本機直接部署：
+
+```bash
+gcloud run deploy my-chef-ai-agent \
+  --source . \
+  --region asia-east1 \
+  --platform managed \
+  --allow-unauthenticated
+```
+
+環境變數需在 GCP Console 的 Cloud Run 服務設定頁面手動填入。
 
 ---
 
@@ -156,14 +211,15 @@ pytest tests/ -v
 ```
 my-chef-ai-agent/
 ├── main.py              # 主應用程式
-├── requirements.txt     # 正式依賴（版本已鎖定下限）
+├── Dockerfile           # Cloud Run 容器映像
+├── requirements.txt     # 正式依賴
 ├── requirements-dev.txt # 開發依賴
 ├── .env.example         # 環境變數範例
 ├── tests/
 │   └── test_main.py     # 單元測試
 └── .github/
     └── workflows/
-        └── deploy.yml   # 自動部署工作流程
+        └── deploy.yml   # GCP Cloud Run 自動部署
 ```
 
 ---

@@ -1,4 +1,4 @@
-name: Deploy to Cloud Platform
+name: Deploy to GCP Cloud Run
 
 on:
   push:
@@ -8,8 +8,38 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - name: Trigger Deployment Webhook
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set GCP Project
+        run: gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+        if: ${{ secrets.GCP_PROJECT_ID != '' }}
+
+      - name: Deploy to Cloud Run
+        env:
+          CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+          CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
-          curl -X POST ${{ secrets.DEPLOY_HOOK_URL }}
-          echo "Deployment triggered successfully!"
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --source . \
+            --region "$CLOUD_RUN_REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "LINE_CHANNEL_ACCESS_TOKEN=${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}" \
+            --set-env-vars "LINE_CHANNEL_SECRET=${{ secrets.LINE_CHANNEL_SECRET }}" \
+            --set-env-vars "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" \
+            --set-env-vars "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --set-env-vars "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
