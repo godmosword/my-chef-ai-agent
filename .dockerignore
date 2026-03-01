@@ -2,11 +2,13 @@
 .github
 __pycache__
 *.pyc
+.pytest_cache
 .env
 .env.*
 .venv
 venv
 tests
+docs
 .gitignore
 *.md
 render.yaml

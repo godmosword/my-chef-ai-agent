@@ -2,9 +2,8 @@
 單元測試：涵蓋所有不依賴外部服務的純函式。
 在 import main 之前先設定假環境變數，確保 _require_env 不會在測試時報錯。
 """
-import os
-import time
 import json
+import os
 import pytest
 
 os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
@@ -15,16 +14,10 @@ from main import (
     _safe_str,
     _parse_to_list,
     _extract_json,
-    is_rate_limited,
     generate_flex_message,
-    memory_cache,
-    rate_limit_store,
     get_user_memory,
     save_user_memory,
     clear_user_memory,
-    RATE_LIMIT_REQUESTS,
-    RATE_LIMIT_WINDOW_SEC,
-    MEMORY_CACHE_LIMIT,
 )
 
 
@@ -119,64 +112,17 @@ class TestExtractJson:
             _extract_json('{"recipe_name": 無效內容}')
 
 
-# ─── is_rate_limited ─────────────────────────────────────────────────────────────
-
-class TestIsRateLimited:
-    def setup_method(self):
-        rate_limit_store.clear()
-
-    def test_first_request_not_limited(self):
-        assert is_rate_limited("user_new") is False
-
-    def test_under_limit_not_blocked(self):
-        for _ in range(RATE_LIMIT_REQUESTS - 1):
-            assert is_rate_limited("user_a") is False
-
-    def test_at_limit_blocked(self):
-        for _ in range(RATE_LIMIT_REQUESTS):
-            is_rate_limited("user_b")
-        assert is_rate_limited("user_b") is True
-
-    def test_different_users_independent_limits(self):
-        for _ in range(RATE_LIMIT_REQUESTS):
-            is_rate_limited("user_heavy")
-        assert is_rate_limited("user_light") is False
-
-    def test_expired_timestamps_not_counted(self):
-        now = time.monotonic()
-        # 放入已過期的時間戳記
-        rate_limit_store["user_c"] = [now - RATE_LIMIT_WINDOW_SEC - 1] * RATE_LIMIT_REQUESTS
-        assert is_rate_limited("user_c") is False
-
-
-# ─── Memory Management ───────────────────────────────────────────────────────────
+# ─── Memory (Stateless, 100% Supabase) ───────────────────────────────────────────
 
 class TestMemoryManagement:
-    def setup_method(self):
-        memory_cache.clear()
-
-    def test_get_empty_memory_returns_empty_list(self):
+    def test_get_empty_memory_returns_empty_list_when_no_supabase(self):
+        """無 Supabase 時 get_user_memory 回傳空陣列。"""
         assert get_user_memory("new_user") == []
 
-    def test_save_and_retrieve_memory(self):
-        history = [{"role": "user", "content": "我想吃牛肉麵"}]
-        save_user_memory("user_x", history)
-        assert get_user_memory("user_x") == history
-
-    def test_clear_memory_removes_entry(self):
-        save_user_memory("user_y", [{"role": "user", "content": "test"}])
-        clear_user_memory("user_y")
-        assert get_user_memory("user_y") == []
-
-    def test_cache_eviction_when_full(self):
-        for i in range(MEMORY_CACHE_LIMIT):
-            save_user_memory(f"evict_user_{i}", [{"role": "user", "content": str(i)}])
-        assert len(memory_cache) <= MEMORY_CACHE_LIMIT
-
-    def test_overwrite_existing_memory(self):
-        save_user_memory("user_z", [{"role": "user", "content": "第一次"}])
-        save_user_memory("user_z", [{"role": "user", "content": "第二次"}])
-        assert get_user_memory("user_z")[0]["content"] == "第二次"
+    def test_save_and_clear_do_not_raise_without_supabase(self):
+        """無 Supabase 時 save/clear 不拋錯。"""
+        save_user_memory("user_x", [{"role": "user", "content": "test"}])
+        clear_user_memory("user_x")
 
 
 # ─── generate_flex_message ───────────────────────────────────────────────────────

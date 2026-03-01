@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import os
-import json
 import ast
+import base64
+import hashlib
+import hmac
+import json
 import logging
+import os
 import random
-import time
-from collections import OrderedDict
+from dataclasses import dataclass
 
-from fastapi import FastAPI, Request, HTTPException
-from linebot.v3 import WebhookHandler
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
     Configuration,
@@ -20,8 +21,7 @@ from linebot.v3.messaging import (
     FlexContainer,
     TextMessage,
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, PostbackEvent
-from openai import OpenAI
+from openai import AsyncOpenAI
 from supabase import create_client, Client
 
 # ─── Logging ────────────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ logger = logging.getLogger("chef-agent")
 # ─── Environment & Validation ───────────────────────────────────────────────────
 
 def _require_env(name: str) -> str:
-    """啟動時若必要環境變數缺失，立即拋出錯誤，避免服務帶著無效設定啟動。"""
+    """啟動時若必要環境變數缺失，立即拋出錯誤。"""
     val = os.getenv(name)
     if not val:
         raise EnvironmentError(f"Missing required environment variable: {name}")
@@ -52,14 +52,12 @@ SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
 
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
-MAX_MESSAGE_LENGTH    = 500   # 用戶輸入字數上限
-MAX_HISTORY_TURNS     = 5     # 保留最近幾輪對話
-MEMORY_CACHE_LIMIT    = 1000  # 記憶體快取最多儲存多少用戶
-RATE_LIMIT_REQUESTS   = 5     # 每個時間窗口最多幾次請求
-RATE_LIMIT_WINDOW_SEC = 60    # 時間窗口（秒）
+MAX_MESSAGE_LENGTH   = 500
+MAX_HISTORY_TURNS    = 5
+MAX_WEBHOOK_BODY     = 1_000_000  # 1MB，防止惡意大 payload
+LINE_TEXT_MAX        = 5000       # LINE Flex 單一文字欄位建議上限
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
-
 RANDOM_SIDEDISH_CMD = "🍳 隨機配菜"
 VIEW_SHOPPING_CMD   = "🛒 檢視清單"
 
@@ -68,7 +66,6 @@ RANDOM_STYLES = [
     "泰式風味", "中式川菜", "地中海風情", "美式 comfort food", "越南河粉風格",
 ]
 
-# 情境觸發關鍵字：符合時動態附加指示，輸出仍須遵守 JSON 規範
 SCENARIO_CLEAR_FRIDGE = (["清冰箱", "剩下", "剩食"], "行政主廚務必以用戶提供的剩餘食材為核心，搭配最少量的額外採買來設計創意料理。")
 SCENARIO_KIDS_MEAL = (["小孩", "兒童", "兒子"], "這是一份專為四歲小男童設計的餐點，口味必須溫和不辣、好咀嚼，食材總管須優先考慮營養均衡。")
 
@@ -97,82 +94,79 @@ if SUPABASE_URL and SUPABASE_KEY:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         logger.info("Supabase connected successfully.")
     except Exception as exc:
-        logger.warning("Supabase init failed, falling back to in-memory cache. Error: %s", exc)
+        logger.warning("Supabase init failed: %s", exc)
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
-handler       = WebhookHandler(LINE_CHANNEL_SECRET)
 
-ai_client = OpenAI(
+ai_client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
     default_headers={
-        "HTTP-Referer": "https://render.com",
+        "HTTP-Referer": "https://run.app",
         "X-Title": "My Chef AI Agent",
     },
 )
 
-# ─── In-Memory Stores ───────────────────────────────────────────────────────────
+# ─── Webhook Event Models ────────────────────────────────────────────────────────
 
-memory_cache:     OrderedDict[str, list]       = OrderedDict()
-rate_limit_store: dict[str, list[float]]       = {}
+@dataclass
+class WebhookMessageEvent:
+    reply_token: str
+    user_id: str
+    text: str
 
-# ─── Rate Limiting ──────────────────────────────────────────────────────────────
 
-def is_rate_limited(user_id: str) -> bool:
-    """滑動時間窗口速率限制，超過上限回傳 True。"""
-    now        = time.monotonic()
-    timestamps = [t for t in rate_limit_store.get(user_id, []) if now - t < RATE_LIMIT_WINDOW_SEC]
-    if len(timestamps) >= RATE_LIMIT_REQUESTS:
-        rate_limit_store[user_id] = timestamps
-        return True
-    timestamps.append(now)
-    rate_limit_store[user_id] = timestamps
-    return False
+@dataclass
+class WebhookPostbackEvent:
+    reply_token: str
+    user_id: str
+    data: str
 
-# ─── Memory Management ──────────────────────────────────────────────────────────
+# ─── Signature Validation ───────────────────────────────────────────────────────
 
-def _evict_cache_if_needed() -> None:
-    """當快取超過上限時，以 LRU 策略移除最舊的條目。"""
-    while len(memory_cache) >= MEMORY_CACHE_LIMIT:
-        memory_cache.popitem(last=False)
+def _validate_signature(body: bytes, signature: str) -> None:
+    if not LINE_CHANNEL_SECRET or not signature:
+        raise InvalidSignatureError()
+    hash_val = hmac.new(LINE_CHANNEL_SECRET.encode("utf-8"), body, hashlib.sha256).digest()
+    expected = base64.b64encode(hash_val).decode("utf-8")
+    if not hmac.compare_digest(signature, expected):
+        raise InvalidSignatureError()
 
+# ─── Memory (100% Supabase, Stateless) ───────────────────────────────────────────
 
 def get_user_memory(user_id: str) -> list:
-    if supabase:
-        try:
-            res = supabase.table("user_memory").select("history").eq("user_id", user_id).execute()
-            if res.data:
-                return res.data[0]["history"]
-        except Exception as exc:
-            logger.warning("Supabase read failed for user %s: %s", user_id, exc)
-    return memory_cache.get(user_id, [])
+    """100% 依賴 Supabase，無設定或失敗則回傳空陣列。"""
+    if not supabase:
+        return []
+    try:
+        res = supabase.table("user_memory").select("history").eq("user_id", user_id).execute()
+        if res.data:
+            return res.data[0]["history"]
+    except Exception as exc:
+        logger.warning("Supabase read failed for user %s: %s", user_id, exc)
+    return []
 
 
 def save_user_memory(user_id: str, history: list) -> None:
-    if supabase:
-        try:
-            supabase.table("user_memory").upsert({"user_id": user_id, "history": history}).execute()
-        except Exception as exc:
-            logger.warning("Supabase write failed for user %s: %s", user_id, exc)
-    _evict_cache_if_needed()
-    memory_cache[user_id] = history
+    """100% 依賴 Supabase，無設定或失敗則略過。"""
+    if not supabase:
+        return
+    try:
+        supabase.table("user_memory").upsert({"user_id": user_id, "history": history}).execute()
+    except Exception as exc:
+        logger.warning("Supabase write failed for user %s: %s", user_id, exc)
 
 
 def clear_user_memory(user_id: str) -> None:
-    if supabase:
-        try:
-            supabase.table("user_memory").delete().eq("user_id", user_id).execute()
-        except Exception as exc:
-            logger.warning("Supabase delete failed for user %s: %s", user_id, exc)
-    memory_cache.pop(user_id, None)
+    if not supabase:
+        return
+    try:
+        supabase.table("user_memory").delete().eq("user_id", user_id).execute()
+    except Exception as exc:
+        logger.warning("Supabase delete failed for user %s: %s", user_id, exc)
 
 
 def get_user_preferences(user_id: str) -> str | None:
-    """
-    從 user_preferences 表查詢用戶飲食偏好。
-    preferences 欄位可為字串（如「不吃牛、減脂中」）或 JSON 陣列。
-    無設定則回傳 None。
-    """
     if not supabase:
         return None
     try:
@@ -184,18 +178,13 @@ def get_user_preferences(user_id: str) -> str | None:
             return None
         if isinstance(prefs, list):
             return "、".join(str(p) for p in prefs) if prefs else None
-        s = str(prefs).strip()
-        return s if s else None
+        return str(prefs).strip() or None
     except Exception as exc:
         logger.warning("Supabase user_preferences read failed for %s: %s", user_id, exc)
         return None
 
 
 def _build_system_prompt_with_preferences(user_id: str) -> str:
-    """
-    依 user_preferences 動態注入飲食偏好指示，強化主廚避開雷區。
-    無偏好則回傳原始 SYSTEM_PROMPT。
-    """
     prefs = get_user_preferences(user_id)
     if not prefs:
         return SYSTEM_PROMPT
@@ -207,22 +196,13 @@ def _build_system_prompt_with_preferences(user_id: str) -> str:
 
 
 def _build_scenario_instructions(text: str) -> str:
-    """
-    依關鍵字偵測情境，回傳要附加給 AI 的額外指示（前綴）。
-    不影響 SYSTEM_PROMPT 的 JSON 輸出規範。
-    """
-    parts = []
-    if any(kw in text for kw in SCENARIO_CLEAR_FRIDGE[0]):
-        parts.append(f"【清冰箱模式】{SCENARIO_CLEAR_FRIDGE[1]}")
-    if any(kw in text for kw in SCENARIO_KIDS_MEAL[0]):
-        parts.append(f"【兒童餐模式】{SCENARIO_KIDS_MEAL[1]}")
-    if not parts:
-        return ""
-    return "\n\n".join(parts) + "\n\n"
+    scenarios = [SCENARIO_CLEAR_FRIDGE, SCENARIO_KIDS_MEAL]
+    labels = ("清冰箱", "兒童餐")
+    parts = [f"【{labels[i]}模式】{s[1]}" for i, s in enumerate(scenarios) if any(k in text for k in s[0])]
+    return "\n\n".join(parts) + "\n\n" if parts else ""
 
 
 def save_favorite_recipe(user_id: str, recipe_name: str, recipe_data: dict) -> bool:
-    """將食譜寫入 favorite_recipes 表（user_id, recipe_name, recipe_data），成功回傳 True。"""
     if not supabase:
         return False
     try:
@@ -238,7 +218,6 @@ def save_favorite_recipe(user_id: str, recipe_name: str, recipe_data: dict) -> b
 
 
 def _get_last_recipe_json(user_id: str) -> dict | None:
-    """從 user_memory 中取得最後一次 AI 生成的食譜 JSON，無則回傳 None。"""
     history = get_user_memory(user_id)
     for msg in reversed(history):
         if msg.get("role") != "assistant":
@@ -252,16 +231,16 @@ def _get_last_recipe_json(user_id: str) -> dict | None:
 
 # ─── Helpers ────────────────────────────────────────────────────────────────────
 
-def _safe_str(val: object, fallback: str = "-") -> str:
-    """確保 LINE Flex Message 中的文字欄位永不為空字串。"""
+def _safe_str(val: object, fallback: str = "-", max_len: int | None = None) -> str:
     s = str(val).strip()
-    if not s or s in ["{}", "[]", "None", "null"]:
+    if not s or s in ("{}", "[]", "None", "null"):
         return fallback
+    if max_len and len(s) > max_len:
+        return s[:max_len - 1] + "…"
     return s
 
 
 def _parse_to_list(data: object) -> list:
-    """將各種型態的 AI 輸出統一轉成 list，提高解析容錯性。"""
     if not data:
         return []
     if isinstance(data, list):
@@ -282,10 +261,6 @@ def _parse_to_list(data: object) -> list:
 
 
 def _extract_json(text: str) -> dict:
-    """
-    透過追蹤大括號深度，從 AI 回傳文字中精確抽取最外層的 JSON 物件，
-    避免正則表達式在巢狀結構下誤判邊界。
-    """
     start = text.find("{")
     if start == -1:
         raise ValueError("No JSON object found in AI response")
@@ -311,7 +286,6 @@ def generate_flex_message(
     estimated_total_cost,
     recipe_name_for_postback: str | None = None,
 ) -> dict:
-    # 廚房對話區塊
     talk_components = []
     for talk in _parse_to_list(kitchen_talk):
         role    = "團隊"
@@ -323,12 +297,11 @@ def generate_flex_message(
         talk_components.append({
             "type": "box", "layout": "baseline", "spacing": "sm", "margin": "md",
             "contents": [
-                {"type": "text", "text": _safe_str(role, "團隊"),    "color": color,    "weight": "bold", "size": "xs", "flex": 0},
-                {"type": "text", "text": _safe_str(content, "..."),  "color": "#431407","size": "sm", "wrap": True, "flex": 1},
+                {"type": "text", "text": _safe_str(role, "團隊"), "color": color, "weight": "bold", "size": "xs", "flex": 0},
+                {"type": "text", "text": _safe_str(content, "...", LINE_TEXT_MAX), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
             ],
         })
 
-    # 食材報價清單
     ingredient_rows = []
     for item in _parse_to_list(ingredients):
         name  = str(item)
@@ -344,27 +317,23 @@ def generate_flex_message(
             ],
         })
 
-    # 料理步驟
     step_rows = []
     for i, step in enumerate(_parse_to_list(steps)):
         step_rows.append({
             "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
             "contents": [
-                {"type": "text", "text": f"{i+1:02d}",                                           "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0},
-                {"type": "text", "text": _safe_str(step, "進行中").lstrip("0123456789. "), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
+                {"type": "text", "text": f"{i+1:02d}", "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0},
+                {"type": "text", "text": _safe_str(step, "進行中", LINE_TEXT_MAX).lstrip("0123456789. "), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
             ],
         })
 
-    # 採買清單
     shop_rows = [
         {"type": "text", "text": f"• {_safe_str(s, '生鮮')}", "size": "sm", "color": "#78350F", "margin": "sm"}
         for s in _parse_to_list(shopping_list)
     ]
 
-    # 收藏按鈕：Postback 傳遞 recipe_name（LINE 限制 300 字）
-    POSTBACK_MAX = 300
     if recipe_name_for_postback:
-        data = f"save_recipe:{_safe_str(recipe_name_for_postback, '美味食譜')}"[:POSTBACK_MAX]
+        data = f"save_recipe:{_safe_str(recipe_name_for_postback, '美味食譜')}"[:300]
         favorite_action = {"type": "postback", "label": "❤️ 收藏食譜", "data": data}
     else:
         favorite_action = {"type": "message", "label": "❤️ 收藏食譜", "text": "這套食譜很棒"}
@@ -432,55 +401,35 @@ def generate_flex_message(
         },
     }
 
-# ─── Routes ─────────────────────────────────────────────────────────────────────
+# ─── LINE Reply Helper ──────────────────────────────────────────────────────────
 
-@app.api_route("/", methods=["GET", "HEAD"])
-async def health_check():
-    return {"status": "ok", "message": "米其林職人大腦 (Claude Sonnet 4.6 穩定版)"}
+def _reply_line(reply_token: str, msg: TextMessage | FlexMessage) -> None:
+    with ApiClient(configuration) as api_client:
+        MessagingApi(api_client).reply_message(
+            ReplyMessageRequest(reply_token=reply_token, messages=[msg])
+        )
 
+# ─── Background: AI Reply (Async) ────────────────────────────────────────────────
 
-@app.post("/callback")
-async def callback(request: Request):
-    signature = request.headers.get("X-Line-Signature", "")
-    body      = await request.body()
-    try:
-        handler.handle(body.decode("utf-8"), signature)
-    except InvalidSignatureError:
-        logger.warning("Invalid LINE signature received.")
-        raise HTTPException(status_code=400, detail="Invalid signature")
-    return "OK"
+async def process_ai_reply(event: WebhookMessageEvent) -> None:
+    """耗時邏輯：呼叫 AI、寫入 Supabase、回覆 LINE。背景非同步執行。"""
+    user_id, reply_token = event.user_id, event.reply_token
+    user_message = event.text
+    stripped = user_message.strip()
 
+    def reply(msg):
+        _reply_line(reply_token, msg)
 
-@handler.add(event=MessageEvent, message=TextMessageContent)
-def handle_message(event):
-    user_message: str = event.message.text
-    user_id:      str = event.source.user_id
-
-    def reply(msg) -> None:
-        with ApiClient(configuration) as api_client:
-            MessagingApi(api_client).reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[msg])
-            )
-
-    # 速率限制
-    if is_rate_limited(user_id):
-        logger.info("Rate limited user: %s", user_id)
-        reply(TextMessage(text="🍽️ 廚房正在忙碌中，請稍等一分鐘再試試看！"))
-        return
-
-    # 輸入長度驗證
     if len(user_message) > MAX_MESSAGE_LENGTH:
         reply(TextMessage(text=f"👨‍🍳 請把需求濃縮在 {MAX_MESSAGE_LENGTH} 字以內，讓廚房更容易發揮！"))
         return
 
-    # 重置指令
-    if user_message.strip() in RESET_KEYWORDS:
+    if stripped in RESET_KEYWORDS:
         clear_user_memory(user_id)
         reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Claude Sonnet 4.6 已就緒。請問想吃什麼？"))
         return
 
-    # 🛒 檢視清單：從記憶中抓最後一份食譜的 shopping_list，回傳純文字條列
-    if user_message.strip() == VIEW_SHOPPING_CMD:
+    if stripped == VIEW_SHOPPING_CMD:
         last_recipe = _get_last_recipe_json(user_id)
         if not last_recipe:
             reply(TextMessage(text="👨‍🍳 尚未有食譜紀錄，請先輸入想吃的料理！"))
@@ -491,22 +440,18 @@ def handle_message(event):
             return
         lines = ["🛒 採買清單"]
         for s in items:
-            line = _safe_str(s, "生鮮").lstrip("• ").strip()
-            lines.append(f"• {line}")
+            lines.append(f"• {_safe_str(s, '生鮮').lstrip('• ').strip()}")
         reply(TextMessage(text="\n".join(lines)))
         return
 
-    # 🍳 隨機配菜：隨機指定料理風格，直接讓主廚團隊研發
-    if user_message.strip() == RANDOM_SIDEDISH_CMD:
+    if stripped == RANDOM_SIDEDISH_CMD:
         style = random.choice(RANDOM_STYLES)
         user_message = f"請用「{style}」風格研發一道隨機配菜，不需要我先指定食材。"
 
-    # 情境觸發：依關鍵字動態附加指示（不影響 JSON 輸出規範）
     scenario_prefix = _build_scenario_instructions(user_message)
     if scenario_prefix:
         user_message = scenario_prefix + user_message
 
-    # 建構對話歷史（含飲食偏好動態注入）
     effective_system = _build_system_prompt_with_preferences(user_id)
     history = get_user_memory(user_id)
     if not history:
@@ -521,33 +466,28 @@ def handle_message(event):
         history = [history[0]] + history[-MAX_HISTORY_TURNS:]
 
     try:
-        response   = ai_client.chat.completions.create(
+        response = await ai_client.chat.completions.create(
             model=MODEL_NAME,
             messages=history,
             temperature=0.3,
         )
         ai_content = response.choices[0].message.content.strip()
-        logger.debug("AI raw output for user %s: %s", user_id, ai_content)
+        logger.debug("AI raw output for user %s: %s", user_id, ai_content[:200])
 
         ai_data = _extract_json(ai_content)
         save_user_memory(user_id, history + [{"role": "assistant", "content": ai_content}])
 
         recipe_name = ai_data.get("recipe_name", "美味食譜")
+        g = ai_data.get
         flex_dict = generate_flex_message(
-            ai_data.get("kitchen_talk",        []),
-            ai_data.get("theme",               ""),
-            recipe_name,
-            ai_data.get("ingredients",         []),
-            ai_data.get("steps",               []),
-            ai_data.get("shopping_list",       []),
-            ai_data.get("estimated_total_cost",""),
+            g("kitchen_talk", []), g("theme", ""), recipe_name,
+            g("ingredients", []), g("steps", []), g("shopping_list", []), g("estimated_total_cost", ""),
             recipe_name_for_postback=recipe_name,
         )
         msg = FlexMessage(
             alt_text=f"職人提案：{ai_data.get('recipe_name', '美味食譜')}",
             contents=FlexContainer.from_dict(flex_dict),
         )
-
     except json.JSONDecodeError as exc:
         logger.error("JSON parse error for user %s: %s", user_id, exc)
         msg = TextMessage(text="👨‍🍳 廚房筆記有點亂，請輸入「清除記憶」後再試一次！")
@@ -561,28 +501,60 @@ def handle_message(event):
     reply(msg)
 
 
-@handler.add(event=PostbackEvent)
-def handle_postback(event):
-    """處理收藏食譜 Postback：從 data 取得 recipe_name，從記憶取得 recipe_data，寫入 favorite_recipes。"""
-    user_id = event.source.user_id
-    data = (event.postback.data or "").strip()
-
-    def reply_text(text: str) -> None:
-        with ApiClient(configuration) as api_client:
-            MessagingApi(api_client).reply_message(
-                ReplyMessageRequest(reply_token=event.reply_token, messages=[TextMessage(text=text)])
-            )
-
+def process_postback_reply(event: WebhookPostbackEvent) -> None:
+    """處理收藏食譜 Postback。"""
+    data = event.data.strip()
     if not data.startswith("save_recipe:"):
         return
-
-    recipe_name = data[len("save_recipe:"):].strip() or "美味食譜"
-    recipe_data = _get_last_recipe_json(user_id)
-
+    recipe_name = _safe_str(data[len("save_recipe:"):].strip(), "美味食譜", max_len=200)
+    recipe_data = _get_last_recipe_json(event.user_id)
     if not recipe_data:
         recipe_data = {"recipe_name": recipe_name}
-
-    if save_favorite_recipe(user_id, recipe_name, recipe_data):
-        reply_text(f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！")
+    if save_favorite_recipe(event.user_id, recipe_name, recipe_data):
+        _reply_line(event.reply_token, TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"))
     else:
-        reply_text("👨‍🍳 收藏失敗，請稍後再試或確認已設定 Supabase。")
+        _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試或確認已設定 Supabase。"))
+
+# ─── Routes ─────────────────────────────────────────────────────────────────────
+
+@app.api_route("/", methods=["GET", "HEAD"])
+async def health_check():
+    return {"status": "ok", "message": "米其林職人大腦 (Claude Sonnet 4.6 穩定版)"}
+
+
+@app.post("/callback")
+async def callback(request: Request, background_tasks: BackgroundTasks):
+    body = await request.body()
+    if len(body) > MAX_WEBHOOK_BODY:
+        raise HTTPException(status_code=413, detail="Payload too large")
+    signature = request.headers.get("X-Line-Signature", "")
+    try:
+        _validate_signature(body, signature)
+    except InvalidSignatureError:
+        logger.warning("Invalid LINE signature received.")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        logger.warning("Invalid webhook body: %s", exc)
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    events = payload.get("events", [])
+
+    for ev in events:
+        ev_type = ev.get("type")
+        reply_token = ev.get("replyToken", "")
+        user_id = (ev.get("source") or {}).get("userId", "")
+        if not reply_token or not user_id:
+            continue
+
+        if ev_type == "message":
+            msg = ev.get("message") or {}
+            if msg.get("type") == "text":
+                text = msg.get("text") or ""
+                background_tasks.add_task(process_ai_reply, WebhookMessageEvent(reply_token, user_id, text))
+        elif ev_type == "postback":
+            data = (ev.get("postback") or {}).get("data", "")
+            background_tasks.add_task(process_postback_reply, WebhookPostbackEvent(reply_token, user_id, data))
+
+    return "OK"
