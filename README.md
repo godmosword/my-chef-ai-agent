@@ -10,6 +10,8 @@
 - **結構化食譜輸出**：食材報價、料理步驟、採買清單、總成本估算一次呈現
 - **多輪對話記憶**：支援上下文，可追加需求（如「加一道配菜」）
 - **Supabase 持久化**：記憶可跨 session 保存；Supabase 未設定時自動使用記憶體快取
+- **飲食偏好**：從 `user_preferences` 讀取（如不吃牛、減脂中），動態注入 AI 指示
+- **食譜收藏**：點擊「❤️ 收藏食譜」將食譜存入 `favorite_recipes`
 - **速率限制**：每用戶每分鐘最多 5 次請求，防止濫用
 
 ---
@@ -82,13 +84,30 @@ https://<your-domain>/callback
 
 ## Supabase 設定（可選）
 
-若需跨 session 保存用戶對話記憶，在 Supabase 建立以下資料表：
+若需跨 session 保存用戶對話記憶、飲食偏好、食譜收藏，在 Supabase 建立以下資料表：
 
 ```sql
+-- 對話記憶
 create table user_memory (
   user_id text primary key,
   history jsonb not null,
   updated_at timestamptz default now()
+);
+
+-- 飲食偏好設定檔（例：不吃牛、減脂中）
+create table user_preferences (
+  user_id text primary key,
+  preferences text,  -- 字串或 JSON，如 "不吃牛、減脂中"
+  updated_at timestamptz default now()
+);
+
+-- 食譜收藏
+create table favorite_recipes (
+  id bigserial primary key,
+  user_id text not null,
+  recipe_name text not null,
+  recipe_data jsonb not null,
+  created_at timestamptz default now()
 );
 ```
 
