@@ -62,7 +62,8 @@ else:
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
 MAX_MESSAGE_LENGTH   = 500
-MAX_HISTORY_TURNS    = 5
+MAX_HISTORY_TURNS    = 3
+MAX_COMPLETION_TOKENS = 4096
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
 
@@ -75,16 +76,14 @@ RANDOM_STYLES = [
     "泰式風味", "中式川菜", "地中海風情", "美式 comfort food", "越南河粉風格",
 ]
 
-SCENARIO_CLEAR_FRIDGE = (["清冰箱", "剩下", "剩食"], "行政主廚務必以用戶提供的剩餘食材為核心，搭配最少量的額外採買來設計創意料理。")
-SCENARIO_KIDS_MEAL = (["小孩", "兒童", "兒子"], "這是一份專為四歲小男童設計的餐點，口味必須溫和不辣、好咀嚼，食材總管須優先考慮營養均衡。")
+SCENARIO_CLEAR_FRIDGE = (["清冰箱", "剩下", "剩食"], "以用戶剩餘食材為核心，最少額外採買。")
+SCENARIO_KIDS_MEAL = (["小孩", "兒童", "兒子"], "四歲兒童餐：溫和不辣、好咀嚼、營養均衡。")
 
 SYSTEM_PROMPT = (
-    "你是一個頂級米其林研發團隊。必須先讓三位主廚(行政主廚、副主廚、食材總管)進行專業對話，再給出食譜。\n"
-    "無論使用者提出何種情境或額外指示，輸出格式必須嚴格遵守以下 JSON 結構，且所有字串內容不可為空：\n"
-    '{"kitchen_talk": [{"role": "角色", "content": "內容"}], '
-    '"theme": "主題", "recipe_name": "菜名", '
-    '"ingredients": [{"name": "食材", "price": "價格"}], '
-    '"steps": ["步驟"], "shopping_list": ["區塊"], "estimated_total_cost": "數字"}'
+    "米其林研發團隊。三位主廚(行政主廚、副主廚、食材總管)先簡短討論再產出食譜。\n"
+    "嚴格輸出以下 JSON，字串不可為空：\n"
+    '{"kitchen_talk":[{"role":"角色","content":"內容"}],"theme":"主題","recipe_name":"菜名",'
+    '"ingredients":[{"name":"食材","price":"價格"}],"steps":["步驟"],"shopping_list":["區塊"],"estimated_total_cost":"數字"}'
 )
 
 ROLE_COLORS: dict[str, str] = {"行政主廚": "#9F1239", "副主廚": "#B45309", "食材總管": "#166534"}
@@ -215,10 +214,7 @@ async def _build_system_prompt_with_preferences(user_id: str) -> str:
     prefs = await get_user_preferences(user_id)
     if not prefs:
         return SYSTEM_PROMPT
-    return SYSTEM_PROMPT + (
-        f"\n\n客戶有以下特殊飲食偏好，請絕對嚴格遵守：{prefs}\n"
-        "行政主廚、副主廚、食材總管在設計食譜時，必須避開雷區，不可使用或用戶明確排除的食材與烹調方式。\n"
-    )
+    return SYSTEM_PROMPT + f"\n飲食禁忌：{prefs}。設計時須避開。"
 
 
 def _build_scenario_instructions(text: str) -> str:
@@ -266,6 +262,20 @@ def _extract_json(text: str) -> dict:
             if depth == 0:
                 return json.loads(text[start : i + 1])
     raise ValueError("Malformed JSON in AI response")
+
+
+def _condense_assistant_message(content: str, max_chars: int = 80) -> str:
+    """將長回覆壓縮為摘要，減少 token 消耗。"""
+    if not content or len(content) <= max_chars:
+        return content
+    try:
+        data = _extract_json(content)
+        name = data.get("recipe_name", "")
+        if name:
+            return f"【上次食譜】{name}"
+    except (ValueError, json.JSONDecodeError):
+        pass
+    return content[: max_chars - 2] + "…"
 
 
 async def _get_last_recipe_json(user_id: str) -> dict | None:
@@ -431,8 +441,10 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     if scenario_prefix:
         user_message = scenario_prefix + user_message
 
-    effective_system = await _build_system_prompt_with_preferences(user_id)
-    history = await get_user_memory(user_id)
+    effective_system, history = await asyncio.gather(
+        _build_system_prompt_with_preferences(user_id),
+        get_user_memory(user_id),
+    )
     if not history:
         history = [{"role": "system", "content": effective_system}]
     elif history[0].get("role") == "system":
@@ -442,13 +454,22 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     history.append({"role": "user", "content": user_message})
     if len(history) > MAX_HISTORY_TURNS + 1:
         history = [history[0]] + history[-MAX_HISTORY_TURNS:]
+    api_messages = [
+        {"role": m["role"], "content": _condense_assistant_message(m.get("content", "")) if m.get("role") == "assistant" else m.get("content", "")}
+        for m in history
+    ]
 
     try:
-        response = await ai_client.chat.completions.create(model=AI_MODEL_FOR_CALL, messages=history, temperature=0.3)
+        response = await ai_client.chat.completions.create(
+            model=AI_MODEL_FOR_CALL,
+            messages=api_messages,
+            temperature=0.3,
+            max_tokens=MAX_COMPLETION_TOKENS,
+        )
         ai_content = response.choices[0].message.content.strip()
         logger.debug("AI raw output for user %s: %s", user_id, ai_content[:200])
         ai_data = _extract_json(ai_content)
-        await save_user_memory(user_id, history + [{"role": "assistant", "content": ai_content}])
+        await save_user_memory(user_id, history + [{"role": "assistant", "content": ai_content}])  # 存完整內容供檢視清單/收藏
         recipe_name = ai_data.get("recipe_name", "美味食譜")
         g = ai_data.get
         flex_dict = generate_flex_message(
