@@ -1,5 +1,39 @@
 ## 變更紀錄
 
+### 2026-02-28
+
+- **Render 與環境設定**
+  - 新增 `render.yaml`，統一設定：
+    - `PORT=8000`
+    - `MODEL_NAME=gemini-3-flash-preview`
+    - 其餘敏感金鑰（LINE、Supabase、Gemini/OpenRouter）改由 Render Dashboard 設定，避免寫死在版本庫中。
+  - 簡化 `.env.example`，僅保留實際需要的變數：
+    - `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET`
+    - `SUPABASE_URL`、`SUPABASE_KEY`
+    - `GEMINI_API_KEY`、`OPENROUTER_API_KEY`
+    - `MODEL_NAME=gemini-3-flash-preview`、`DEBUG=1`
+
+- **主選單與情境模式**
+  - 新增 `get_main_menu_flex()`，提供五大核心功能按鈕：
+    - 🍱 各式菜色（切換菜系選單）
+    - 🏠 生活需求（導向清冰箱／兒童餐說明）
+    - 💰 預算方案（預算導向食譜）
+    - ☁️ 心情點餐（依心情推薦料理風格）
+    - 🛒 採買食材（對應「🛒 檢視清單」）
+  - 在 `process_ai_reply` 中新增對應三個模式的說明邏輯：
+    - 「清冰箱模式」
+    - 「幫我規劃預算食譜」
+    - 「我想根據心情點餐」
+
+- **System Prompt 強化**
+  - 在 `_build_system_prompt` 中加入：
+    - 預算方案：要求在 `kitchen_talk` 中討論性價比並嚴格控制 `estimated_total_cost`。
+    - 心情點餐：要求副主廚依據心情推薦適合的食材與口感。
+
+- **文案微調**
+  - Reset 歡迎詞更新為：`👨‍🍳 歡迎！廚房已備妥，Gemini 3 Flash 已就緒。請問想吃什麼？`
+  - `health_check` 保持：`米其林職人大腦 (Gemini 3 Flash 驅動中)`。
+
 ### 2025-02-28
 
 - **效能與非同步**

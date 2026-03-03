@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from urllib.parse import parse_qs
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
+from dotenv import load_dotenv
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
     AsyncApiClient,
@@ -39,6 +40,8 @@ logging.basicConfig(
 logger = logging.getLogger("chef-agent")
 
 # ─── Environment ────────────────────────────────────────────────────────────────
+
+load_dotenv()
 
 def _require_env(name: str) -> str:
     val = os.getenv(name)
@@ -73,7 +76,7 @@ MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
-CUISINE_SELECTOR_KEYWORDS = {"選單", "換菜單"}
+CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
 RANDOM_SIDEDISH_CMD = "🍳 隨機配菜"
 VIEW_SHOPPING_CMD   = "🛒 檢視清單"
 
@@ -84,6 +87,8 @@ RANDOM_STYLES = [
 
 SCENARIO_CLEAR_FRIDGE = (["清冰箱", "剩下", "剩食"], "以用戶剩餘食材為核心，最少額外採買。")
 SCENARIO_KIDS_MEAL = (["小孩", "兒童", "兒子"], "四歲兒童餐：溫和不辣、好咀嚼、營養均衡。")
+SCENARIO_BUDGET = (["預算", "便宜", "省錢", "方案"], "預算方案：行政主廚需討論 CP 值，食材總管嚴格控管 NT$ 預算。")
+SCENARIO_MOOD   = (["心情", "壓力", "開心", "難過"], "心情點餐：副主廚需根據情緒推薦溫暖或清爽的口感，提供情緒支持。")
 
 SYSTEM_PROMPT = (
     "你是米其林三星廚房(行政主廚/副主廚/食材總管)。三位各一句(≤15字)討論後產出食譜。"
@@ -299,8 +304,8 @@ async def update_user_cuisine_context(user_id: str, cuisine: str) -> None:
 def _build_system_prompt(prefs: str | None = None, current_cuisine: str | None = None) -> str:
     base = SYSTEM_PROMPT
     # 預算與心情相關指示，協助 AI 理解額外維度
-    base += "\n若涉及「預算方案」，請在 kitchen_talk 中討論性價比，並嚴格控制 estimated_total_cost。"
-    base += "\n若涉及「心情點餐」，請副主廚針對該心情推薦適合的食材與口感。"
+    base += "\n若涉及「預算方案」，請在 kitchen_talk 中討論 CP 值與採買策略，並嚴格控制 estimated_total_cost。"
+    base += "\n若涉及「心情點餐」，請副主廚針對該心情提供具情緒價值與儀式感的料理建議。"
     if prefs:
         base += f"\n飲食禁忌：{prefs}。"
     if current_cuisine and current_cuisine != "不拘":
@@ -309,9 +314,17 @@ def _build_system_prompt(prefs: str | None = None, current_cuisine: str | None =
 
 
 def _build_scenario_instructions(text: str) -> str:
-    scenarios = [SCENARIO_CLEAR_FRIDGE, SCENARIO_KIDS_MEAL]
-    labels = ("清冰箱", "兒童餐")
-    parts = [f"【{labels[i]}模式】{s[1]}" for i, s in enumerate(scenarios) if any(k in text for k in s[0])]
+    labeled_scenarios = [
+        ("清冰箱", SCENARIO_CLEAR_FRIDGE),
+        ("兒童餐", SCENARIO_KIDS_MEAL),
+        ("預算方案", SCENARIO_BUDGET),
+        ("心情點餐", SCENARIO_MOOD),
+    ]
+    parts = [
+        f"【{label}模式】{scenario[1]}"
+        for label, scenario in labeled_scenarios
+        if any(k in text for k in scenario[0])
+    ]
     return "\n\n".join(parts) + "\n\n" if parts else ""
 
 
@@ -519,26 +532,17 @@ def get_main_menu_flex() -> FlexMessage:
             "type": "box",
             "layout": "vertical",
             "contents": [
-                {
-                    "type": "text",
-                    "text": "👨‍🍳 米其林職人服務",
-                    "weight": "bold",
-                    "size": "lg",
-                    "color": "#FFFFFF",
-                }
+                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "color": "#FFFFFF"}
             ],
-            "backgroundColor": "#EA580C",
+            "backgroundColor": "#EA580C"
         },
         "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
+            "type": "box", "layout": "vertical", "spacing": "md",
             "contents": [
                 {
                     "type": "button",
                     "style": "primary",
                     "color": "#9F1239",
-                    "height": "sm",
                     "action": {
                         "type": "message",
                         "label": "🍱 各式菜色",
@@ -549,7 +553,6 @@ def get_main_menu_flex() -> FlexMessage:
                     "type": "button",
                     "style": "primary",
                     "color": "#B45309",
-                    "height": "sm",
                     "action": {
                         "type": "message",
                         "label": "🏠 生活需求",
@@ -560,7 +563,6 @@ def get_main_menu_flex() -> FlexMessage:
                     "type": "button",
                     "style": "primary",
                     "color": "#166534",
-                    "height": "sm",
                     "action": {
                         "type": "message",
                         "label": "💰 預算方案",
@@ -571,7 +573,6 @@ def get_main_menu_flex() -> FlexMessage:
                     "type": "button",
                     "style": "primary",
                     "color": "#1E40AF",
-                    "height": "sm",
                     "action": {
                         "type": "message",
                         "label": "☁️ 心情點餐",
@@ -581,7 +582,6 @@ def get_main_menu_flex() -> FlexMessage:
                 {
                     "type": "button",
                     "style": "secondary",
-                    "height": "sm",
                     "action": {
                         "type": "message",
                         "label": "🛒 採買食材",
@@ -592,7 +592,7 @@ def get_main_menu_flex() -> FlexMessage:
         },
     }
     return FlexMessage(
-        alt_text="請選擇功能服務",
+        alt_text="開啟米其林職人菜單",
         contents=FlexContainer.from_dict(menu_dict),
     )
 
@@ -708,6 +708,10 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
         await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3 Flash 已就緒。請問想吃什麼？"))
+        return
+
+    if stripped in {"選單", "開始"}:
+        await reply(get_main_menu_flex())
         return
 
     # 主選單按鈕對應邏輯
