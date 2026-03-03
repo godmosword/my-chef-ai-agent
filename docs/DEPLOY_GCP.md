@@ -98,7 +98,7 @@ git push -u origin main
 | `CLOUD_RUN_REGION` | `asia-east1` | 步驟三選擇的區域 |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Access Token | [LINE Developers](https://developers.line.biz/) → Channel → Messaging API |
 | `LINE_CHANNEL_SECRET` | Channel Secret | LINE Developers → Basic settings |
-| `OPENROUTER_API_KEY` | API 金鑰 | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `GEMINI_API_KEY` | API 金鑰 | [Google AI Studio](https://aistudio.google.com/apikey) |
 | `SUPABASE_URL` | 專案 URL | [Supabase Dashboard](https://supabase.com/dashboard)（選填） |
 | `SUPABASE_KEY` | anon key | Supabase Settings → API（選填） |
 
@@ -129,7 +129,7 @@ git push origin main
 **驗證**：在瀏覽器開啟 `https://你的URL/`，應看到：
 
 ```json
-{"status":"ok","message":"米其林職人大腦 (Claude Sonnet 4.6 穩定版)"}
+{"status":"ok","message":"米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
 ```
 
 ---
