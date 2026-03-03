@@ -161,6 +161,9 @@ git push origin main
 **部署失敗：Permission denied**  
 → 確認 Service Account 已授予 Cloud Run Admin、Service Account User、Storage Admin
 
+**部署失敗：container failed to start and listen on PORT**  
+→ 通常為 `GEMINI_API_KEY` 未設定或為空。請至 GitHub → Settings → Secrets → Actions 新增 `GEMINI_API_KEY`（從 [Google AI Studio](https://aistudio.google.com/apikey) 取得）
+
 **LINE Webhook 驗證失敗**  
 → 確認 URL 以 `/callback` 結尾、Cloud Run 服務為 `allow-unauthenticated`
 
