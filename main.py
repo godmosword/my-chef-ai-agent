@@ -618,7 +618,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
-        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已淨空，Gemini 3 Flash 準備就緒。今天想來點什麼風味？"))
+        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3 Flash 已就緒。請問想吃什麼？"))
         return
 
     if stripped in CUISINE_SELECTOR_KEYWORDS:

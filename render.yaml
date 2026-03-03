@@ -9,8 +9,6 @@ services:
         value: "8000"
       - key: MODEL_NAME
         value: "gemini-3-flash-preview"
-      - key: DEBUG
-        value: "1"
       # 以下為敏感變數，請在 Render Dashboard 中手動輸入，不要寫死在這裡
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
@@ -21,6 +19,4 @@ services:
       - key: SUPABASE_KEY
         sync: false
       - key: GEMINI_API_KEY
-        sync: false
-      - key: OPENROUTER_API_KEY
         sync: false
