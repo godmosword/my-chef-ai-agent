@@ -35,8 +35,28 @@ Note: `test_get_empty_memory_returns_empty_list_when_no_supabase` fails (pre-exi
 | Google Gemini AI | `GEMINI_API_KEY` | Required for AI recipe generation |
 | Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional; app degrades gracefully without it |
 
+### Hello world testing (webhook simulation)
+
+Since this is a LINE Bot, end-to-end testing requires real LINE webhook events (via ngrok). For local validation without ngrok, simulate a webhook with a valid HMAC-SHA256 signature:
+
+```python
+import hmac, hashlib, base64, json, os, urllib.request
+secret = os.environ['LINE_CHANNEL_SECRET']
+body = json.dumps({
+    'events': [{'type':'message','replyToken':'0000000000000000000000000000dead',
+                'source':{'userId':'Utest'},'message':{'type':'text','text':'番茄炒蛋'}}]
+}).encode()
+sig = base64.b64encode(hmac.new(secret.encode(), body, hashlib.sha256).digest()).decode()
+req = urllib.request.Request('http://localhost:8000/callback', data=body,
+    headers={'Content-Type':'application/json','X-Line-Signature': sig})
+print(urllib.request.urlopen(req).read())
+```
+
+The webhook will return `"OK"`. The background task will call Gemini AI and generate a Flex Message, but the LINE reply will fail with "Invalid reply token" (expected with synthetic tokens). Check server logs for the `AI user=... elapsed=... tokens=...` line to confirm AI integration works.
+
 ### Gotchas
 
 - Environment variables are validated at **module import time** (not at request time). If they're missing, the app crashes immediately on startup.
 - There is no `.env` auto-loading (no `python-dotenv`). Set env vars directly or use `cp .env.example .env` and export them.
 - The `pytest` binary may not be on PATH; use `python3 -m pytest` instead.
+- When killing the dev server, also kill child processes (reloader + server worker). Use `lsof -ti:8000` to find all PIDs on the port.
