@@ -46,10 +46,18 @@ def _require_env(name: str) -> str:
 
 LINE_CHANNEL_ACCESS_TOKEN = _require_env("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET       = _require_env("LINE_CHANNEL_SECRET")
-OPENROUTER_API_KEY        = _require_env("OPENROUTER_API_KEY")
-MODEL_NAME                = os.getenv("MODEL_NAME", "anthropic/claude-sonnet-4-5")
+MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-pro-preview")
 SUPABASE_URL              = os.getenv("SUPABASE_URL")
 SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
+
+# gemini-3.1-pro-preview 使用 GEMINI_API_KEY 直連 Google；其他模型使用 OpenRouter
+USE_GEMINI_DIRECT = MODEL_NAME in ("gemini-3.1-pro-preview", "google/gemini-3.1-pro-preview")
+if USE_GEMINI_DIRECT:
+    GEMINI_API_KEY = _require_env("GEMINI_API_KEY")
+    OPENROUTER_API_KEY = None
+else:
+    OPENROUTER_API_KEY = _require_env("OPENROUTER_API_KEY")
+    GEMINI_API_KEY = None
 
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
@@ -95,11 +103,19 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 
-ai_client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-    default_headers={"HTTP-Referer": "https://run.app", "X-Title": "My Chef AI Agent"},
-)
+if USE_GEMINI_DIRECT:
+    ai_client = AsyncOpenAI(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        api_key=GEMINI_API_KEY,
+    )
+    AI_MODEL_FOR_CALL = "gemini-3.1-pro-preview"
+else:
+    ai_client = AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=OPENROUTER_API_KEY,
+        default_headers={"HTTP-Referer": "https://run.app", "X-Title": "My Chef AI Agent"},
+    )
+    AI_MODEL_FOR_CALL = MODEL_NAME
 
 # ─── Webhook Event Models ────────────────────────────────────────────────────────
 
@@ -393,7 +409,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
-        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Claude Sonnet 4.6 已就緒。請問想吃什麼？"))
+        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3.1 Pro 已就緒。請問想吃什麼？"))
         return
 
     if stripped == VIEW_SHOPPING_CMD:
@@ -428,7 +444,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         history = [history[0]] + history[-MAX_HISTORY_TURNS:]
 
     try:
-        response = await ai_client.chat.completions.create(model=MODEL_NAME, messages=history, temperature=0.3)
+        response = await ai_client.chat.completions.create(model=AI_MODEL_FOR_CALL, messages=history, temperature=0.3)
         ai_content = response.choices[0].message.content.strip()
         logger.debug("AI raw output for user %s: %s", user_id, ai_content[:200])
         ai_data = _extract_json(ai_content)
@@ -469,7 +485,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林職人大腦 (Claude Sonnet 4.6 穩定版)"}
+    return {"status": "ok", "message": "米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
 
 
 @app.post("/callback")

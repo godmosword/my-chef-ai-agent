@@ -9,10 +9,10 @@ services:
         sync: false
       - key: LINE_CHANNEL_SECRET
         sync: false
-      - key: OPENROUTER_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
       - key: MODEL_NAME
-        value: anthropic/claude-sonnet-4-5
+        value: gemini-3.1-pro-preview
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY

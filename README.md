@@ -1,6 +1,6 @@
 # 米其林職人大腦 🍽️
 
-以 Claude Sonnet AI 驅動的 LINE Bot，模擬米其林三星廚房團隊，即時生成食譜、採買清單與成本估算，並以 Flex Message 卡片呈現。
+以 Gemini 3.1 Pro AI 驅動的 LINE Bot，模擬米其林三星廚房團隊，即時生成食譜、採買清單與成本估算，並以 Flex Message 卡片呈現。
 
 ## 功能特色
 
@@ -18,7 +18,7 @@
 ## 技術棧
 
 - **Web**：FastAPI + Uvicorn  
-- **AI**：Claude Sonnet（OpenRouter.ai）  
+- **AI**：Gemini 3.1 Pro（Google AI API）  
 - **訊息**：LINE Bot SDK v3  
 - **資料庫**：Supabase（可選）  
 - **部署**：GCP Cloud Run + GitHub Actions  
@@ -35,7 +35,7 @@ pip install -r requirements.txt
 
 # 2. 複製環境變數
 cp .env.example .env
-# 編輯 .env，填入 LINE_CHANNEL_ACCESS_TOKEN、LINE_CHANNEL_SECRET、OPENROUTER_API_KEY
+# 編輯 .env，填入 LINE_CHANNEL_ACCESS_TOKEN、LINE_CHANNEL_SECRET、GEMINI_API_KEY
 
 # 3. 啟動
 uvicorn main:app --reload --port 8000
@@ -49,8 +49,8 @@ uvicorn main:app --reload --port 8000
 |------|:----:|------|
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API |
 | `LINE_CHANNEL_SECRET` | ✅ | LINE Basic settings |
-| `OPENROUTER_API_KEY` | ✅ | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `MODEL_NAME` | | 預設 `anthropic/claude-sonnet-4-5` |
+| `GEMINI_API_KEY` | ✅ | [Google AI Studio](https://aistudio.google.com/apikey)（預設模型使用） |
+| `MODEL_NAME` | | 預設 `gemini-3.1-pro-preview`，使用 GEMINI_API_KEY 直連 |
 | `SUPABASE_URL` | | Supabase 專案 URL |
 | `SUPABASE_KEY` | | Supabase anon key |
 
@@ -62,7 +62,7 @@ uvicorn main:app --reload --port 8000
 
 1. 啟用 Cloud Run、Artifact Registry、Cloud Build API  
 2. 建立 Service Account（Cloud Run Admin、Service Account User、Storage Admin）  
-3. 在 GitHub Secrets 設定 `GCP_SA_KEY`、`GCP_PROJECT_ID`、`CLOUD_RUN_SERVICE`、`CLOUD_RUN_REGION` 與 LINE、OpenRouter、Supabase 金鑰  
+3. 在 GitHub Secrets 設定 `GCP_SA_KEY`、`GCP_PROJECT_ID`、`CLOUD_RUN_SERVICE`、`CLOUD_RUN_REGION` 與 LINE、Gemini、Supabase 金鑰  
 4. Push 到 `main`，GitHub Actions 會自動部署  
 5. 取得 Cloud Run URL，於 LINE Developer Console 設定 Webhook：`https://<你的URL>/callback`  
 
