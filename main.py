@@ -26,7 +26,7 @@ from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
 )
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APITimeoutError
 from supabase import create_client, Client
 
 # ─── Logging ────────────────────────────────────────────────────────────────────
@@ -65,9 +65,9 @@ else:
 
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
-MAX_MESSAGE_LENGTH   = 500
-MAX_HISTORY_TURNS    = 3
-MAX_COMPLETION_TOKENS = 4096
+MAX_MESSAGE_LENGTH    = 500
+MAX_HISTORY_TURNS     = 3
+MAX_COMPLETION_TOKENS = 2048
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
@@ -123,6 +123,7 @@ if USE_GEMINI_DIRECT:
     ai_client = AsyncOpenAI(
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         api_key=GEMINI_API_KEY,
+        max_retries=1,
     )
     AI_MODEL_FOR_CALL = _mn
 else:
@@ -130,6 +131,7 @@ else:
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
         default_headers={"HTTP-Referer": "https://run.app", "X-Title": "My Chef AI Agent"},
+        max_retries=1,
     )
     AI_MODEL_FOR_CALL = MODEL_NAME
 
@@ -616,7 +618,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
-        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3.1 Pro 已就緒。請問想吃什麼？"))
+        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已淨空，Gemini 3 Flash 準備就緒。今天想來點什麼風味？"))
         return
 
     if stripped in CUISINE_SELECTOR_KEYWORDS:
@@ -671,6 +673,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
             temperature=0.3,
             max_tokens=MAX_COMPLETION_TOKENS,
             response_format={"type": "json_object"},
+            timeout=45.0,
         )
         elapsed = time.perf_counter() - t0
         ai_content = response.choices[0].message.content.strip()
@@ -699,13 +702,26 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         msg = FlexMessage(alt_text=f"職人提案：{recipe_name}", contents=FlexContainer.from_dict(flex_dict))
     except json.JSONDecodeError as exc:
         logger.error("JSON parse error for user %s: %s", user_id, exc)
-        msg = TextMessage(text="👨‍🍳 廚房筆記有點亂，請輸入「清除記憶」後再試一次！")
+        msg = TextMessage(
+            text=f"👨‍🍳 廚房筆記有點亂 (JSONDecodeError): {str(exc)}\n請輸入「清除記憶」後再試一次！"
+        )
     except ValueError as exc:
         logger.error("Value error for user %s: %s", user_id, exc)
-        msg = TextMessage(text="👨‍🍳 團隊正在熱烈討論中，請對我輸入「清除記憶」後換個說法試試。")
-    except Exception:
+        msg = TextMessage(
+            text=f"👨‍🍳 AI 格式解析失敗 (ValueError): {str(exc)}\n請輸入「清除記憶」後換個說法試試。"
+        )
+    except Exception as exc:
         logger.exception("Unexpected error for user %s", user_id)
-        msg = TextMessage(text="👨‍🍳 團隊正在熱烈討論中，請對我輸入「清除記憶」後換個說法試試。")
+        if isinstance(exc, APITimeoutError):
+            msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
+        else:
+            msg = TextMessage(
+                text=(
+                    "👨‍🍳 呼叫 AI 時發生意外：\n"
+                    f"{type(exc).__name__}: {str(exc)}\n\n"
+                    "請截圖此錯誤並輸入「清除記憶」重試。"
+                )
+            )
 
     await reply(msg)
 
@@ -725,7 +741,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
+    return {"status": "ok", "message": "米其林職人大腦 (Gemini 3 Flash 驅動中)"}
 
 
 @app.post("/callback")
@@ -769,8 +785,12 @@ async def callback(
             if action == "change_cuisine":
                 cuisine = (parsed.get("cuisine") or [""])[0]
                 if cuisine:
-                    background_tasks.add_task(update_user_cuisine_context, user_id, cuisine)
-                await _reply_line(reply_token, TextMessage(text="👨‍🍳 主廚已收到，馬上為您準備對應菜單！"))
+                    await update_user_cuisine_context(user_id, cuisine)
+                    fake_text = f"請根據 {CUISINE_LABELS.get(cuisine, '該')} 風格推薦一道料理"
+                    background_tasks.add_task(
+                        process_ai_reply,
+                        WebhookMessageEvent(reply_token=reply_token, user_id=user_id, text=fake_text),
+                    )
             else:
                 background_tasks.add_task(process_postback_reply, WebhookPostbackEvent(reply_token, user_id, data))
 
