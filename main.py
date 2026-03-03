@@ -11,6 +11,8 @@ import logging
 import os
 import random
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from urllib.parse import parse_qs
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 from linebot.v3.exceptions import InvalidSignatureError
@@ -87,6 +89,14 @@ SYSTEM_PROMPT = (
 )
 
 ROLE_COLORS: dict[str, str] = {"行政主廚": "#9F1239", "副主廚": "#B45309", "食材總管": "#166534"}
+
+CUISINE_LABELS: dict[str, str] = {
+    "taiwanese": "台灣小吃",
+    "thai": "泰式料理",
+    "japanese_ramen": "日式拉麵與定食",
+    "european_american": "歐美家常菜",
+    "kids_meal": "兒童專屬特餐",
+}
 
 # ─── Clients ────────────────────────────────────────────────────────────────────
 
@@ -189,6 +199,35 @@ def get_user_memory(user_id: str) -> list:
     return _user_memory_select(user_id)
 
 
+@safe_db((None, None))
+def get_user_cuisine_context(user_id: str) -> tuple[str | None, str | None]:
+    """回傳 (active_cuisine, context_updated_at)，若無則 (None, None)。"""
+    return _user_cuisine_context_select(user_id)
+
+
+def _filter_history_after_context(history: list, context_updated_at: str | None) -> list:
+    """
+    依 context_updated_at 過濾歷史，只保留時間戳記大於該時間的訊息。
+    無 timestamp 的舊訊息視為早於任何 context_updated_at，予以排除。
+    """
+    if not context_updated_at:
+        return history
+    cutoff = context_updated_at
+    return [m for m in history if (m.get("timestamp") or "") > cutoff]
+
+
+async def get_filtered_user_memory(user_id: str) -> list:
+    """
+    撈取過濾後的對話紀錄：只保留 context_updated_at 之後的訊息。
+    若使用者從未切換菜系，則回傳完整歷史。
+    """
+    full_history, (_, context_updated_at) = await asyncio.gather(
+        get_user_memory(user_id),
+        get_user_cuisine_context(user_id),
+    )
+    return _filter_history_after_context(full_history, context_updated_at)
+
+
 @safe_db(None)
 def save_user_memory(user_id: str, history: list) -> None:
     return _user_memory_upsert(user_id, history)
@@ -208,13 +247,58 @@ def get_user_preferences(user_id: str) -> str | None:
 def save_favorite_recipe(user_id: str, recipe_name: str, recipe_data: dict) -> bool:
     return _favorite_recipes_insert(user_id, recipe_name, recipe_data)
 
+
+def _user_cuisine_context_select(user_id: str) -> tuple[str | None, str | None]:
+    """同步查詢使用者的 active_cuisine 與 context_updated_at。回傳 (cuisine, context_updated_at)。"""
+    res = supabase.table("user_cuisine_context").select("active_cuisine, context_updated_at").eq("user_id", user_id).execute()
+    if not res.data:
+        return None, None
+    row = res.data[0]
+    return row.get("active_cuisine"), row.get("context_updated_at")
+
+
+def _user_cuisine_context_upsert(user_id: str, active_cuisine: str) -> None:
+    """同步更新使用者的 active_cuisine 與 context_updated_at。"""
+    supabase.table("user_cuisine_context").upsert(
+        {
+            "user_id": user_id,
+            "active_cuisine": active_cuisine,
+            "context_updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+        on_conflict="user_id",
+    ).execute()
+
+
+async def update_user_cuisine_context(user_id: str, cuisine: str) -> None:
+    """
+    非同步更新使用者的菜系情境。
+    使用 asyncio.to_thread 包裝 Supabase 同步操作，更新 active_cuisine 與 context_updated_at。
+    """
+    if not supabase:
+        logger.warning("Supabase not configured, skip update_user_cuisine_context")
+        return
+    try:
+        await asyncio.to_thread(_user_cuisine_context_upsert, user_id, cuisine)
+        logger.info("Updated cuisine context for user %s: %s", user_id, cuisine)
+    except Exception as exc:
+        logger.warning("update_user_cuisine_context failed: %s", exc)
+
 # ─── Helpers ────────────────────────────────────────────────────────────────────
 
-async def _build_system_prompt_with_preferences(user_id: str) -> str:
+async def _build_system_prompt_with_preferences(user_id: str, current_cuisine: str | None = None) -> str:
     prefs = await get_user_preferences(user_id)
-    if not prefs:
-        return SYSTEM_PROMPT
-    return SYSTEM_PROMPT + f"\n飲食禁忌：{prefs}。設計時須避開。"
+    base = SYSTEM_PROMPT
+    if prefs:
+        base += f"\n飲食禁忌：{prefs}。設計時須避開。"
+    if current_cuisine and current_cuisine != "不拘":
+        base += (
+            f"\n\n目前指定的料理情境為：{current_cuisine}。"
+            "請忽略任何與此情境無關的過往菜色討論。"
+            "接下來的食譜推薦與食材採買清單，請完全聚焦於此風格，並嚴格遵守使用者的長期飲食禁忌。"
+        )
+    elif current_cuisine == "不拘":
+        base += "\n\n目前未指定料理情境，可自由發揮。請嚴格遵守使用者的長期飲食禁忌。"
+    return base
 
 
 def _build_scenario_instructions(text: str) -> str:
@@ -308,6 +392,109 @@ async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage) -> None:
         )
 
 # ─── Flex Message Engine ────────────────────────────────────────────────────────
+
+CUISINE_CAROUSEL_CARDS = [
+    {
+        "title": "🇹🇼 台灣小吃",
+        "cuisine": "taiwanese",
+        "image_url": "https://placehold.co/400x300/EA580C/FFFFFF?text=%F0%9F%87%B9%F0%9F%87%BC+%E5%8F%B0%E7%81%A3%E5%B0%8F%E5%90%83",
+        "description": "滷肉飯、蚵仔煎、牛肉麵、珍珠奶茶…道地台灣味，家常好上手。",
+        "display_text": "已為您切換至台灣小吃情境！",
+    },
+    {
+        "title": "🇹🇭 泰式料理",
+        "cuisine": "thai",
+        "image_url": "https://placehold.co/400x300/166534/FFFFFF?text=%F0%9F%87%B9%F0%9F%87%AD+%E6%B3%B0%E5%BC%8F%E6%96%99%E7%90%86",
+        "description": "酸辣開胃、香茅檸檬、打拋豬、綠咖哩，南洋風情一次滿足。",
+        "display_text": "已為您切換至泰式料理情境！",
+    },
+    {
+        "title": "🇯🇵 日式拉麵與定食",
+        "cuisine": "japanese_ramen",
+        "image_url": "https://placehold.co/400x300/9F1239/FFFFFF?text=%F0%9F%87%AF%F0%9F%87%B5+%E6%97%A5%E5%BC%8F%E6%8B%89%E9%BA%B5",
+        "description": "拉麵、丼飯、定食、壽司，日式職人精神，在家也能重現。",
+        "display_text": "已為您切換至日式拉麵與定食情境！",
+    },
+    {
+        "title": "🇪🇺 歐美家常菜",
+        "cuisine": "european_american",
+        "image_url": "https://placehold.co/400x300/1E40AF/FFFFFF?text=%F0%9F%87%AA%F0%9F%87%BA+%E6%AD%90%E7%BE%8E%E5%AE%B6%E5%B8%B8%E8%8F%9C",
+        "description": "義大利麵、牛排、燉飯、烤雞，西式經典輕鬆上桌。",
+        "display_text": "已為您切換至歐美家常菜情境！",
+    },
+    {
+        "title": "👶 兒童專屬特餐",
+        "cuisine": "kids_meal",
+        "image_url": "https://placehold.co/400x300/F59E0B/FFFFFF?text=%F0%9F%91%B6+%E5%85%92%E7%AB%A5%E5%B0%88%E5%B1%AC%E7%89%B9%E9%A4%90",
+        "description": "溫和不辣、好咀嚼、營養均衡，專為小朋友設計的安心料理。",
+        "display_text": "已為您切換至兒童專屬特餐情境！",
+    },
+]
+
+
+def get_cuisine_selector_flex_message() -> FlexMessage:
+    """
+    回傳 LINE Carousel Flex Message，供使用者選擇菜系情境。
+    每張卡片的「選擇此菜系」按鈕綁定 PostbackAction，data 格式為 query string。
+    """
+    bubbles = []
+    for card in CUISINE_CAROUSEL_CARDS:
+        bubble = {
+            "type": "bubble",
+            "hero": {
+                "type": "image",
+                "url": card["image_url"],
+                "size": "full",
+                "aspectRatio": "20:13",
+                "aspectMode": "cover",
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": card["title"],
+                        "weight": "bold",
+                        "size": "xl",
+                        "color": "#1F2937",
+                    },
+                    {
+                        "type": "text",
+                        "text": card["description"],
+                        "size": "sm",
+                        "color": "#6B7280",
+                        "wrap": True,
+                        "margin": "md",
+                    },
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": "#EA580C",
+                        "action": {
+                            "type": "postback",
+                            "label": "選擇此菜系",
+                            "data": f"action=change_cuisine&cuisine={card['cuisine']}",
+                            "displayText": card["display_text"],
+                        },
+                    },
+                ],
+            },
+        }
+        bubbles.append(bubble)
+
+    carousel_dict = {"type": "carousel", "contents": bubbles}
+    return FlexMessage(
+        alt_text="請選擇您想探索的菜系",
+        contents=FlexContainer.from_dict(carousel_dict),
+    )
+
 
 def generate_flex_message(
     kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost,
@@ -441,17 +628,24 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     if scenario_prefix:
         user_message = scenario_prefix + user_message
 
-    effective_system, history = await asyncio.gather(
-        _build_system_prompt_with_preferences(user_id),
+    (active_cuisine, _), filtered_history, full_history = await asyncio.gather(
+        get_user_cuisine_context(user_id),
+        get_filtered_user_memory(user_id),
         get_user_memory(user_id),
     )
+    current_cuisine = CUISINE_LABELS.get(active_cuisine or "", active_cuisine or "不拘")
+    effective_system = await _build_system_prompt_with_preferences(user_id, current_cuisine)
+
+    history = filtered_history
     if not history:
         history = [{"role": "system", "content": effective_system}]
     elif history[0].get("role") == "system":
         history[0] = {"role": "system", "content": effective_system}
     else:
         history = [{"role": "system", "content": effective_system}] + history
-    history.append({"role": "user", "content": user_message})
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    history.append({"role": "user", "content": user_message, "timestamp": now_iso})
     if len(history) > MAX_HISTORY_TURNS + 1:
         history = [history[0]] + history[-MAX_HISTORY_TURNS:]
     api_messages = [
@@ -469,7 +663,13 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         ai_content = response.choices[0].message.content.strip()
         logger.debug("AI raw output for user %s: %s", user_id, ai_content[:200])
         ai_data = _extract_json(ai_content)
-        await save_user_memory(user_id, history + [{"role": "assistant", "content": ai_content}])  # 存完整內容供檢視清單/收藏
+        to_save = full_history + [
+            {"role": "user", "content": user_message, "timestamp": now_iso},
+            {"role": "assistant", "content": ai_content, "timestamp": now_iso},
+        ]
+        if len(to_save) > MAX_HISTORY_TURNS + 1:
+            to_save = [to_save[0]] + to_save[-MAX_HISTORY_TURNS:]
+        await save_user_memory(user_id, to_save)  # 存完整歷史，不刪除舊紀錄
         recipe_name = ai_data.get("recipe_name", "美味食譜")
         g = ai_data.get
         flex_dict = generate_flex_message(
@@ -545,6 +745,14 @@ async def callback(
                 background_tasks.add_task(process_ai_reply, WebhookMessageEvent(reply_token, user_id, msg.get("text", "")))
         elif ev_type == "postback":
             data = (ev.get("postback") or {}).get("data", "")
-            background_tasks.add_task(process_postback_reply, WebhookPostbackEvent(reply_token, user_id, data))
+            parsed = parse_qs(data)
+            action = (parsed.get("action") or [None])[0]
+            if action == "change_cuisine":
+                cuisine = (parsed.get("cuisine") or [""])[0]
+                if cuisine:
+                    background_tasks.add_task(update_user_cuisine_context, user_id, cuisine)
+                await _reply_line(reply_token, TextMessage(text="👨‍🍳 主廚已收到，馬上為您準備對應菜單！"))
+            else:
+                background_tasks.add_task(process_postback_reply, WebhookPostbackEvent(reply_token, user_id, data))
 
     return "OK"

@@ -93,6 +93,13 @@ create table favorite_recipes (
   recipe_data jsonb not null,
   created_at timestamptz default now()
 );
+
+-- 菜系情境（Carousel 選擇後更新）
+create table user_cuisine_context (
+  user_id text primary key,
+  active_cuisine text not null,
+  context_updated_at timestamptz not null
+);
 ```
 
 ---
