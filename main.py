@@ -298,6 +298,9 @@ async def update_user_cuisine_context(user_id: str, cuisine: str) -> None:
 
 def _build_system_prompt(prefs: str | None = None, current_cuisine: str | None = None) -> str:
     base = SYSTEM_PROMPT
+    # 預算與心情相關指示，協助 AI 理解額外維度
+    base += "\n若涉及「預算方案」，請在 kitchen_talk 中討論性價比，並嚴格控制 estimated_total_cost。"
+    base += "\n若涉及「心情點餐」，請副主廚針對該心情推薦適合的食材與口感。"
     if prefs:
         base += f"\n飲食禁忌：{prefs}。"
     if current_cuisine and current_cuisine != "不拘":
@@ -508,6 +511,92 @@ def get_cuisine_selector_flex_message() -> FlexMessage:
     )
 
 
+def get_main_menu_flex() -> FlexMessage:
+    """產出五大核心功能的主選單"""
+    menu_dict = {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "👨‍🍳 米其林職人服務",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#FFFFFF",
+                }
+            ],
+            "backgroundColor": "#EA580C",
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#9F1239",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "🍱 各式菜色",
+                        "text": "換菜單",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#B45309",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "🏠 生活需求",
+                        "text": "清冰箱模式",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#166534",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "💰 預算方案",
+                        "text": "幫我規劃預算食譜",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#1E40AF",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "☁️ 心情點餐",
+                        "text": "我想根據心情點餐",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "secondary",
+                    "height": "sm",
+                    "action": {
+                        "type": "message",
+                        "label": "🛒 採買食材",
+                        "text": "🛒 檢視清單",
+                    },
+                },
+            ],
+        },
+    }
+    return FlexMessage(
+        alt_text="請選擇功能服務",
+        contents=FlexContainer.from_dict(menu_dict),
+    )
+
+
 def generate_flex_message(
     kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost,
     recipe_name_for_postback: str | None = None,
@@ -619,6 +708,47 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
         await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3 Flash 已就緒。請問想吃什麼？"))
+        return
+
+    # 主選單按鈕對應邏輯
+    if stripped == "清冰箱模式":
+        await reply(
+            TextMessage(
+                text=(
+                    "👨‍🍳 生活需求模式開啟！\n\n"
+                    "你可以直接描述目前的情境，例如：\n"
+                    "・清冰箱：冰箱只剩下哪些食材？\n"
+                    "・兒童餐：小朋友幾歲、有沒有特別不吃的？\n\n"
+                    "我會自動套用「清冰箱」或「兒童餐」情境來設計菜單。"
+                )
+            )
+        )
+        return
+
+    if stripped == "幫我規劃預算食譜":
+        await reply(
+            TextMessage(
+                text=(
+                    "👨‍🍳 預算方案模式開啟！\n\n"
+                    "請告訴我：預算金額、人數與大概想吃的料理方向，例如：\n"
+                    "「兩個人，預算 200 元內，想吃家常菜」\n\n"
+                    "我會以「成本控制優先」為原則，幫你規劃食譜與採買清單。"
+                )
+            )
+        )
+        return
+
+    if stripped == "我想根據心情點餐":
+        await reply(
+            TextMessage(
+                text=(
+                    "☁️ 心情點餐模式開啟！\n\n"
+                    "請用幾個字描述現在的心情或場合，例如：\n"
+                    "「壓力超大」「想慶祝升遷」「今天很疲累只想快煮」\n\n"
+                    "我會把這個心情轉換成合適的料理風格與菜單。"
+                )
+            )
+        )
         return
 
     if stripped in CUISINE_SELECTOR_KEYWORDS:
