@@ -49,7 +49,7 @@ def _require_env(name: str) -> str:
 
 LINE_CHANNEL_ACCESS_TOKEN = _require_env("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET       = _require_env("LINE_CHANNEL_SECRET")
-MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-pro-preview")
+MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3-flash-preview")
 SUPABASE_URL              = os.getenv("SUPABASE_URL")
 SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
 
