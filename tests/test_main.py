@@ -8,7 +8,7 @@ import pytest
 
 os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
 os.environ.setdefault("LINE_CHANNEL_SECRET",       "test_secret")
-os.environ.setdefault("OPENROUTER_API_KEY",        "test_key")
+os.environ.setdefault("GEMINI_API_KEY",            "test_key")
 
 from main import (
     _safe_str,

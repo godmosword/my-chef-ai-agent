@@ -16,12 +16,20 @@ jobs:
       - name: 1. Checkout Code (取得程式碼)
         uses: actions/checkout@v4
 
-      - name: 2. Authenticate to GCP (登入 Google Cloud)
+      - name: 2. Validate Secrets (檢查必要金鑰)
+        run: |
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "::error::GEMINI_API_KEY 未設定。請至 GitHub → Settings → Secrets → Actions 新增 GEMINI_API_KEY（從 https://aistudio.google.com/apikey 取得）"
+            exit 1
+          fi
+          echo "Secrets validated."
+
+      - name: 3. Authenticate to GCP (登入 Google Cloud)
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: 3. Deploy to Cloud Run (打包並部署到 Cloud Run)
+      - name: 4. Deploy to Cloud Run (打包並部署到 Cloud Run)
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
         with:
@@ -29,13 +37,14 @@ jobs:
           region: ${{ secrets.CLOUD_RUN_REGION }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           source: .
-          flags: --allow-unauthenticated
+          flags: --allow-unauthenticated --no-cpu-throttling
           env_vars: |
             LINE_CHANNEL_ACCESS_TOKEN=${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
             LINE_CHANNEL_SECRET=${{ secrets.LINE_CHANNEL_SECRET }}
-            OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+            MODEL_NAME=gemini-3.1-pro-preview
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
 
-      - name: 4. Output Service URL
+      - name: 5. Output Service URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"

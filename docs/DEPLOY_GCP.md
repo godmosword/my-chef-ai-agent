@@ -98,7 +98,7 @@ git push -u origin main
 | `CLOUD_RUN_REGION` | `asia-east1` | 步驟三選擇的區域 |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Access Token | [LINE Developers](https://developers.line.biz/) → Channel → Messaging API |
 | `LINE_CHANNEL_SECRET` | Channel Secret | LINE Developers → Basic settings |
-| `OPENROUTER_API_KEY` | API 金鑰 | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `GEMINI_API_KEY` | API 金鑰 | [Google AI Studio](https://aistudio.google.com/apikey) |
 | `SUPABASE_URL` | 專案 URL | [Supabase Dashboard](https://supabase.com/dashboard)（選填） |
 | `SUPABASE_KEY` | anon key | Supabase Settings → API（選填） |
 
@@ -129,7 +129,7 @@ git push origin main
 **驗證**：在瀏覽器開啟 `https://你的URL/`，應看到：
 
 ```json
-{"status":"ok","message":"米其林職人大腦 (Claude Sonnet 4.6 穩定版)"}
+{"status":"ok","message":"米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
 ```
 
 ---
@@ -161,11 +161,17 @@ git push origin main
 **部署失敗：Permission denied**  
 → 確認 Service Account 已授予 Cloud Run Admin、Service Account User、Storage Admin
 
+**部署失敗：container failed to start and listen on PORT**  
+→ 通常為 `GEMINI_API_KEY` 未設定或為空。請至 GitHub → Settings → Secrets → Actions 新增 `GEMINI_API_KEY`（從 [Google AI Studio](https://aistudio.google.com/apikey) 取得）
+
 **LINE Webhook 驗證失敗**  
 → 確認 URL 以 `/callback` 結尾、Cloud Run 服務為 `allow-unauthenticated`
 
 **冷啟動較慢**  
 → 首次請求約 5–15 秒屬正常，可設「最低執行個體數」為 1 減少冷啟動（會產生費用）
+
+**訊息仍顯示舊版模型名稱（如 Claude）**  
+→ 若程式已部署但 LINE 仍顯示舊文字，請檢查 **LINE Developers Console** → **Messaging API** → **Greeting messages**（加入好友的招呼訊息），該處為 LINE 平台設定，需手動更新為「米其林職人大腦，Gemini 3.1 Pro 已就緒」等
 
 ---
 
