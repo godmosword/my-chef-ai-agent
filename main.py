@@ -363,8 +363,7 @@ def _condense_assistant_message(content: str, max_chars: int = 80) -> str:
     if not content or len(content) <= max_chars:
         return content
     try:
-        data = _extract_json(content)
-        name = data.get("recipe_name", "")
+        name = _parse_ai_json(content).get("recipe_name", "")
         if name:
             return f"【上次食譜】{name}"
     except (ValueError, json.JSONDecodeError):
@@ -442,68 +441,30 @@ CUISINE_CAROUSEL_CARDS = [
 ]
 
 
-def get_cuisine_selector_flex_message() -> FlexMessage:
-    """
-    回傳 LINE Carousel Flex Message，供使用者選擇菜系情境。
-    每張卡片的「選擇此菜系」按鈕綁定 PostbackAction，data 格式為 query string。
-    """
-    bubbles = []
-    for card in CUISINE_CAROUSEL_CARDS:
-        bubble = {
+def _build_cuisine_selector() -> FlexMessage:
+    bubbles = [
+        {
             "type": "bubble",
-            "hero": {
-                "type": "image",
-                "url": card["image_url"],
-                "size": "full",
-                "aspectRatio": "20:13",
-                "aspectMode": "cover",
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": card["title"],
-                        "weight": "bold",
-                        "size": "xl",
-                        "color": "#1F2937",
-                    },
-                    {
-                        "type": "text",
-                        "text": card["description"],
-                        "size": "sm",
-                        "color": "#6B7280",
-                        "wrap": True,
-                        "margin": "md",
-                    },
-                ],
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#EA580C",
-                        "action": {
-                            "type": "postback",
-                            "label": "選擇此菜系",
-                            "data": f"action=change_cuisine&cuisine={card['cuisine']}",
-                            "displayText": card["display_text"],
-                        },
-                    },
-                ],
-            },
+            "hero": {"type": "image", "url": c["image_url"], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover"},
+            "body": {"type": "box", "layout": "vertical", "contents": [
+                {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": "#1F2937"},
+                {"type": "text", "text": c["description"], "size": "sm", "color": "#6B7280", "wrap": True, "margin": "md"},
+            ]},
+            "footer": {"type": "box", "layout": "vertical", "contents": [
+                {"type": "button", "style": "primary", "color": "#EA580C", "action": {
+                    "type": "postback", "label": "選擇此菜系",
+                    "data": f"action=change_cuisine&cuisine={c['cuisine']}", "displayText": c["display_text"],
+                }},
+            ]},
         }
-        bubbles.append(bubble)
-
-    carousel_dict = {"type": "carousel", "contents": bubbles}
+        for c in CUISINE_CAROUSEL_CARDS
+    ]
     return FlexMessage(
         alt_text="請選擇您想探索的菜系",
-        contents=FlexContainer.from_dict(carousel_dict),
+        contents=FlexContainer.from_dict({"type": "carousel", "contents": bubbles}),
     )
+
+CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
 def generate_flex_message(
@@ -616,11 +577,11 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     if stripped in RESET_KEYWORDS:
         await clear_user_memory(user_id)
-        await reply(TextMessage(text="👨‍🍳 歡迎！廚房已備妥，Gemini 3.1 Pro 已就緒。請問想吃什麼？"))
+        await reply(TextMessage(text=f"👨‍🍳 歡迎！廚房已備妥，{AI_MODEL_FOR_CALL} 已就緒。請問想吃什麼？"))
         return
 
     if stripped in CUISINE_SELECTOR_KEYWORDS:
-        await reply(get_cuisine_selector_flex_message())
+        await reply(CUISINE_SELECTOR_MSG)
         return
 
     if stripped == VIEW_SHOPPING_CMD:
@@ -688,7 +649,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         ]
         if len(to_save) > MAX_HISTORY_TURNS + 1:
             to_save = [to_save[0]] + to_save[-MAX_HISTORY_TURNS:]
-        await save_user_memory(user_id, to_save)  # 存完整歷史，不刪除舊紀錄
+        asyncio.create_task(save_user_memory(user_id, to_save))
         recipe_name = ai_data.get("recipe_name", "美味食譜")
         g = ai_data.get
         flex_dict = generate_flex_message(
@@ -725,7 +686,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "message": "米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
+    return {"status": "ok", "model": AI_MODEL_FOR_CALL}
 
 
 @app.post("/callback")
