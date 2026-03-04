@@ -1,19 +1,22 @@
 services:
   - type: web
     name: my-chef-ai-agent
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
+      - key: PORT
+        value: "8000"
+      - key: MODEL_NAME
+        value: "gemini-3-flash-preview"
+      # 以下為敏感變數，請在 Render Dashboard 中手動輸入，不要寫死在這裡
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
       - key: LINE_CHANNEL_SECRET
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: MODEL_NAME
-        value: gemini-3.1-pro-preview
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
         sync: false

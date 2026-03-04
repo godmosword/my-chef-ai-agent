@@ -112,17 +112,19 @@ class TestExtractJson:
             _extract_json('{"recipe_name": 無效內容}')
 
 
-# ─── Memory (Stateless, 100% Supabase) ───────────────────────────────────────────
+# ─── Memory (Stateless, 100% Supabase, Async) ────────────────────────────────────
 
 class TestMemoryManagement:
-    def test_get_empty_memory_returns_empty_list_when_no_supabase(self):
+    @pytest.mark.asyncio
+    async def test_get_empty_memory_returns_empty_list_when_no_supabase(self):
         """無 Supabase 時 get_user_memory 回傳空陣列。"""
-        assert get_user_memory("new_user") == []
+        assert await get_user_memory("new_user") == []
 
-    def test_save_and_clear_do_not_raise_without_supabase(self):
+    @pytest.mark.asyncio
+    async def test_save_and_clear_do_not_raise_without_supabase(self):
         """無 Supabase 時 save/clear 不拋錯。"""
-        save_user_memory("user_x", [{"role": "user", "content": "test"}])
-        clear_user_memory("user_x")
+        await save_user_memory("user_x", [{"role": "user", "content": "test"}])
+        await clear_user_memory("user_x")
 
 
 # ─── generate_flex_message ───────────────────────────────────────────────────────

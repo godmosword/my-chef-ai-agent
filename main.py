@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from urllib.parse import parse_qs
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
+from dotenv import load_dotenv
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
     AsyncApiClient,
@@ -26,7 +27,7 @@ from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
 )
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APITimeoutError
 from supabase import create_client, Client
 
 # ─── Logging ────────────────────────────────────────────────────────────────────
@@ -39,6 +40,8 @@ logging.basicConfig(
 logger = logging.getLogger("chef-agent")
 
 # ─── Environment ────────────────────────────────────────────────────────────────
+
+load_dotenv()
 
 def _require_env(name: str) -> str:
     val = os.getenv(name)
@@ -65,15 +68,15 @@ else:
 
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
-MAX_MESSAGE_LENGTH   = 500
-MAX_HISTORY_TURNS    = 3
-MAX_COMPLETION_TOKENS = 4096
+MAX_MESSAGE_LENGTH    = 500
+MAX_HISTORY_TURNS     = 3
+MAX_COMPLETION_TOKENS = 2048
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
-CUISINE_SELECTOR_KEYWORDS = {"選單", "換菜單"}
+CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
 RANDOM_SIDEDISH_CMD = "🍳 隨機配菜"
 VIEW_SHOPPING_CMD   = "🛒 檢視清單"
 
@@ -84,6 +87,8 @@ RANDOM_STYLES = [
 
 SCENARIO_CLEAR_FRIDGE = (["清冰箱", "剩下", "剩食"], "以用戶剩餘食材為核心，最少額外採買。")
 SCENARIO_KIDS_MEAL = (["小孩", "兒童", "兒子"], "四歲兒童餐：溫和不辣、好咀嚼、營養均衡。")
+SCENARIO_BUDGET = (["預算", "便宜", "省錢", "方案"], "預算方案：行政主廚需討論 CP 值，食材總管嚴格控管 NT$ 預算。")
+SCENARIO_MOOD   = (["心情", "壓力", "開心", "難過"], "心情點餐：副主廚需根據情緒推薦溫暖或清爽的口感，提供情緒支持。")
 
 SYSTEM_PROMPT = (
     "你是米其林三星廚房(行政主廚/副主廚/食材總管)。三位各一句(≤15字)討論後產出食譜。"
@@ -123,6 +128,7 @@ if USE_GEMINI_DIRECT:
     ai_client = AsyncOpenAI(
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         api_key=GEMINI_API_KEY,
+        max_retries=1,
     )
     AI_MODEL_FOR_CALL = _mn
 else:
@@ -130,6 +136,7 @@ else:
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
         default_headers={"HTTP-Referer": "https://run.app", "X-Title": "My Chef AI Agent"},
+        max_retries=1,
     )
     AI_MODEL_FOR_CALL = MODEL_NAME
 
@@ -296,6 +303,9 @@ async def update_user_cuisine_context(user_id: str, cuisine: str) -> None:
 
 def _build_system_prompt(prefs: str | None = None, current_cuisine: str | None = None) -> str:
     base = SYSTEM_PROMPT
+    # 預算與心情相關指示，協助 AI 理解額外維度
+    base += "\n若涉及「預算方案」，請在 kitchen_talk 中討論 CP 值與採買策略，並嚴格控制 estimated_total_cost。"
+    base += "\n若涉及「心情點餐」，請副主廚針對該心情提供具情緒價值與儀式感的料理建議。"
     if prefs:
         base += f"\n飲食禁忌：{prefs}。"
     if current_cuisine and current_cuisine != "不拘":
@@ -304,9 +314,17 @@ def _build_system_prompt(prefs: str | None = None, current_cuisine: str | None =
 
 
 def _build_scenario_instructions(text: str) -> str:
-    scenarios = [SCENARIO_CLEAR_FRIDGE, SCENARIO_KIDS_MEAL]
-    labels = ("清冰箱", "兒童餐")
-    parts = [f"【{labels[i]}模式】{s[1]}" for i, s in enumerate(scenarios) if any(k in text for k in s[0])]
+    labeled_scenarios = [
+        ("清冰箱", SCENARIO_CLEAR_FRIDGE),
+        ("兒童餐", SCENARIO_KIDS_MEAL),
+        ("預算方案", SCENARIO_BUDGET),
+        ("心情點餐", SCENARIO_MOOD),
+    ]
+    parts = [
+        f"【{label}模式】{scenario[1]}"
+        for label, scenario in labeled_scenarios
+        if any(k in text for k in scenario[0])
+    ]
     return "\n\n".join(parts) + "\n\n" if parts else ""
 
 
@@ -467,6 +485,79 @@ def _build_cuisine_selector() -> FlexMessage:
 CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
+def get_main_menu_flex() -> FlexMessage:
+    """產出五大核心功能的主選單"""
+    menu_dict = {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "color": "#FFFFFF"}
+            ],
+            "backgroundColor": "#EA580C"
+        },
+        "body": {
+            "type": "box", "layout": "vertical", "spacing": "md",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#9F1239",
+                    "action": {
+                        "type": "message",
+                        "label": "🍱 各式菜色",
+                        "text": "換菜單",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#B45309",
+                    "action": {
+                        "type": "message",
+                        "label": "🏠 生活需求",
+                        "text": "清冰箱模式",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#166534",
+                    "action": {
+                        "type": "message",
+                        "label": "💰 預算方案",
+                        "text": "幫我規劃預算食譜",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#1E40AF",
+                    "action": {
+                        "type": "message",
+                        "label": "☁️ 心情點餐",
+                        "text": "我想根據心情點餐",
+                    },
+                },
+                {
+                    "type": "button",
+                    "style": "secondary",
+                    "action": {
+                        "type": "message",
+                        "label": "🛒 採買食材",
+                        "text": "🛒 檢視清單",
+                    },
+                },
+            ],
+        },
+    }
+    return FlexMessage(
+        alt_text="開啟米其林職人菜單",
+        contents=FlexContainer.from_dict(menu_dict),
+    )
+
+
 def generate_flex_message(
     kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost,
     recipe_name_for_postback: str | None = None,
@@ -580,6 +671,50 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         await reply(TextMessage(text=f"👨‍🍳 歡迎！廚房已備妥，{AI_MODEL_FOR_CALL} 已就緒。請問想吃什麼？"))
         return
 
+    if stripped in {"選單", "開始"}:
+        await reply(get_main_menu_flex())
+        return
+
+    if stripped == "清冰箱模式":
+        await reply(
+            TextMessage(
+                text=(
+                    "👨‍🍳 生活需求模式開啟！\n\n"
+                    "你可以直接描述目前的情境，例如：\n"
+                    "・清冰箱：冰箱只剩下哪些食材？\n"
+                    "・兒童餐：小朋友幾歲、有沒有特別不吃的？\n\n"
+                    "我會自動套用「清冰箱」或「兒童餐」情境來設計菜單。"
+                )
+            )
+        )
+        return
+
+    if stripped == "幫我規劃預算食譜":
+        await reply(
+            TextMessage(
+                text=(
+                    "👨‍🍳 預算方案模式開啟！\n\n"
+                    "請告訴我：預算金額、人數與大概想吃的料理方向，例如：\n"
+                    "「兩個人，預算 200 元內，想吃家常菜」\n\n"
+                    "我會以「成本控制優先」為原則，幫你規劃食譜與採買清單。"
+                )
+            )
+        )
+        return
+
+    if stripped == "我想根據心情點餐":
+        await reply(
+            TextMessage(
+                text=(
+                    "☁️ 心情點餐模式開啟！\n\n"
+                    "請用幾個字描述現在的心情或場合，例如：\n"
+                    "「壓力超大」「想慶祝升遷」「今天很疲累只想快煮」\n\n"
+                    "我會把這個心情轉換成合適的料理風格與菜單。"
+                )
+            )
+        )
+        return
+
     if stripped in CUISINE_SELECTOR_KEYWORDS:
         await reply(CUISINE_SELECTOR_MSG)
         return
@@ -632,6 +767,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
             temperature=0.3,
             max_tokens=MAX_COMPLETION_TOKENS,
             response_format={"type": "json_object"},
+            timeout=45.0,
         )
         elapsed = time.perf_counter() - t0
         ai_content = response.choices[0].message.content.strip()
@@ -660,13 +796,26 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         msg = FlexMessage(alt_text=f"職人提案：{recipe_name}", contents=FlexContainer.from_dict(flex_dict))
     except json.JSONDecodeError as exc:
         logger.error("JSON parse error for user %s: %s", user_id, exc)
-        msg = TextMessage(text="👨‍🍳 廚房筆記有點亂，請輸入「清除記憶」後再試一次！")
+        msg = TextMessage(
+            text=f"👨‍🍳 廚房筆記有點亂 (JSONDecodeError): {str(exc)}\n請輸入「清除記憶」後再試一次！"
+        )
     except ValueError as exc:
         logger.error("Value error for user %s: %s", user_id, exc)
-        msg = TextMessage(text="👨‍🍳 團隊正在熱烈討論中，請對我輸入「清除記憶」後換個說法試試。")
-    except Exception:
+        msg = TextMessage(
+            text=f"👨‍🍳 AI 格式解析失敗 (ValueError): {str(exc)}\n請輸入「清除記憶」後換個說法試試。"
+        )
+    except Exception as exc:
         logger.exception("Unexpected error for user %s", user_id)
-        msg = TextMessage(text="👨‍🍳 團隊正在熱烈討論中，請對我輸入「清除記憶」後換個說法試試。")
+        if isinstance(exc, APITimeoutError):
+            msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
+        else:
+            msg = TextMessage(
+                text=(
+                    "👨‍🍳 呼叫 AI 時發生意外：\n"
+                    f"{type(exc).__name__}: {str(exc)}\n\n"
+                    "請截圖此錯誤並輸入「清除記憶」重試。"
+                )
+            )
 
     await reply(msg)
 
@@ -730,8 +879,12 @@ async def callback(
             if action == "change_cuisine":
                 cuisine = (parsed.get("cuisine") or [""])[0]
                 if cuisine:
-                    background_tasks.add_task(update_user_cuisine_context, user_id, cuisine)
-                await _reply_line(reply_token, TextMessage(text="👨‍🍳 主廚已收到，馬上為您準備對應菜單！"))
+                    await update_user_cuisine_context(user_id, cuisine)
+                    fake_text = f"請根據 {CUISINE_LABELS.get(cuisine, '該')} 風格推薦一道料理"
+                    background_tasks.add_task(
+                        process_ai_reply,
+                        WebhookMessageEvent(reply_token=reply_token, user_id=user_id, text=fake_text),
+                    )
             else:
                 background_tasks.add_task(process_postback_reply, WebhookPostbackEvent(reply_token, user_id, data))
 
