@@ -28,7 +28,7 @@
 ## 技術棧
 
 - **Web**：FastAPI + Uvicorn  
-- **AI**：Gemini 3 Flash（預設透過 `MODEL_NAME=gemini-3-flash-preview`）  
+- **AI**：Gemini 3.1 Flash Lite（預設透過 `MODEL_NAME=gemini-3.1-flash-lite-preview`）  
 - **訊息**：LINE Bot SDK v3（非同步版 `AsyncMessagingApi`）  
 - **資料庫**：Supabase（可關閉，未設定時自動降級為無狀態模式）  
 - **託管環境**：Render（`render.yaml`） / GCP Cloud Run（可選）  

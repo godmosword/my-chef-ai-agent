@@ -8,7 +8,7 @@ services:
       - key: PORT
         value: "8000"
       - key: MODEL_NAME
-        value: "gemini-3-flash-preview"
+        value: "gemini-3.1-flash-lite-preview"
       # 以下為敏感變數，請在 Render Dashboard 中手動輸入，不要寫死在這裡
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
