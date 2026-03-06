@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 import json
-from urllib.parse import parse_qs
 
 from fastapi import BackgroundTasks, Header, HTTPException, Request
 
-from app.config import CUISINE_LABELS, MAX_WEBHOOK_BODY, logger
+from app.config import MAX_WEBHOOK_BODY, logger
 from app.clients import app, AI_MODEL_FOR_CALL
 from app.models import WebhookMessageEvent, WebhookPostbackEvent, WebhookImageEvent
 from app.helpers import _validate_signature
 from app.handlers import process_ai_reply, process_postback_reply, process_image_reply
-from app.db import update_user_cuisine_context
 
 from linebot.v3.exceptions import InvalidSignatureError
 
@@ -76,21 +74,9 @@ async def callback(
 
         elif ev_type == "postback":
             data = (ev.get("postback") or {}).get("data", "")
-            parsed = parse_qs(data)
-            action = (parsed.get("action") or [None])[0]
-            if action == "change_cuisine":
-                cuisine = (parsed.get("cuisine") or [""])[0]
-                if cuisine:
-                    await update_user_cuisine_context(user_id, cuisine)
-                    fake_text = f"請根據 {CUISINE_LABELS.get(cuisine, '該')} 風格推薦一道料理"
-                    background_tasks.add_task(
-                        process_ai_reply,
-                        WebhookMessageEvent(reply_token=reply_token, user_id=user_id, text=fake_text),
-                    )
-            else:
-                background_tasks.add_task(
-                    process_postback_reply,
-                    WebhookPostbackEvent(reply_token, user_id, data),
-                )
+            background_tasks.add_task(
+                process_postback_reply,
+                WebhookPostbackEvent(reply_token, user_id, data),
+            )
 
     return "OK"

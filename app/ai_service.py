@@ -29,6 +29,7 @@ from app.db import (
 from app.helpers import (
     _build_system_prompt,
     _condense_assistant_message,
+    _extract_json,
     _filter_history_after_context,
     _parse_ai_json,
 )
@@ -47,7 +48,6 @@ async def _fetch_ai_context(user_id: str) -> tuple[list, list, str | None, str |
 
 async def _get_last_recipe_json(user_id: str) -> dict | None:
     """Extract the last recipe JSON from conversation history."""
-    from app.helpers import _extract_json
     history = await get_user_memory(user_id)
     for msg in reversed(history):
         if msg.get("role") != "assistant":
@@ -118,8 +118,10 @@ async def call_ai_with_retry(
             logger.warning("JSON parse failed (attempt %d) for user %s: %s", attempt, user_id, exc)
             continue
 
-    # All attempts failed
-    raise ValueError(f"JSON parse failed after {1 + max_retries} attempts: {last_error}") from last_error
+    # All attempts failed — attach raw AI response to the exception for fallback use
+    err = ValueError(f"JSON parse failed after {1 + max_retries} attempts: {last_error}")
+    err.raw_content = last_raw  # type: ignore[attr-defined]
+    raise err from last_error
 
 
 # ─── Image Recognition ──────────────────────────────────────────────────────────

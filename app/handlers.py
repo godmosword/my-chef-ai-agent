@@ -259,12 +259,8 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     except (json.JSONDecodeError, ValueError) as exc:
         logger.error("JSON/Value error for user %s: %s", user_id, exc)
-        # Try to use the raw AI content as a fallback Flex
         try:
-            # Get raw content from the last attempt if available
-            raw_content = str(exc)
-            if hasattr(exc, "__cause__") and exc.__cause__:
-                raw_content = str(exc.__cause__)
+            raw_content = getattr(exc, "raw_content", "無法取得原始內容")
             msg = build_fallback_recipe_flex(raw_content)
         except Exception:
             msg = TextMessage(
@@ -326,5 +322,17 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 刪除失敗，請稍後再試。"))
         return
 
-    # ── Change cuisine (handled in routes.py) ──
+    # ── Change cuisine ──
+    if action == "change_cuisine":
+        cuisine = (parsed.get("cuisine") or [""])[0]
+        if cuisine:
+            await update_user_cuisine_context(event.user_id, cuisine)
+            fake_event = WebhookMessageEvent(
+                reply_token=event.reply_token,
+                user_id=event.user_id,
+                text=f"請根據 {CUISINE_LABELS.get(cuisine, '該')} 風格推薦一道料理",
+            )
+            await process_ai_reply(fake_event)
+        return
+
     # Other unknown postbacks are silently ignored
