@@ -12,7 +12,7 @@ from __future__ import annotations
 from app.clients import app  # noqa: F401
 
 # Register routes (side-effect import)
-import app.routes  # noqa: F401
+from app import routes  # noqa: F401
 
 # ─── Backward-compatible re-exports for tests ───────────────────────────────────
 # These allow existing tests to keep `from main import ...` without changes.
