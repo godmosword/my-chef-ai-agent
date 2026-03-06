@@ -1,5 +1,22 @@
 ## 變更紀錄
 
+### 2026-03-01（v2.0 模組化與新功能）
+
+- **架構重構**
+  - 主程式拆成 `app/` 套件：`config`、`clients`、`models`、`routes`、`handlers`、`ai_service`、`db`、`flex_messages`、`helpers`。
+  - `main.py` 改為薄入口（import app、re-export 供既有單元測試使用）。
+  - FastAPI 版本標為 `2.0.0`。
+
+- **新功能**
+  - **傳照片辨識食材**：支援 image 訊息，下載 LINE 圖片後以 AI 視覺辨識食材，再產出食譜（`process_image_reply`、`identify_ingredients_from_image`）。
+  - **我的最愛**：輸入「我的最愛」「收藏」「最愛食譜」可顯示收藏食譜輪播（`build_favorites_carousel`），並支援刪除單筆收藏。
+  - **AI 重試**：JSON 解析失敗時可重試，並注入 `AI_RETRY_EXTRA_PROMPT` 要求純 JSON。
+  - **菜系選單快取**：菜系輪播改為預建 `CUISINE_SELECTOR_MSG`，減少重複組裝。
+
+- **API 與依賴**
+  - Health check 回傳 `status`、`model`、`message`（可讀文案）。
+  - 新增 `httpx` 依賴，用於下載 LINE 圖片。
+
 ### 2026-02-28
 
 - **Render 與環境設定**

@@ -18,7 +18,11 @@ from linebot.v3.exceptions import InvalidSignatureError
 
 @app.api_route("/", methods=["GET", "HEAD"])
 async def health_check():
-    return {"status": "ok", "model": AI_MODEL_FOR_CALL}
+    return {
+        "status": "ok",
+        "model": AI_MODEL_FOR_CALL,
+        "message": "米其林職人大腦 (Gemini 3.1 Flash Lite 驅動中)",
+    }
 
 
 @app.post("/callback")

@@ -17,6 +17,8 @@
   - `🛒 檢視清單`：查看上一道菜的採買清單
   - 「清冰箱」「剩下」「剩食」：清冰箱模式
   - 「小孩」「兒童」「兒子」：兒童餐模式
+- **傳照片辨識食材**：傳送食物或冰箱內食材照片，由 AI 辨識後自動產出對應食譜。
+- **我的最愛**：輸入「我的最愛」「收藏」「最愛食譜」可瀏覽收藏食譜輪播，並可刪除單筆收藏。
 - **狀態管理（可選）**：透過 Supabase 儲存：
   - 對話記憶 `user_memory`
   - 飲食偏好 `user_preferences`
@@ -80,7 +82,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 |------|:----:|------|
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API access token |
 | `LINE_CHANNEL_SECRET` | ✅ | LINE Basic settings 的 Channel secret |
-| `MODEL_NAME` |  | 預設 `gemini-3-flash-preview` |
+| `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
 | `GEMINI_API_KEY` | ✅\* | 使用 Gemini 直連時必填 |
 | `OPENROUTER_API_KEY` | ✅\* | 若改走 OpenRouter 模型時必填 |
 | `SUPABASE_URL` |  | Supabase URL（不填則關閉 DB 功能） |
@@ -152,6 +154,8 @@ create table user_cuisine_context (
 | `🛒 檢視清單` | 顯示上一次食譜的採買清單 |
 | 「清冰箱」「剩下」「剩食」 | 啟用清冰箱情境，盡量用現有食材 |
 | 「小孩」「兒童」「兒子」 | 啟用兒童餐情境，溫和不辣、好咀嚼 |
+| 傳送**圖片**（食物／冰箱食材） | AI 辨識食材後產出食譜 |
+| `我的最愛` / `收藏` / `最愛食譜` | 顯示收藏食譜輪播，可刪除單筆 |
 | Flex 卡片上的「❤️ 收藏食譜」 | 透過 Supabase 寫入 `favorite_recipes` |
 
 ---
@@ -173,21 +177,30 @@ pytest tests/ -v
 
 ## 6. 專案結構概覽
 
+程式採 **`app/` 模組化**，`main.py` 為薄入口，實際邏輯在 `app/` 內：
+
 ```text
 my-chef-ai-agent/
-├── main.py                 # FastAPI + LINE Bot 主程式
-├── Dockerfile              # 容器化設定（可用於本地 / Cloud Run）
-├── render.yaml             # Render 部署設定
+├── main.py                 # 入口：import app.clients + app.routes，並 re-export 供測試
+├── app/
+│   ├── config.py           # 環境變數、常數、logging
+│   ├── clients.py          # FastAPI app、Supabase、LINE、AI client
+│   ├── models.py           # WebhookMessageEvent、WebhookPostbackEvent、WebhookImageEvent
+│   ├── routes.py           # /、/callback 路由
+│   ├── handlers.py         # process_ai_reply、process_postback_reply、process_image_reply
+│   ├── ai_service.py       # AI 呼叫與重試、圖片辨識食材
+│   ├── db.py               # Supabase 非同步封裝（記憶、偏好、收藏、菜系）
+│   ├── flex_messages.py    # 食譜卡、主選單、菜系輪播、收藏輪播
+│   └── helpers.py          # _safe_str、_extract_json、_build_system_prompt 等
+├── Dockerfile
+├── render.yaml
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── .env.example
-├── tests/
-│   └── test_main.py        # 單元測試
-├── docs/
-│   └── DEPLOY_GCP.md       # GCP Cloud Run 部署教學（可選）
-├── .github/
-│   └── workflows/deploy.yml# Cloud Run CI/CD（可選）
-└── AGENTS.md               # 給 AI 助手的協作說明
+├── tests/test_main.py
+├── docs/DEPLOY_GCP.md
+├── .github/workflows/deploy.yml
+└── AGENTS.md
 ```
 
 ---
