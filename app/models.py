@@ -9,6 +9,7 @@ class WebhookMessageEvent:
     reply_token: str
     user_id: str
     text: str
+    tenant_id: str = "default"
 
 
 @dataclass
@@ -16,6 +17,7 @@ class WebhookPostbackEvent:
     reply_token: str
     user_id: str
     data: str
+    tenant_id: str = "default"
 
 
 @dataclass
@@ -24,3 +26,4 @@ class WebhookImageEvent:
     reply_token: str
     user_id: str
     message_id: str
+    tenant_id: str = "default"

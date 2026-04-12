@@ -1,0 +1,89 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "米其林職人大腦主選單",
+  "chatBarText": "👨‍🍳 點我開啟菜單",
+  "areas": [
+    {
+      "bounds": {
+        "x": 8,
+        "y": 138,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "換菜單",
+        "text": "換菜單"
+      }
+    },
+    {
+      "bounds": {
+        "x": 838,
+        "y": 138,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "隨機配菜",
+        "text": "🍳 隨機配菜"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1668,
+        "y": 138,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "我的最愛",
+        "text": "我的最愛"
+      }
+    },
+    {
+      "bounds": {
+        "x": 8,
+        "y": 912,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "清冰箱",
+        "text": "清冰箱模式"
+      }
+    },
+    {
+      "bounds": {
+        "x": 838,
+        "y": 912,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "預算方案",
+        "text": "幫我規劃預算食譜"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1668,
+        "y": 912,
+        "width": 822,
+        "height": 766
+      },
+      "action": {
+        "type": "message",
+        "label": "採買清單",
+        "text": "🛒 檢視清單"
+      }
+    }
+  ]
+}

@@ -33,6 +33,7 @@ from app.helpers import (
     _filter_history_after_context,
     _parse_ai_json,
 )
+from app.observability import incr
 
 
 async def _fetch_ai_context(user_id: str) -> tuple[list, list, str | None, str | None]:
@@ -92,8 +93,13 @@ async def call_ai_with_retry(
             timeout=45.0,
         )
         elapsed = time.perf_counter() - t0
+        incr("ai.calls_total")
+        incr("ai.latency_seconds_total", elapsed)
         ai_content = response.choices[0].message.content.strip()
         usage = getattr(response, "usage", None)
+        if usage:
+            incr("ai.tokens.input_total", getattr(usage, "prompt_tokens", 0) or 0)
+            incr("ai.tokens.output_total", getattr(usage, "completion_tokens", 0) or 0)
 
         if DEBUG_MODE:
             logger.debug(
@@ -115,6 +121,7 @@ async def call_ai_with_retry(
             return ai_content, parsed
         except (json.JSONDecodeError, ValueError) as exc:
             last_error = exc
+            incr("ai.errors.json_parse_total")
             logger.warning("JSON parse failed (attempt %d) for user %s: %s", attempt, user_id, exc)
             continue
 
@@ -133,6 +140,7 @@ async def download_line_image(message_id: str) -> bytes:
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.get(url, headers=headers)
         resp.raise_for_status()
+        incr("line.images.download_total")
         return resp.content
 
 
@@ -172,4 +180,5 @@ async def identify_ingredients_from_image(image_bytes: bytes) -> str:
         max_tokens=256,
         timeout=30.0,
     )
+    incr("ai.vision.calls_total")
     return response.choices[0].message.content.strip()

@@ -4,7 +4,10 @@
 
 ### Overview
 
-This is a modular Python FastAPI LINE Bot called **米其林職人大腦** (Michelin Chef AI Brain). It uses Gemini 3.1 Flash Lite to generate structured recipe cards in LINE Flex Message format. `main.py` is a thin entrypoint; all logic lives in the `app/` package.
+This is a modular Python FastAPI LINE Bot called **米其林職人大腦** (Michelin Chef AI Brain).
+`main.py` 是薄入口，核心邏輯在 `app/`：`routes`（webhook／健康檢查）、`handlers`（文字／圖片／postback）、`ai_service`（食譜與圖片辨識）、`db`（**Render Postgres** 或 **Supabase**，可優雅降級）。
+
+預設以 Gemini 系列走 OpenAI 相容端點；亦可依 `MODEL_NAME` 改走 OpenRouter。
 
 ### Running the dev server
 
@@ -25,7 +28,7 @@ Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
 python3 -m pytest tests/ -v
 ```
 
-All 29 tests pass. Env vars must be set even for tests:
+目前：`python3 -m pytest tests/ -v` 通過 **35/35**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
@@ -58,11 +61,11 @@ req = urllib.request.Request('http://localhost:8000/callback', data=body,
 print(urllib.request.urlopen(req).read())
 ```
 
-The webhook will return `"OK"`. The background task will call Gemini AI and generate a Flex Message, but the LINE reply will fail with "Invalid reply token" (expected with synthetic tokens). Check server logs for the `AI user=... elapsed=... tokens=...` line to confirm AI integration works.
+The webhook will return `"OK"`. A **queue worker** will call Gemini AI and generate a Flex Message, but the LINE reply will fail with "Invalid reply token" (expected with synthetic tokens). Check server logs for the `AI user=... elapsed=... tokens=...` line to confirm AI integration works.
 
 ### Gotchas
 
 - Environment variables are validated at **module import time** (not at request time). If they're missing, the app crashes immediately on startup.
-- `python-dotenv` is used (`app/config.py` calls `load_dotenv()`). You can create a `.env` file via `cp .env.example .env` and fill in values, or set env vars directly on the command line.
+- `python-dotenv`：`app/config.py` 會 `load_dotenv()`。可 `cp .env.example .env` 後填值，或直接在 shell 設定環境變數。
 - The `pytest` binary may not be on PATH; use `python3 -m pytest` instead.
 - When killing the dev server, also kill child processes (reloader + server worker). Use `lsof -ti:8000` to find all PIDs on the port.

@@ -12,6 +12,7 @@ from linebot.v3.messaging import (
     AsyncMessagingApi,
     FlexContainer,
     FlexMessage,
+    PushMessageRequest,
     ReplyMessageRequest,
     TextMessage,
 )
@@ -33,6 +34,7 @@ from app.clients import line_configuration, AI_MODEL_FOR_CALL
 from app.models import WebhookMessageEvent, WebhookPostbackEvent, WebhookImageEvent
 from app.db import (
     clear_user_memory,
+    delete_user_data,
     delete_favorite_recipe,
     get_favorite_recipes,
     get_user_memory,
@@ -55,6 +57,7 @@ from app.flex_messages import (
     generate_flex_message,
     get_main_menu_flex,
 )
+from app.ai_errors import format_ai_error_for_user
 from app.ai_service import (
     _fetch_ai_context,
     _get_last_recipe_json,
@@ -62,27 +65,57 @@ from app.ai_service import (
     download_line_image,
     identify_ingredients_from_image,
 )
+from app.billing import consume_quota
+from app.observability import incr
+from app.subscriptions import build_checkout_url
 
 
 # ─── LINE Reply helper ──────────────────────────────────────────────────────────
 
-async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage) -> None:
+async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage, user_id: str | None = None) -> None:
     async with AsyncApiClient(line_configuration) as api_client:
-        await AsyncMessagingApi(api_client).reply_message(
-            ReplyMessageRequest(reply_token=reply_token, messages=[msg])
-        )
+        api = AsyncMessagingApi(api_client)
+        try:
+            await api.reply_message(ReplyMessageRequest(reply_token=reply_token, messages=[msg]))
+            incr("line.reply.success_total")
+            return
+        except Exception as exc:
+            logger.warning("Reply API failed; trying push fallback: %s", exc)
+            incr("line.reply.errors_total")
+            if user_id:
+                await api.push_message(PushMessageRequest(to=user_id, messages=[msg]))
+                incr("line.push_fallback.success_total")
+                return
+            raise
 
 
 # ─── Image message handler ──────────────────────────────────────────────────────
 
 async def process_image_reply(event: WebhookImageEvent) -> None:
     """Handle image messages: identify ingredients and generate a recipe."""
-    user_id, reply_token = event.user_id, event.reply_token
+    user_id, reply_token, tenant_id = event.user_id, event.reply_token, event.tenant_id
 
     async def reply(msg):
-        await _reply_line(reply_token, msg)
+        await _reply_line(reply_token, msg, user_id=user_id)
 
     try:
+        image_quota = await consume_quota(
+            user_id=user_id,
+            tenant_id=tenant_id,
+            units=1,
+            event_type="image_recipe_generation",
+        )
+        if not image_quota.allowed:
+            upgrade_url = build_checkout_url(user_id=user_id, tenant_id=tenant_id, plan_key="pro")
+            await reply(TextMessage(
+                text=(
+                    "👨‍🍳 今日免費額度已用完。\n"
+                    f"目前方案：{image_quota.plan_key}，每日上限 {image_quota.limit} 次。\n"
+                    f"請明天再試，或升級方案解鎖更多次數：{upgrade_url}"
+                )
+            ))
+            return
+
         # Download the image from LINE
         image_bytes = await download_line_image(event.message_id)
         logger.info("Downloaded image %s for user %s (%d bytes)", event.message_id, user_id, len(image_bytes))
@@ -103,10 +136,12 @@ async def process_image_reply(event: WebhookImageEvent) -> None:
             reply_token=reply_token,
             user_id=user_id,
             text=fake_text,
+            tenant_id=tenant_id,
         )
-        await process_ai_reply(fake_event)
+        await process_ai_reply(fake_event, skip_quota_check=True)
 
     except Exception as exc:
+        incr("handler.image.errors_total")
         logger.exception("Image processing failed for user %s: %s", user_id, exc)
         await reply(TextMessage(
             text="👨‍🍳 照片處理時發生了問題，請稍後再試，或直接告訴我你有哪些食材！"
@@ -115,13 +150,14 @@ async def process_image_reply(event: WebhookImageEvent) -> None:
 
 # ─── Text message handler ───────────────────────────────────────────────────────
 
-async def process_ai_reply(event: WebhookMessageEvent) -> None:
-    user_id, reply_token = event.user_id, event.reply_token
+async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool = False) -> None:
+    incr("handler.ai.calls_total")
+    user_id, reply_token, tenant_id = event.user_id, event.reply_token, event.tenant_id
     user_message = event.text
     stripped = user_message.strip()
 
     async def reply(msg):
-        await _reply_line(reply_token, msg)
+        await _reply_line(reply_token, msg, user_id=user_id)
 
     # ── Quick commands ──
 
@@ -136,6 +172,33 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 
     if stripped in {"選單", "開始"}:
         await reply(get_main_menu_flex())
+        return
+
+    if stripped in {"升級方案", "訂閱方案", "我要升級"}:
+        upgrade_url = build_checkout_url(user_id=user_id, tenant_id=tenant_id, plan_key="pro")
+        await reply(TextMessage(
+            text=(
+                "💳 升級方案\n"
+                f"請點擊：{upgrade_url}\n"
+                "完成後即可提升每日可生成次數。"
+            )
+        ))
+        return
+
+    if stripped in {"隱私聲明", "資料政策"}:
+        await reply(TextMessage(
+            text=(
+                "🔐 資料使用說明\n"
+                "1) 我們會儲存對話、收藏與用量資料以提供功能。\n"
+                "2) 食譜建議僅供參考，請自行評估過敏原與食安風險。\n"
+                "3) 輸入「刪除我的資料」可要求刪除您的資料。"
+            )
+        ))
+        return
+
+    if stripped in {"刪除我的資料", "忘記我"}:
+        await delete_user_data(user_id=user_id, tenant_id=tenant_id)
+        await reply(TextMessage(text="🧹 已受理並清除您的資料（含對話、收藏與用量記錄）。"))
         return
 
     if stripped == "清冰箱模式":
@@ -202,6 +265,24 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     if stripped == RANDOM_SIDEDISH_CMD:
         user_message = f"請用「{random.choice(RANDOM_STYLES)}」風格研發一道隨機配菜，不需要我先指定食材。"
 
+    if not skip_quota_check:
+        quota = await consume_quota(
+            user_id=user_id,
+            tenant_id=tenant_id,
+            units=1,
+            event_type="text_recipe_generation",
+        )
+        if not quota.allowed:
+            upgrade_url = build_checkout_url(user_id=user_id, tenant_id=tenant_id, plan_key="pro")
+            await reply(TextMessage(
+                text=(
+                    "👨‍🍳 今日免費額度已用完。\n"
+                    f"目前方案：{quota.plan_key}，每日上限 {quota.limit} 次。\n"
+                    f"你可以明天再來，或升級方案解鎖更多配方次數：{upgrade_url}"
+                )
+            ))
+            return
+
     # ── Scenario detection ──
 
     scenario_prefix = _build_scenario_instructions(user_message)
@@ -258,6 +339,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
         msg = FlexMessage(alt_text=f"職人提案：{recipe_name}", contents=FlexContainer.from_dict(flex_dict))
 
     except (json.JSONDecodeError, ValueError) as exc:
+        incr("handler.ai.errors.json_total")
         logger.error("JSON/Value error for user %s: %s", user_id, exc)
         try:
             raw_content = getattr(exc, "raw_content", "無法取得原始內容")
@@ -268,6 +350,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
             )
 
     except APITimeoutError:
+        incr("handler.ai.errors.timeout_total")
         msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
 
     except (AuthenticationError, BadRequestError) as exc:
@@ -284,12 +367,9 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
             ))
 
     except Exception as exc:
+        incr("handler.ai.errors.unexpected_total")
         logger.exception("Unexpected error for user %s", user_id)
-        msg = TextMessage(text=(
-            "👨‍🍳 呼叫 AI 時發生意外：\n"
-            f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
-            "請截圖此錯誤並輸入「清除記憶」重試。"
-        ))
+        msg = TextMessage(text=format_ai_error_for_user(exc))
 
     await reply(msg)
 
@@ -297,6 +377,7 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
 # ─── Postback handler ────────────────────────────────────────────────────────────
 
 async def process_postback_reply(event: WebhookPostbackEvent) -> None:
+    incr("handler.postback.calls_total")
     data = event.data.strip()
     parsed = parse_qs(data)
     action = (parsed.get("action") or [None])[0]
@@ -306,9 +387,19 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         recipe_name = _safe_str(data[len("save_recipe:"):].strip(), "美味食譜", max_len=200)
         recipe_data = await _get_last_recipe_json(event.user_id) or {"recipe_name": recipe_name}
         if await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
-            await _reply_line(event.reply_token, TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"))
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"),
+                user_id=event.user_id,
+            )
         else:
-            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試，或確認已設定 DATABASE_URL（Render Postgres）或 Supabase。"))
+            await _reply_line(
+                event.reply_token,
+                TextMessage(
+                    text="👨‍🍳 收藏失敗，請稍後再試，或確認已設定 DATABASE_URL（Render Postgres）或 Supabase。"
+                ),
+                user_id=event.user_id,
+            )
         return
 
     # ── Redo recipe ──
@@ -318,6 +409,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             reply_token=event.reply_token,
             user_id=event.user_id,
             text=f"請重新製作「{name}」這道菜",
+            tenant_id=event.tenant_id,
         )
         await process_ai_reply(fake_event)
         return
@@ -330,9 +422,9 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         except ValueError:
             recipe_id = 0
         if recipe_id and await delete_favorite_recipe(event.user_id, recipe_id):
-            await _reply_line(event.reply_token, TextMessage(text="🗑️ 已從收藏中移除！"))
+            await _reply_line(event.reply_token, TextMessage(text="🗑️ 已從收藏中移除！"), user_id=event.user_id)
         else:
-            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 刪除失敗，請稍後再試。"))
+            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 刪除失敗，請稍後再試。"), user_id=event.user_id)
         return
 
     # ── Change cuisine ──
@@ -344,6 +436,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
                 reply_token=event.reply_token,
                 user_id=event.user_id,
                 text=f"請根據 {CUISINE_LABELS.get(cuisine, '該')} 風格推薦一道料理",
+                tenant_id=event.tenant_id,
             )
             await process_ai_reply(fake_event)
         return

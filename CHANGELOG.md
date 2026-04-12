@@ -1,5 +1,30 @@
 ## 變更紀錄
 
+### 2026-04-12（v2.1 商業化與平台化）
+
+- **佇列與可靠性**
+  - Webhook `/callback` 改為將文字／圖片／postback 事件 **`enqueue_job`** 入列，由 lifespan 啟動的 **async worker** 處理（取代僅依 `BackgroundTasks` 的模式）。
+  - 支援 **event 去重**（TTL 可調）、佇列滿時回 **503** 以利 LINE 重試。
+- **用量與訂閱（Supabase）**
+  - `app/billing.py`：`check_quota` / `consume_quota`；進入 AI 前短路，超額時 LINE 文案含升級連結。
+  - `usage_daily`、`subscriptions`、`usage_ledger`；可選 **`increment_usage_daily`** RPC 與 `REQUIRE_ATOMIC_USAGE`。
+  - 多租戶：`X-Tenant-ID` 或 `DEFAULT_TENANT_ID`；事件模型含 `tenant_id`。
+- **營運與管理 API**
+  - `GET /metrics`（可選 `METRICS_TOKEN` + `X-Metrics-Token`）、`request_id` middleware。
+  - `GET /billing/checkout`、`GET|PUT /admin/subscriptions/{user_id}`（`X-Admin-Token`）。
+  - `GET /legal/disclaimer`、`GET /legal/privacy`；`docs/LEGAL_POLICY.md` 草案；食譜卡 footer 免責；`reply` 失敗時嘗試 `push`。
+- **設定與資料庫**
+  - `python-dotenv`：`app/config.py` 於載入時 `load_dotenv()`。
+  - `supabase/migrations/20260412120000_commercial_schema.sql`：商業化表 + RPC + RLS 範例。
+- **測試**
+  - `tests/test_platform_features.py`（配額、佇列滿 503、admin token）；`tests/test_ai_errors.py`（AI 錯誤使用者文案）。
+  - 全套件 **35** 則通過。
+- **LINE 錯誤訊息**
+  - `app/ai_errors.py`：金鑰過期／無效、429、權限等改為中文說明；`DEBUG=1` 時才附技術細節。避免將 Google API 整段 JSON 貼給使用者。
+- **CI／Cloud Run 部署**
+  - `.github/workflows/deploy.yml`：加入 `concurrency`，同一分支序列化部署，避免 `gcloud run deploy` 回報 resource version 衝突。
+  - `google-github-actions/auth@v3`、`deploy-cloudrun@v3`（Node 24）。
+
 ### 2026-03-01（v2.0 模組化與新功能）
 
 - **架構重構**
@@ -56,7 +81,7 @@
 - **效能與非同步**
   - 將 LINE Messaging API 改為使用 `AsyncApiClient` / `AsyncMessagingApi` 非同步客戶端。
   - 將 Supabase 同步 SDK 以 `asyncio.to_thread` 包裝，並透過 `@safe_db` decorator 統一錯誤處理與降級行為。
-  - Webhook `/callback` 僅做簽章驗證與 JSON 解析，實際 AI 呼叫與回覆放入 `BackgroundTasks`，避免阻塞。
+  - Webhook `/callback` 僅做簽章驗證與 JSON 解析，實際 AI 呼叫與回覆放入 `BackgroundTasks`，避免阻塞。（**歷史紀錄**：後續 v2.1 已改為記憶體佇列 + worker，見上方 2026-04-12。）
   - 將 `AsyncOpenAI` 的 `max_retries` 設為 `1`，並對 `chat.completions.create` 設定 `timeout=45.0`，避免在 Render 或 Cloud Run 中長時間重試。
   - 將 `MAX_COMPLETION_TOKENS` 從 `4096` 降為 `2048`，並透過 `_condense_assistant_message` 對歷史訊息做摘要，以降低 token 使用量。
 

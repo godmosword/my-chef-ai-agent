@@ -114,6 +114,10 @@ def get_main_menu_flex() -> FlexMessage:
                     "type": "button", "style": "secondary",
                     "action": {"type": "message", "label": "🛒 採買食材", "text": "🛒 檢視清單"},
                 },
+                {
+                    "type": "button", "style": "secondary",
+                    "action": {"type": "message", "label": "🔐 資料政策", "text": "隱私聲明"},
+                },
             ],
         },
     }
@@ -210,10 +214,22 @@ def generate_flex_message(
             ],
         },
         "footer": {
-            "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": favorite_action},
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "md",
+                    "contents": [
+                        {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": favorite_action},
+                    ],
+                },
+                {
+                    "type": "text",
+                    "text": "食譜僅供參考，請留意過敏原與食安條件。",
+                    "size": "xxs",
+                    "color": "#92400E",
+                    "wrap": True,
+                },
             ],
         },
     }
