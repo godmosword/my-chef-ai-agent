@@ -8,6 +8,7 @@ from supabase import create_client, Client
 
 from app.config import (
     LINE_CHANNEL_ACCESS_TOKEN,
+    DATABASE_URL,
     SUPABASE_URL,
     SUPABASE_KEY,
     USE_GEMINI_DIRECT,
@@ -22,10 +23,12 @@ from app.config import (
 
 app = FastAPI(title="米其林職人大腦", version="2.0.0")
 
-# ─── Supabase ───────────────────────────────────────────────────────────────────
+# ─── Supabase（僅在未設定 DATABASE_URL 時啟用；Render Postgres 請用 DATABASE_URL）──
 
 supabase: Client | None = None
-if SUPABASE_URL and SUPABASE_KEY:
+if DATABASE_URL:
+    logger.info("DATABASE_URL is set; app data uses PostgreSQL (Supabase client not used).")
+elif SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         logger.info("Supabase connected successfully.")

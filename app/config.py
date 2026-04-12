@@ -32,6 +32,8 @@ LINE_CHANNEL_SECRET       = _require_env("LINE_CHANNEL_SECRET")
 MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite-preview")
 SUPABASE_URL              = os.getenv("SUPABASE_URL")
 SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
+# Render Postgres（或任何 PostgreSQL）連線字串；若設定則資料層優先使用 Postgres，不必再設 Supabase
+DATABASE_URL              = (os.getenv("DATABASE_URL") or "").strip() or None
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")

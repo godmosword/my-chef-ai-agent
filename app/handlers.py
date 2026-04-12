@@ -308,7 +308,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         if await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
             await _reply_line(event.reply_token, TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"))
         else:
-            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試或確認已設定 Supabase。"))
+            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試，或確認已設定 DATABASE_URL（Render Postgres）或 Supabase。"))
         return
 
     # ── Redo recipe ──
