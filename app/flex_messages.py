@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
-from app.config import ROLE_COLORS, CUISINE_LABELS, LINE_TEXT_MAX
+from app.config import ROLE_COLORS, LINE_TEXT_MAX
 from app.helpers import _safe_str, _parse_to_list
 
 

@@ -14,6 +14,7 @@ from app.clients import app  # noqa: E402
 
 @pytest.mark.asyncio
 async def test_consume_quota_denies_when_increment_fails(monkeypatch):
+    monkeypatch.setattr(billing, "DATABASE_URL", "")
     monkeypatch.setattr(
         billing,
         "check_quota",

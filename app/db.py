@@ -17,6 +17,16 @@ def _db_active() -> bool:
     return bool(DATABASE_URL) or bool(supabase)
 
 
+def _delete_user_data_postgres(user_id: str) -> None:
+    assert DATABASE_URL
+    with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM user_memory WHERE user_id = %s", (user_id,))
+            cur.execute("DELETE FROM user_preferences WHERE user_id = %s", (user_id,))
+            cur.execute("DELETE FROM favorite_recipes WHERE user_id = %s", (user_id,))
+            cur.execute("DELETE FROM user_cuisine_context WHERE user_id = %s", (user_id,))
+
+
 # ─── PostgreSQL (Render Postgres 等) ────────────────────────────────────────────
 
 
@@ -43,7 +53,9 @@ def _pg_user_memory_upsert(user_id: str, history: list) -> None:
                 """
                 INSERT INTO user_memory (user_id, history)
                 VALUES (%s, %s::jsonb)
-                ON CONFLICT (user_id) DO UPDATE SET history = EXCLUDED.history
+                ON CONFLICT (user_id) DO UPDATE SET
+                    history = EXCLUDED.history,
+                    updated_at = now()
                 """,
                 (user_id, payload),
             )
@@ -159,19 +171,27 @@ def _pg_user_cuisine_context_upsert(user_id: str, active_cuisine: str) -> None:
 
 
 def _sb_user_memory_select(user_id: str) -> list:
+    if not supabase:
+        return []
     res = supabase.table("user_memory").select("history").eq("user_id", user_id).execute()
     return res.data[0]["history"] if res.data else []
 
 
 def _sb_user_memory_upsert(user_id: str, history: list) -> None:
+    if not supabase:
+        return
     supabase.table("user_memory").upsert({"user_id": user_id, "history": history}).execute()
 
 
 def _sb_user_memory_delete(user_id: str) -> None:
+    if not supabase:
+        return
     supabase.table("user_memory").delete().eq("user_id", user_id).execute()
 
 
 def _sb_user_preferences_select(user_id: str) -> str | None:
+    if not supabase:
+        return None
     res = supabase.table("user_preferences").select("preferences").eq("user_id", user_id).execute()
     if not res.data:
         return None
@@ -184,6 +204,8 @@ def _sb_user_preferences_select(user_id: str) -> str | None:
 
 
 def _sb_favorite_recipes_insert(user_id: str, recipe_name: str, recipe_data: dict) -> bool:
+    if not supabase:
+        return False
     supabase.table("favorite_recipes").insert({
         "user_id": user_id,
         "recipe_name": recipe_name,
@@ -193,6 +215,8 @@ def _sb_favorite_recipes_insert(user_id: str, recipe_name: str, recipe_data: dic
 
 
 def _sb_favorite_recipes_select(user_id: str, limit: int = 10) -> list[dict]:
+    if not supabase:
+        return []
     res = (
         supabase.table("favorite_recipes")
         .select("id, recipe_name, recipe_data, created_at")
@@ -205,11 +229,15 @@ def _sb_favorite_recipes_select(user_id: str, limit: int = 10) -> list[dict]:
 
 
 def _sb_favorite_recipe_delete(user_id: str, recipe_id: int) -> bool:
+    if not supabase:
+        return False
     supabase.table("favorite_recipes").delete().eq("id", recipe_id).eq("user_id", user_id).execute()
     return True
 
 
 def _sb_user_cuisine_context_select(user_id: str) -> tuple[str | None, str | None]:
+    if not supabase:
+        return None, None
     res = supabase.table("user_cuisine_context").select("active_cuisine, context_updated_at").eq("user_id", user_id).execute()
     if not res.data:
         return None, None
@@ -218,6 +246,8 @@ def _sb_user_cuisine_context_select(user_id: str) -> tuple[str | None, str | Non
 
 
 def _sb_user_cuisine_context_upsert(user_id: str, active_cuisine: str) -> None:
+    if not supabase:
+        return
     supabase.table("user_cuisine_context").upsert(
         {
             "user_id": user_id,
@@ -304,6 +334,8 @@ def _user_cuisine_context_upsert(user_id: str, active_cuisine: str) -> None:
 
 
 def _usage_daily_select(user_id: str, usage_date: date, tenant_id: str) -> int:
+    if not supabase:
+        return 0
     res = (
         supabase.table("usage_daily")
         .select("requests_count")
@@ -318,7 +350,9 @@ def _usage_daily_select(user_id: str, usage_date: date, tenant_id: str) -> int:
     return int(res.data[0].get("requests_count") or 0)
 
 
-def _usage_daily_increment(user_id: str, usage_date: date, tenant_id: str, units: int) -> int:
+def _usage_daily_increment(user_id: str, usage_date: date, tenant_id: str, units: int) -> int | None:
+    if not supabase:
+        return None
     try:
         rpc_res = supabase.rpc(
             "increment_usage_daily",
@@ -357,6 +391,8 @@ def _usage_daily_increment(user_id: str, usage_date: date, tenant_id: str, units
 
 
 def _user_subscription_select(user_id: str, tenant_id: str) -> tuple[str, str]:
+    if not supabase:
+        return "free", "inactive"
     res = (
         supabase.table("subscriptions")
         .select("plan_key,status")
@@ -374,6 +410,8 @@ def _user_subscription_select(user_id: str, tenant_id: str) -> tuple[str, str]:
 
 
 def _subscription_upsert(user_id: str, tenant_id: str, plan_key: str, status: str) -> None:
+    if not supabase:
+        return
     supabase.table("subscriptions").upsert(
         {
             "tenant_id": tenant_id,
@@ -393,6 +431,8 @@ def _usage_ledger_insert(
     event_type: str,
     detail: dict | None = None,
 ) -> None:
+    if not supabase:
+        return
     supabase.table("usage_ledger").insert(
         {
             "tenant_id": tenant_id,
@@ -406,12 +446,15 @@ def _usage_ledger_insert(
 
 
 def _delete_user_data(user_id: str, tenant_id: str) -> None:
-    # Core product tables
+    if DATABASE_URL:
+        _delete_user_data_postgres(user_id)
+    if not supabase:
+        return
+    # 若同時使用 Supabase，一併清除 REST 上的列（含僅存在於 Supabase 的用量／訂閱）
     supabase.table("user_memory").delete().eq("user_id", user_id).execute()
     supabase.table("user_preferences").delete().eq("user_id", user_id).execute()
     supabase.table("favorite_recipes").delete().eq("user_id", user_id).execute()
     supabase.table("user_cuisine_context").delete().eq("user_id", user_id).execute()
-    # Billing / usage tables
     supabase.table("usage_daily").delete().eq("user_id", user_id).eq("tenant_id", tenant_id).execute()
     supabase.table("usage_ledger").delete().eq("user_id", user_id).eq("tenant_id", tenant_id).execute()
     supabase.table("subscriptions").delete().eq("user_id", user_id).eq("tenant_id", tenant_id).execute()

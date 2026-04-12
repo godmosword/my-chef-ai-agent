@@ -4,7 +4,8 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from app.config import PLAN_DAILY_LIMITS, logger
+from app.clients import supabase as supabase_client
+from app.config import DATABASE_URL, PLAN_DAILY_LIMITS, logger
 from app.db import (
     append_usage_ledger,
     get_daily_usage,
@@ -68,7 +69,10 @@ async def consume_quota(
             return decision
         used_after = await increment_daily_usage(user_id, units=units, tenant_id=tenant_id)
         minimum_expected = decision.used + units
-        if used_after is None or used_after < minimum_expected:
+        # 僅 PostgreSQL（有 DATABASE_URL）、未接 Supabase 時無法持久化用量；視為通過並以推算值帶過
+        if used_after is None and bool(DATABASE_URL) and supabase_client is None:
+            used_after = minimum_expected
+        elif used_after is None or used_after < minimum_expected:
             logger.error(
                 "Quota increment failed user=%s tenant=%s expected_at_least=%s actual=%s",
                 user_id,

@@ -16,7 +16,13 @@
 
 ## 3. 建立資料表
 
-在 Postgres 上執行下列 SQL（Render Postgres → **Shell** 或任何 `psql` 客戶端皆可）：
+**方式 A（建議）**：本機或 CI 已設定 `DATABASE_URL` 時，於專案根目錄執行：
+
+```bash
+python3 init_db.py
+```
+
+**方式 B**：在 Postgres 上直接執行下列 SQL（Render Postgres → **Shell** 或任何 `psql` 客戶端皆可）：
 
 ```sql
 -- 與 README 中 Supabase 節相同結構，供本專案 ORM 無關之直連使用

@@ -6,17 +6,12 @@ import json
 import time
 import httpx
 
-from openai import APITimeoutError
-
 from app.config import (
     AI_MAX_RETRIES,
     AI_RETRY_EXTRA_PROMPT,
-    CUISINE_LABELS,
     DEBUG_MODE,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
-    MAX_HISTORY_TURNS,
-    SYSTEM_PROMPT,
     logger,
 )
 from app.clients import ai_client, AI_MODEL_FOR_CALL
@@ -24,11 +19,8 @@ from app.db import (
     get_user_memory,
     get_user_cuisine_context,
     get_user_preferences,
-    save_user_memory,
 )
 from app.helpers import (
-    _build_system_prompt,
-    _condense_assistant_message,
     _extract_json,
     _filter_history_after_context,
     _parse_ai_json,
@@ -70,7 +62,7 @@ async def call_ai_with_retry(
     Call AI and parse JSON response. On JSON parse failure, retry with a stricter prompt.
     Returns (raw_ai_content, parsed_dict).
     Raises ValueError if all retries fail JSON parsing.
-    Raises APITimeoutError or other exceptions from the AI client.
+    Raises exceptions from the OpenAI-compatible client (例如逾時、認證錯誤)。
     """
     last_raw = ""
     last_error: Exception | None = None

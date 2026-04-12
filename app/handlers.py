@@ -37,7 +37,6 @@ from app.db import (
     delete_user_data,
     delete_favorite_recipe,
     get_favorite_recipes,
-    get_user_memory,
     save_favorite_recipe,
     save_user_memory,
     update_user_cuisine_context,
@@ -46,7 +45,6 @@ from app.helpers import (
     _build_scenario_instructions,
     _build_system_prompt,
     _condense_assistant_message,
-    _extract_json,
     _parse_to_list,
     _safe_str,
 )

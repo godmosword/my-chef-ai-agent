@@ -4,7 +4,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from linebot.v3.messaging import AsyncApiClient, AsyncMessagingApi, Configuration
+from linebot.v3.messaging import Configuration
 from openai import AsyncOpenAI
 from supabase import create_client, Client
 
