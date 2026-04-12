@@ -1,215 +1,194 @@
-## 米其林職人大腦（Render / LINE Bot 版）
+# 米其林職人大腦
 
-以 **Gemini 3 Flash** 為核心的 FastAPI + LINE Bot 專案，模擬米其林三星廚房團隊，幫你：
-
-- **即時生成食譜**（主題、菜名、步驟）
-- **估算採買清單與總成本**
-- 以 **Flex Message 卡片** 呈現在 LINE 對話中
+FastAPI 上的 **LINE Messaging API** 機器人：用 **Gemini**（OpenAI 相容 API）產生結構化食譜 JSON，再以 **Flex Message** 回覆。可選持久化：**Render Postgres**（`DATABASE_URL`）或 **Supabase**（`SUPABASE_URL` + `SUPABASE_KEY`）；兩者皆未設定時，服務仍可跑，但對話記憶與收藏不會持久化。
 
 ---
 
-## 功能總覽
+## 功能摘要
 
-- **廚房角色扮演**：行政主廚、副主廚、食材總管三方討論後給出菜單  
-- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 全部以 JSON 回傳  
-- **多輪對話與情境**：
-  - `🍳 隨機配菜`：隨機料理風格配菜
-  - `🛒 檢視清單`：查看上一道菜的採買清單
-  - 「清冰箱」「剩下」「剩食」：清冰箱模式
-  - 「小孩」「兒童」「兒子」：兒童餐模式
-- **傳照片辨識食材**：傳送食物或冰箱內食材照片，由 AI 辨識後自動產出對應食譜。
-- **我的最愛**：輸入「我的最愛」「收藏」「最愛食譜」可瀏覽收藏食譜輪播，並可刪除單筆收藏。
-- **狀態管理（可選）**：透過 Supabase 儲存：
-  - 對話記憶 `user_memory`
-  - 飲食偏好 `user_preferences`
-  - 食譜收藏 `favorite_recipes`
-  - 目前菜系情境 `user_cuisine_context`
+| 類別 | 說明 |
+|------|------|
+| 食譜生成 | 自然語言描述料理需求 → 主題、食材、步驟、採買清單、預估成本 |
+| 廚房角色 | 行政主廚／副主廚／食材總管對話（`kitchen_talk`） |
+| 情境 | 清冰箱、兒童餐、預算、心情等關鍵字觸發（見下方指令表） |
+| 圖片 | 傳食材／冰箱照片 → AI 辨識後接續產生食譜 |
+| 收藏 | Flex 上的「收藏食譜」與「我的最愛」輪播（需資料庫） |
+| 菜系 | 換菜系 postback 會寫入菜系情境並觸發新食譜流程 |
 
 ---
 
 ## 技術棧
 
-- **Web**：FastAPI + Uvicorn  
-- **AI**：Gemini 3.1 Flash Lite（預設透過 `MODEL_NAME=gemini-3.1-flash-lite-preview`）  
-- **訊息**：LINE Bot SDK v3（非同步版 `AsyncMessagingApi`）  
-- **資料庫**：Supabase（可關閉，未設定時自動降級為無狀態模式）  
-- **託管環境**：Render（`render.yaml`） / GCP Cloud Run（可選）  
+- **執行**：Python 3.11+（Dockerfile 為 3.11）、FastAPI、Uvicorn  
+- **AI**：預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，Gemini 直連；亦可改 OpenRouter（非 `gemini-*` 模型時改 `OPENROUTER_API_KEY`）  
+- **LINE**：`line-bot-sdk` v3，`AsyncMessagingApi`  
+- **資料**：`psycopg` + `DATABASE_URL` **或** `supabase-py` + URL／Key；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)  
+- **部署**：[`render.yaml`](render.yaml)、可選 [`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)
 
 ---
 
-## 1. 本機開發
-
-### 1.1 安裝依賴與環境變數
-
-```bash
-# 安裝依賴
-pip install -r requirements.txt
-
-# 複製範例環境變數
-cp .env.example .env
-```
-
-編輯 `.env`，至少填入：
-
-- `LINE_CHANNEL_ACCESS_TOKEN`
-- `LINE_CHANNEL_SECRET`
-- `GEMINI_API_KEY`
-
-（若使用 OpenRouter，則改填 `OPENROUTER_API_KEY` 與對應的 `MODEL_NAME`）
-
-### 1.2 啟動開發伺服器
-
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-建議搭配 `ngrok` 或 Render 自帶 URL，將 `https://.../callback` 設為 LINE Webhook。
-
----
-
-## 2. 在 Render 上部署
-
-本庫已包含 `render.yaml`，可直接匯入 Render：
-
-- `type: web`
-- `env: python`
-- `buildCommand: pip install -r requirements.txt`
-- `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-### 2.1 重要環境變數（Render Dashboard 設定）
-
-| 變數 | 必填 | 說明 |
-|------|:----:|------|
-| `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API access token |
-| `LINE_CHANNEL_SECRET` | ✅ | LINE Basic settings 的 Channel secret |
-| `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
-| `GEMINI_API_KEY` | ✅\* | 使用 Gemini 直連時必填 |
-| `OPENROUTER_API_KEY` | ✅\* | 若改走 OpenRouter 模型時必填 |
-| `DATABASE_URL` |  | **Render Postgres** 的 Internal Database URL；若設定則記憶／收藏走 Postgres，**不必**再設 Supabase（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)） |
-| `SUPABASE_URL` |  | 僅在未設 `DATABASE_URL` 時使用：Supabase 專案 URL |
-| `SUPABASE_KEY` |  | 僅在未設 `DATABASE_URL` 時使用：Supabase anon key |
-| `DEBUG` |  | 設為 `1` 時會輸出較詳細 log |
-
-> \* 二擇一：  
-> - 使用 `gemini-*` 模型 → 設 `GEMINI_API_KEY`  
-> - 使用其他模型（經由 OpenRouter） → 設 `OPENROUTER_API_KEY`  
->
-> 資料儲存二擇一：  
-> - **Render Postgres** → 設 `DATABASE_URL`（並在資料庫執行建表 SQL，見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
-> - **Supabase** → 設 `SUPABASE_URL` + `SUPABASE_KEY`（兩者皆不設則無對話記憶與收藏持久化）
-
-### 2.2 Render 建立流程（概要）
-
-1. 新增 Web Service，連接此 GitHub repo。  
-2. 選擇 Python 環境，Render 會自動讀取 `render.yaml`。  
-3. 在「Environment」頁籤填入上表所有需要的變數（尤其是 LINE 與 Gemini/OpenRouter 金鑰）。  
-4. 部署完成後，取得 `https://xxx.onrender.com` 類似 URL。  
-5. 到 LINE Developer Console → Messaging API → Webhook URL 設定為：  
-   `https://xxx.onrender.com/callback` 並啟用 Webhook。  
-
----
-
-## 3. 資料表結構（可選：Supabase 或 Render Postgres）
-
-若需要對話記憶、偏好與收藏功能，請在 **Supabase** 或 **Render Postgres** 建立下列表（兩者 DDL 相同；Render 步驟見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）：
-
-```sql
--- 對話記憶
-create table user_memory (
-  user_id text primary key,
-  history jsonb not null,
-  updated_at timestamptz default now()
-);
-
--- 飲食偏好
-create table user_preferences (
-  user_id text primary key,
-  preferences text,
-  updated_at timestamptz default now()
-);
-
--- 食譜收藏
-create table favorite_recipes (
-  id bigserial primary key,
-  user_id text not null,
-  recipe_name text not null,
-  recipe_data jsonb not null,
-  created_at timestamptz default now()
-);
-
--- 菜系情境（Carousel 選擇後更新）
-create table user_cuisine_context (
-  user_id text primary key,
-  active_cuisine text not null,
-  context_updated_at timestamptz not null
-);
-```
-
-未設定 `SUPABASE_URL` / `SUPABASE_KEY` 時，相關功能會自動變成 no-op，不會中斷整體服務。
-
----
-
-## 4. 使用說明（LINE 指令總表）
-
-| 輸入 | 行為 |
-|------|------|
-| 任意料理需求（例如「番茄牛腩」） | 產出完整食譜 Flex 卡片 |
-| `你好` / `清除記憶` / `洗腦` / `重新開始` | 清除對話記憶並重新歡迎 |
-| `🍳 隨機配菜` | 由系統隨機選一種料理風格產出配菜 |
-| `🛒 檢視清單` | 顯示上一次食譜的採買清單 |
-| 「清冰箱」「剩下」「剩食」 | 啟用清冰箱情境，盡量用現有食材 |
-| 「小孩」「兒童」「兒子」 | 啟用兒童餐情境，溫和不辣、好咀嚼 |
-| 傳送**圖片**（食物／冰箱食材） | AI 辨識食材後產出食譜 |
-| `我的最愛` / `收藏` / `最愛食譜` | 顯示收藏食譜輪播，可刪除單筆 |
-| Flex 卡片上的「❤️ 收藏食譜」 | 透過 Supabase 寫入 `favorite_recipes` |
-
----
-
-## 5. 開發與測試
+## 快速開始（本機）
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -v
+cp .env.example .env
+# 編輯 .env：LINE 與 GEMINI（或 OpenRouter）必填；DATABASE_URL 或 Supabase 選填
 ```
 
-測試涵蓋：
+啟動（環境變數在 **import 時**就會檢查，請一次帶齊或寫入 `.env`）：
 
-- JSON 解析與錯誤處理（`_extract_json`、`_parse_ai_json`）
-- Flex Message 組裝（`generate_flex_message`）
-- 記憶體相關函式在「無 Supabase」情境下的降級行為
+```bash
+LINE_CHANNEL_ACCESS_TOKEN=… LINE_CHANNEL_SECRET=… GEMINI_API_KEY=… \
+  python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+- 健康檢查：`GET /` → `status`、`model`、`message`  
+- Webhook：`POST /callback`，需有效 `X-Line-Signature`  
+- 對外測試：ngrok／Render URL，將 `https://…/callback` 設到 LINE Console
+
+### 測試
+
+```bash
+LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
+  python3 -m pytest tests/ -v
+```
+
+（未設資料庫時，記憶相關測試驗證安全降級。）
 
 ---
 
-## 6. 專案結構概覽
+## 環境變數
 
-程式採 **`app/` 模組化**，`main.py` 為薄入口，實際邏輯在 `app/` 內：
+### 必填
+
+| 變數 | 說明 |
+|------|------|
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Channel access token |
+| `LINE_CHANNEL_SECRET` | LINE Channel secret |
+
+### AI（二擇一）
+
+| 變數 | 說明 |
+|------|------|
+| `GEMINI_API_KEY` | `MODEL_NAME` 為 `gemini-*` 時必填（預設） |
+| `OPENROUTER_API_KEY` | 使用非 Gemini 模型經 OpenRouter 時必填 |
+
+| 變數 | 預設 | 說明 |
+|------|------|------|
+| `MODEL_NAME` | `gemini-3.1-flash-lite-preview` | 決定直連 Gemini 或走 OpenRouter |
+
+### 資料庫（選填，擇一組即可）
+
+| 變數 | 說明 |
+|------|------|
+| `DATABASE_URL` | Render Postgres 等 **PostgreSQL** 連線字串；設定後走 `psycopg`，**不**使用 Supabase client |
+| `SUPABASE_URL` + `SUPABASE_KEY` | 僅在 **未**設定 `DATABASE_URL` 時使用 |
+
+### 其他
+
+| 變數 | 說明 |
+|------|------|
+| `DEBUG` | `1` / `true` 時較詳細 log |
+
+---
+
+## Render 部署（概要）
+
+1. 建立 **Web Service**，連線此 repo；可沿用 [`render.yaml`](render.yaml)。  
+2. 在 **Environment** 設定 LINE、Gemini（或 OpenRouter）金鑰。  
+3. （建議）新增 **PostgreSQL**，與 Web Service **Link**，或手動設定 `DATABASE_URL`（建議 **Internal** URL），並在 DB 執行建表 SQL：[`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)。  
+4. Webhook URL：`https://<你的服務>.onrender.com/callback`。
+
+---
+
+## 資料表 DDL（Postgres／Supabase 相同）
+
+若啟用持久化，需建立下列資料表（完整步驟見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）：
+
+```sql
+CREATE TABLE IF NOT EXISTS user_memory (
+  user_id text PRIMARY KEY,
+  history jsonb NOT NULL,
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id text PRIMARY KEY,
+  preferences text,
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS favorite_recipes (
+  id bigserial PRIMARY KEY,
+  user_id text NOT NULL,
+  recipe_name text NOT NULL,
+  recipe_data jsonb NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_cuisine_context (
+  user_id text PRIMARY KEY,
+  active_cuisine text NOT NULL,
+  context_updated_at timestamptz NOT NULL
+);
+```
+
+未設定任何資料庫時，上述功能會降級（不拋錯、不寫入）。
+
+---
+
+## LINE 指令與行為
+
+| 輸入 | 行為 |
+|------|------|
+| 一般料理描述 | 產生食譜 Flex |
+| `你好`／`清除記憶`／`洗腦`／`重新開始` | 清除記憶並歡迎 |
+| `選單`／`開始` | 主選單 Flex |
+| `🍳 隨機配菜` | 隨機風格配菜 |
+| `🛒 檢視清單` | 上一道菜的採買清單 |
+| 清冰箱／剩下／剩食 等 | 清冰箱情境前綴 |
+| 小孩／兒童／兒子 等 | 兒童餐情境 |
+| `換菜單` | 菜系選擇 |
+| `我的最愛`／`收藏`／`最愛食譜` 等 | 收藏輪播（需 DB） |
+| 圖片訊息 | 辨識食材後走食譜流程 |
+| Flex「❤️ 收藏食譜」 | 寫入 `favorite_recipes`（需 DB） |
+
+---
+
+## 專案結構
 
 ```text
-my-chef-ai-agent/
-├── main.py                 # 入口：import app.clients + app.routes，並 re-export 供測試
+├── main.py                 # 入口：載入 app、註冊路由、re-export 測試用符號
 ├── app/
-│   ├── config.py           # 環境變數、常數、logging
-│   ├── clients.py          # FastAPI app、Supabase、LINE、AI client
-│   ├── models.py           # WebhookMessageEvent、WebhookPostbackEvent、WebhookImageEvent
-│   ├── routes.py           # /、/callback 路由
-│   ├── handlers.py         # process_ai_reply、process_postback_reply、process_image_reply
-│   ├── ai_service.py       # AI 呼叫與重試、圖片辨識食材
-│   ├── db.py               # Supabase 非同步封裝（記憶、偏好、收藏、菜系）
-│   ├── flex_messages.py    # 食譜卡、主選單、菜系輪播、收藏輪播
-│   └── helpers.py          # _safe_str、_extract_json、_build_system_prompt 等
-├── Dockerfile
-├── render.yaml
+│   ├── config.py           # 環境與常數
+│   ├── clients.py          # FastAPI、LINE、AI、可選 Supabase
+│   ├── routes.py           # /、/callback
+│   ├── handlers.py         # 文字／圖片／postback
+│   ├── ai_service.py       # AI 呼叫、重試、圖片辨識
+│   ├── db.py               # Postgres（DATABASE_URL）或 Supabase
+│   ├── flex_messages.py    # Flex 組裝
+│   ├── helpers.py          # 簽章、JSON、prompt 等
+│   └── models.py           # Webhook 事件模型
+├── tests/test_main.py
 ├── requirements.txt
 ├── requirements-dev.txt
-├── .env.example
-├── tests/test_main.py
-├── docs/DEPLOY_GCP.md
-├── .github/workflows/deploy.yml
-└── AGENTS.md
+├── render.yaml
+├── Dockerfile
+├── docs/
+│   ├── RENDER_POSTGRES.md
+│   └── DEPLOY_GCP.md
+├── TODOS.md                # 已知待辦與後續想法
+├── CHANGELOG.md
+├── AGENTS.md               # Cursor／自動化代理說明
+└── .env.example
 ```
 
 ---
 
-## 授權
+## 文件與授權
+
+- 代理／本機注意事項：**[`AGENTS.md`](AGENTS.md)**  
+- 變更紀錄：**[`CHANGELOG.md`](CHANGELOG.md)**  
+- 待辦：**[`TODOS.md`](TODOS.md)**  
 
 MIT License
