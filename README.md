@@ -1,194 +1,360 @@
-# 米其林職人大腦
+## 米其林職人大腦（Render / LINE Bot 版）
 
-FastAPI 上的 **LINE Messaging API** 機器人：用 **Gemini**（OpenAI 相容 API）產生結構化食譜 JSON，再以 **Flex Message** 回覆。可選持久化：**Render Postgres**（`DATABASE_URL`）或 **Supabase**（`SUPABASE_URL` + `SUPABASE_KEY`）；兩者皆未設定時，服務仍可跑，但對話記憶與收藏不會持久化。
+以 **Gemini 3.1 Flash Lite**（可透過 `MODEL_NAME` 切換）為核心的 FastAPI + LINE Bot 專案，模擬米其林三星廚房團隊，幫你：
+
+- **即時生成食譜**（主題、菜名、步驟）
+- **估算採買清單與總成本**
+- 以 **Flex Message 卡片** 呈現在 LINE 對話中
 
 ---
 
-## 功能摘要
+## 功能總覽
 
-| 類別 | 說明 |
-|------|------|
-| 食譜生成 | 自然語言描述料理需求 → 主題、食材、步驟、採買清單、預估成本 |
-| 廚房角色 | 行政主廚／副主廚／食材總管對話（`kitchen_talk`） |
-| 情境 | 清冰箱、兒童餐、預算、心情等關鍵字觸發（見下方指令表） |
-| 圖片 | 傳食材／冰箱照片 → AI 辨識後接續產生食譜 |
-| 收藏 | Flex 上的「收藏食譜」與「我的最愛」輪播（需資料庫） |
-| 菜系 | 換菜系 postback 會寫入菜系情境並觸發新食譜流程 |
+- **廚房角色扮演**：行政主廚、副主廚、食材總管三方討論後給出菜單  
+- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 全部以 JSON 回傳  
+- **多輪對話與情境**：
+  - `🍳 隨機配菜`：隨機料理風格配菜
+  - `🛒 檢視清單`：查看上一道菜的採買清單
+  - 「清冰箱」「剩下」「剩食」：清冰箱模式
+  - 「小孩」「兒童」「兒子」：兒童餐模式
+- **傳照片辨識食材**：傳送食物或冰箱內食材照片，由 AI 辨識後自動產出對應食譜。
+- **我的最愛**：輸入「我的最愛」「收藏」「最愛食譜」可瀏覽收藏食譜輪播，並可刪除單筆收藏。
+- **用量配額與方案**：內建每日次數控管（free/pro/enterprise），超額時提供升級連結。
+- **可靠佇列處理**：Webhook 事件會先入列（含 event 去重），由背景 worker 消化。
+- **觀測與法務端點**：`GET /metrics`（可選 token）、`GET /legal/disclaimer`、`GET /legal/privacy`；詳見 [`docs/LEGAL_POLICY.md`](docs/LEGAL_POLICY.md)。
+- **多租戶 HTTP**：Webhook 可帶 `X-Tenant-ID`（未帶則用 `DEFAULT_TENANT_ID`）。
+- **狀態管理（可選）**：透過 Supabase 儲存：
+  - 對話記憶 `user_memory`
+  - 飲食偏好 `user_preferences`
+  - 食譜收藏 `favorite_recipes`
+  - 目前菜系情境 `user_cuisine_context`
+  - 訂閱與配額 `subscriptions` / `usage_daily` / `usage_ledger`
 
 ---
 
 ## 技術棧
 
-- **執行**：Python 3.11+（Dockerfile 為 3.11）、FastAPI、Uvicorn  
-- **AI**：預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，Gemini 直連；亦可改 OpenRouter（非 `gemini-*` 模型時改 `OPENROUTER_API_KEY`）  
-- **LINE**：`line-bot-sdk` v3，`AsyncMessagingApi`  
-- **資料**：`psycopg` + `DATABASE_URL` **或** `supabase-py` + URL／Key；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)  
-- **部署**：[`render.yaml`](render.yaml)、可選 [`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)
+- **Web**：FastAPI + Uvicorn  
+- **AI**：Gemini 3.1 Flash Lite（預設透過 `MODEL_NAME=gemini-3.1-flash-lite-preview`）  
+- **訊息**：LINE Bot SDK v3（非同步版 `AsyncMessagingApi`）  
+- **資料庫**：**Render Postgres**（`DATABASE_URL` + `psycopg`，記憶／收藏）與 **Supabase**（用量／訂閱等 REST，可關閉）；皆未設定時自動降級為無狀態模式  
+- **託管環境**：Render（`render.yaml`） / GCP Cloud Run（可選）  
 
 ---
 
-## 快速開始（本機）
+## 1. 本機開發
+
+### 1.1 安裝依賴與環境變數
 
 ```bash
-pip install -r requirements-dev.txt
+# 安裝依賴
+pip install -r requirements.txt
+
+# 複製範例環境變數
 cp .env.example .env
-# 編輯 .env：LINE 與 GEMINI（或 OpenRouter）必填；DATABASE_URL 或 Supabase 選填
 ```
 
-啟動（環境變數在 **import 時**就會檢查，請一次帶齊或寫入 `.env`）：
+編輯 `.env`，至少填入：
+
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_CHANNEL_SECRET`
+- `GEMINI_API_KEY`
+
+（若使用 OpenRouter，則改填 `OPENROUTER_API_KEY` 與對應的 `MODEL_NAME`）
+
+### 1.2 啟動開發伺服器
 
 ```bash
-LINE_CHANNEL_ACCESS_TOKEN=… LINE_CHANNEL_SECRET=… GEMINI_API_KEY=… \
-  python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-- 健康檢查：`GET /` → `status`、`model`、`message`  
-- Webhook：`POST /callback`，需有效 `X-Line-Signature`  
-- 對外測試：ngrok／Render URL，將 `https://…/callback` 設到 LINE Console
+建議搭配 `ngrok` 或 Render 自帶 URL，將 `https://.../callback` 設為 LINE Webhook。
 
-### 測試
+---
+
+## 2. 在 Render 上部署
+
+本庫已包含 `render.yaml`，可直接匯入 Render：
+
+- `type: web`
+- `env: python`
+- `buildCommand: pip install -r requirements.txt`
+- `startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT`
+
+### 2.1 重要環境變數（Render Dashboard 設定）
+
+| 變數 | 必填 | 說明 |
+|------|:----:|------|
+| `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API access token |
+| `LINE_CHANNEL_SECRET` | ✅ | LINE Basic settings 的 Channel secret |
+| `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
+| `GEMINI_API_KEY` | ✅\* | 使用 Gemini 直連時必填 |
+| `OPENROUTER_API_KEY` | ✅\* | 若改走 OpenRouter 模型時必填 |
+| `DATABASE_URL` |  | **Render Postgres** Internal URL；若設定則對話記憶／收藏以 **`psycopg` 直連 Postgres**（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)），此時不會用 Supabase REST 讀寫上述核心表。訂閱與每日用量等商業化功能仍建議搭配 Supabase 與專案內 migration。 |
+| `SUPABASE_URL` |  | 未設 `DATABASE_URL` 時用於記憶／收藏；有設 `DATABASE_URL` 時仍可用於用量／訂閱等 REST 表。不填則關閉對應 Supabase 功能。 |
+| `SUPABASE_KEY` |  | Supabase 金鑰；生產建議 **service role**（僅後端、勿進前端）。 |
+| `DEBUG` |  | 設為 `1` 時會輸出較詳細 log |
+| `DEFAULT_TENANT_ID` |  | 預設租戶識別（預設 `default`） |
+| `PLAN_FREE_DAILY_LIMIT` |  | 免費方案每日上限（預設 `20`） |
+| `PLAN_PRO_DAILY_LIMIT` |  | Pro 方案每日上限（預設 `200`） |
+| `PLAN_ENTERPRISE_DAILY_LIMIT` |  | Enterprise 每日上限（預設 `2000`） |
+| `QUEUE_WORKER_COUNT` |  | 背景 worker 數（預設 `2`） |
+| `QUEUE_MAX_SIZE` |  | 佇列容量（預設 `1000`） |
+| `QUEUE_DEDUPE_TTL_SEC` |  | event 去重 TTL 秒數（預設 `900`） |
+| `REQUIRE_ATOMIC_USAGE` |  | 設為 `1` 時必須使用 DB 原子計數 RPC，否則拒絕扣量 |
+| `BILLING_PROVIDER` |  | 訂閱金流識別（`manual`/`linepay`/`ecpay`/`tappay`） |
+| `CHECKOUT_URL_TEMPLATE` |  | 升級連結模板（可使用 `{user_id}`、`{tenant_id}`、`{plan_key}`） |
+| `BILLING_BASE_URL` |  | 未提供模板時的基底 URL |
+| `ADMIN_API_TOKEN` |  | 管理訂閱 API 驗證 token |
+| `METRICS_TOKEN` |  | `/metrics` 保護 token（放在 `X-Metrics-Token`） |
+
+> \* 二擇一：  
+> - 使用 `gemini-*` 模型 → 設 `GEMINI_API_KEY`  
+> - 使用其他模型（經由 OpenRouter） → 設 `OPENROUTER_API_KEY`  
+>
+> 資料儲存：  
+> - **Render Postgres** → 設 `DATABASE_URL`（建表見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
+> - **Supabase** → 設 `SUPABASE_URL` + `SUPABASE_KEY`（可單獨支撐記憶／收藏，也可與 Postgres 並用於用量／訂閱）  
+> - 兩者皆不設則無對話記憶與收藏持久化；商業化用量請見第 3 節 migration。
+
+### 2.2 Render 建立流程（概要）
+
+1. 新增 Web Service，連接此 GitHub repo。  
+2. 選擇 Python 環境，Render 會自動讀取 `render.yaml`。  
+3. 在「Environment」頁籤填入上表所有需要的變數（尤其是 LINE 與 Gemini/OpenRouter 金鑰）。  
+4. 部署完成後，取得 `https://xxx.onrender.com` 類似 URL。  
+5. 到 LINE Developer Console → Messaging API → Webhook URL 設定為：  
+   `https://xxx.onrender.com/callback` 並啟用 Webhook。  
+
+---
+
+## 3. 資料表結構（可選：Supabase 或 Render Postgres）
+
+若需要對話記憶、偏好與收藏，請在 **Supabase** 或 **Render Postgres** 建立下列核心表（兩者 DDL 相同；Render 步驟見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）。
+
+### 3.1 套用專案內 migration（建議，商業化／用量）
+
+訂閱、每日用量、`usage_ledger` 與 **`increment_usage_daily`** 原子扣量 RPC 已收錄在：
+
+`supabase/migrations/20260412120000_commercial_schema.sql`
+
+**方式一：Supabase CLI**（本機已 `supabase link` 目標專案）
 
 ```bash
-LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
-  python3 -m pytest tests/ -v
+supabase db push
 ```
 
-（未設資料庫時，記憶相關測試驗證安全降級。）
+**方式二：Supabase Dashboard** → **SQL Editor** → 開啟上述檔案，將全文貼上後執行。
 
----
+補充：
 
-## 環境變數
+- RPC 回傳欄位為 `requests_count`，與 `app/db.py` 解析邏輯一致。
+- 後端若以 **service role** 金鑰（`SUPABASE_KEY`）連線，會繞過 RLS；若改為 anon 搭配 JWT 做多租戶，請依實際 JWT 內容調整該 migration 內的 policy。
+- 正式環境若要強制「僅允許原子扣量、不可用非原子 fallback」，請設定 `REQUIRE_ATOMIC_USAGE=1`，並確認已部署此 RPC。
 
-### 必填
+### 3.2 手動 SQL 參考（對話記憶等核心表 + 商業化表）
 
-| 變數 | 說明 |
-|------|------|
-| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Channel access token |
-| `LINE_CHANNEL_SECRET` | LINE Channel secret |
-
-### AI（二擇一）
-
-| 變數 | 說明 |
-|------|------|
-| `GEMINI_API_KEY` | `MODEL_NAME` 為 `gemini-*` 時必填（預設） |
-| `OPENROUTER_API_KEY` | 使用非 Gemini 模型經 OpenRouter 時必填 |
-
-| 變數 | 預設 | 說明 |
-|------|------|------|
-| `MODEL_NAME` | `gemini-3.1-flash-lite-preview` | 決定直連 Gemini 或走 OpenRouter |
-
-### 資料庫（選填，擇一組即可）
-
-| 變數 | 說明 |
-|------|------|
-| `DATABASE_URL` | Render Postgres 等 **PostgreSQL** 連線字串；設定後走 `psycopg`，**不**使用 Supabase client |
-| `SUPABASE_URL` + `SUPABASE_KEY` | 僅在 **未**設定 `DATABASE_URL` 時使用 |
-
-### 其他
-
-| 變數 | 說明 |
-|------|------|
-| `DEBUG` | `1` / `true` 時較詳細 log |
-
----
-
-## Render 部署（概要）
-
-1. 建立 **Web Service**，連線此 repo；可沿用 [`render.yaml`](render.yaml)。  
-2. 在 **Environment** 設定 LINE、Gemini（或 OpenRouter）金鑰。  
-3. （建議）新增 **PostgreSQL**，與 Web Service **Link**，或手動設定 `DATABASE_URL`（建議 **Internal** URL），並在 DB 執行建表 SQL：[`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)。  
-4. Webhook URL：`https://<你的服務>.onrender.com/callback`。
-
----
-
-## 資料表 DDL（Postgres／Supabase 相同）
-
-若啟用持久化，需建立下列資料表（完整步驟見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）：
+以下為可一次複製的 DDL 範例；商業化相關部分與 **3.1** 檔案語意相同，維運上建議以 migration 檔為單一來源。
 
 ```sql
-CREATE TABLE IF NOT EXISTS user_memory (
-  user_id text PRIMARY KEY,
-  history jsonb NOT NULL,
-  updated_at timestamptz DEFAULT now()
+-- 對話記憶
+create table user_memory (
+  user_id text primary key,
+  history jsonb not null,
+  updated_at timestamptz default now()
 );
 
-CREATE TABLE IF NOT EXISTS user_preferences (
-  user_id text PRIMARY KEY,
+-- 飲食偏好
+create table user_preferences (
+  user_id text primary key,
   preferences text,
-  updated_at timestamptz DEFAULT now()
+  updated_at timestamptz default now()
 );
 
-CREATE TABLE IF NOT EXISTS favorite_recipes (
-  id bigserial PRIMARY KEY,
-  user_id text NOT NULL,
-  recipe_name text NOT NULL,
-  recipe_data jsonb NOT NULL,
-  created_at timestamptz DEFAULT now()
+-- 食譜收藏
+create table favorite_recipes (
+  id bigserial primary key,
+  user_id text not null,
+  recipe_name text not null,
+  recipe_data jsonb not null,
+  created_at timestamptz default now()
 );
 
-CREATE TABLE IF NOT EXISTS user_cuisine_context (
-  user_id text PRIMARY KEY,
-  active_cuisine text NOT NULL,
-  context_updated_at timestamptz NOT NULL
+-- 菜系情境（Carousel 選擇後更新）
+create table user_cuisine_context (
+  user_id text primary key,
+  active_cuisine text not null,
+  context_updated_at timestamptz not null
 );
+
+-- 每日用量（多租戶）
+create table usage_daily (
+  tenant_id text not null default 'default',
+  user_id text not null,
+  usage_date date not null,
+  requests_count integer not null default 0,
+  updated_at timestamptz default now(),
+  primary key (tenant_id, user_id, usage_date)
+);
+
+-- 訂閱方案（多租戶）
+create table subscriptions (
+  tenant_id text not null default 'default',
+  user_id text not null,
+  plan_key text not null default 'free',
+  status text not null default 'active',
+  updated_at timestamptz default now(),
+  primary key (tenant_id, user_id)
+);
+
+-- 用量帳務明細（多租戶）
+create table usage_ledger (
+  id bigserial primary key,
+  tenant_id text not null default 'default',
+  user_id text not null,
+  units integer not null,
+  event_type text not null,
+  detail jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
+-- 範例 RLS（依 tenant_id 隔離）
+alter table usage_daily enable row level security;
+alter table subscriptions enable row level security;
+alter table usage_ledger enable row level security;
+
+create policy tenant_isolation_usage_daily
+on usage_daily for all
+using (tenant_id = current_setting('request.jwt.claims', true)::jsonb->>'tenant_id');
+
+create policy tenant_isolation_subscriptions
+on subscriptions for all
+using (tenant_id = current_setting('request.jwt.claims', true)::jsonb->>'tenant_id');
+
+create policy tenant_isolation_usage_ledger
+on usage_ledger for all
+using (tenant_id = current_setting('request.jwt.claims', true)::jsonb->>'tenant_id');
+
+-- 建議：原子扣量 RPC（避免多實例競態；回傳欄位名與 migration 一致）
+create or replace function increment_usage_daily(
+  p_tenant_id text,
+  p_user_id text,
+  p_usage_date date,
+  p_units integer
+)
+returns table (requests_count integer)
+language plpgsql
+as $$
+declare
+  v_count integer;
+begin
+  insert into usage_daily (tenant_id, user_id, usage_date, requests_count)
+  values (p_tenant_id, p_user_id, p_usage_date, p_units)
+  on conflict (tenant_id, user_id, usage_date)
+  do update set requests_count = usage_daily.requests_count + excluded.requests_count
+  returning usage_daily.requests_count into v_count;
+
+  return query select v_count as requests_count;
+end;
+$$;
 ```
 
-未設定任何資料庫時，上述功能會降級（不拋錯、不寫入）。
+未設定 `SUPABASE_URL` / `SUPABASE_KEY` 時，相關功能會自動變成 no-op，不會中斷整體服務。
 
 ---
 
-## LINE 指令與行為
+## 4. 使用說明（LINE 指令總表）
 
 | 輸入 | 行為 |
 |------|------|
-| 一般料理描述 | 產生食譜 Flex |
-| `你好`／`清除記憶`／`洗腦`／`重新開始` | 清除記憶並歡迎 |
-| `選單`／`開始` | 主選單 Flex |
-| `🍳 隨機配菜` | 隨機風格配菜 |
-| `🛒 檢視清單` | 上一道菜的採買清單 |
-| 清冰箱／剩下／剩食 等 | 清冰箱情境前綴 |
-| 小孩／兒童／兒子 等 | 兒童餐情境 |
-| `換菜單` | 菜系選擇 |
-| `我的最愛`／`收藏`／`最愛食譜` 等 | 收藏輪播（需 DB） |
-| 圖片訊息 | 辨識食材後走食譜流程 |
-| Flex「❤️ 收藏食譜」 | 寫入 `favorite_recipes`（需 DB） |
+| 任意料理需求（例如「番茄牛腩」） | 產出完整食譜 Flex 卡片 |
+| `你好` / `清除記憶` / `洗腦` / `重新開始` | 清除對話記憶並重新歡迎 |
+| `🍳 隨機配菜` | 由系統隨機選一種料理風格產出配菜 |
+| `🛒 檢視清單` | 顯示上一次食譜的採買清單 |
+| `升級方案` / `訂閱方案` | 取得方案升級連結 |
+| `隱私聲明` / `資料政策` | 查看資料使用與免責說明 |
+| `刪除我的資料` / `忘記我` | 清除對話、收藏與用量資料 |
+| 「清冰箱」「剩下」「剩食」 | 啟用清冰箱情境，盡量用現有食材 |
+| 「小孩」「兒童」「兒子」 | 啟用兒童餐情境，溫和不辣、好咀嚼 |
+| 傳送**圖片**（食物／冰箱食材） | AI 辨識食材後產出食譜 |
+| `我的最愛` / `收藏` / `最愛食譜` | 顯示收藏食譜輪播，可刪除單筆 |
+| Flex 卡片上的「❤️ 收藏食譜」 | 寫入 `favorite_recipes`（有 `DATABASE_URL` 時走 Postgres，否則走 Supabase REST） |
 
 ---
 
-## 專案結構
+## 5. 開發與測試
+
+```bash
+pip install -r requirements-dev.txt
+python3 -m pytest tests/ -v
+```
+
+目前 **35** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`）。涵蓋範例：
+
+- JSON 解析與錯誤處理、Flex Message 組裝、無 Supabase 時記憶／偏好的降級行為
+- 配額扣量失敗拒絕、`/callback` 佇列滿回 503、管理訂閱 API 需正確 `X-Admin-Token`
+- AI 錯誤對使用者訊息（金鑰過期等不洩漏原始 JSON）
+
+變更紀錄與待辦清單：
+
+- [`CHANGELOG.md`](CHANGELOG.md)
+- [`TODO.md`](TODO.md)（營運／產品向待辦）
+- [`TODOS.md`](TODOS.md)（工程與文件向 backlog；與 `TODO.md` 互補）
+
+營運觀測端點：
+
+- `GET /metrics`：應用內 counters（請求、AI、佇列、錯誤）。
+- `GET /billing/checkout`：產生升級連結（可作為前端跳轉入口）。
+- `GET /admin/subscriptions/{user_id}` / `PUT /admin/subscriptions/{user_id}`：管理方案（需 `X-Admin-Token`）。
+- `GET /legal/disclaimer`、`GET /legal/privacy`：法務與資料政策資訊。
+
+---
+
+## 6. 專案結構概覽
+
+程式採 **`app/` 模組化**，`main.py` 為薄入口，實際邏輯在 `app/` 內：
 
 ```text
-├── main.py                 # 入口：載入 app、註冊路由、re-export 測試用符號
+my-chef-ai-agent/
+├── main.py                 # 入口：import app.clients + app.routes，並 re-export 供測試
 ├── app/
-│   ├── config.py           # 環境與常數
-│   ├── clients.py          # FastAPI、LINE、AI、可選 Supabase
-│   ├── routes.py           # /、/callback
-│   ├── handlers.py         # 文字／圖片／postback
-│   ├── ai_service.py       # AI 呼叫、重試、圖片辨識
-│   ├── db.py               # Postgres（DATABASE_URL）或 Supabase
-│   ├── flex_messages.py    # Flex 組裝
-│   ├── helpers.py          # 簽章、JSON、prompt 等
-│   └── models.py           # Webhook 事件模型
-├── tests/test_main.py
+│   ├── config.py           # 環境變數、常數、logging
+│   ├── clients.py          # FastAPI app、Supabase、LINE、AI client
+│   ├── models.py           # WebhookMessageEvent、WebhookPostbackEvent、WebhookImageEvent
+│   ├── routes.py           # /、/callback 路由
+│   ├── handlers.py         # process_ai_reply、process_postback_reply、process_image_reply
+│   ├── ai_service.py       # AI 呼叫與重試、圖片辨識食材
+│   ├── db.py               # Postgres（DATABASE_URL）或 Supabase（記憶、偏好、收藏、菜系、用量／訂閱）
+│   ├── billing.py          # 配額檢查與扣量
+│   ├── job_queue.py        # Webhook 事件佇列與 worker
+│   ├── observability.py    # request_id、metrics counters
+│   ├── subscriptions.py    # 升級／結帳連結組裝
+│   ├── flex_messages.py    # 食譜卡、主選單、菜系輪播、收藏輪播
+│   └── helpers.py          # _safe_str、_extract_json、_build_system_prompt 等
+├── Dockerfile
+├── render.yaml
 ├── requirements.txt
 ├── requirements-dev.txt
-├── render.yaml
-├── Dockerfile
+├── .env.example
+├── tests/
+│   ├── test_main.py
+│   ├── test_platform_features.py
+│   └── test_ai_errors.py
 ├── docs/
+│   ├── DEPLOY_GCP.md
 │   ├── RENDER_POSTGRES.md
-│   └── DEPLOY_GCP.md
-├── TODOS.md                # 已知待辦與後續想法
+│   └── LEGAL_POLICY.md
+├── supabase/migrations/   # 商業化 schema + increment_usage_daily RPC
 ├── CHANGELOG.md
-├── AGENTS.md               # Cursor／自動化代理說明
-└── .env.example
+├── TODO.md
+├── TODOS.md
+├── pytest.ini
+├── .github/workflows/deploy.yml
+└── AGENTS.md
 ```
 
 ---
 
-## 文件與授權
-
-- 代理／本機注意事項：**[`AGENTS.md`](AGENTS.md)**  
-- 變更紀錄：**[`CHANGELOG.md`](CHANGELOG.md)**  
-- 待辦：**[`TODOS.md`](TODOS.md)**  
+## 授權
 
 MIT License

@@ -6,14 +6,27 @@ import os
 
 from dotenv import load_dotenv
 
+from app.observability import get_request_id
+
 # ─── Logging ────────────────────────────────────────────────────────────────────
+
+
+class RequestIdFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = get_request_id()
+        return True
 
 logging.basicConfig(
     level=logging.DEBUG if os.getenv("DEBUG", "").lower() in ("1", "true", "yes") else logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s [req:%(request_id)s]: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("chef-agent")
+_request_filter = RequestIdFilter()
+logging.getLogger().addFilter(_request_filter)
+for _handler in logging.getLogger().handlers:
+    _handler.addFilter(_request_filter)
+logger.addFilter(_request_filter)
 
 # ─── Environment ────────────────────────────────────────────────────────────────
 
@@ -34,6 +47,12 @@ SUPABASE_URL              = os.getenv("SUPABASE_URL")
 SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
 # Render Postgres（或任何 PostgreSQL）連線字串；若設定則資料層優先使用 Postgres，不必再設 Supabase
 DATABASE_URL              = (os.getenv("DATABASE_URL") or "").strip() or None
+DEFAULT_TENANT_ID         = os.getenv("DEFAULT_TENANT_ID", "default")
+ADMIN_API_TOKEN           = os.getenv("ADMIN_API_TOKEN")
+METRICS_TOKEN             = os.getenv("METRICS_TOKEN")
+BILLING_PROVIDER          = os.getenv("BILLING_PROVIDER", "manual").lower()
+CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")
+BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
@@ -53,6 +72,10 @@ MAX_COMPLETION_TOKENS = 2048
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
+QUEUE_WORKER_COUNT   = int(os.getenv("QUEUE_WORKER_COUNT", "2"))
+QUEUE_MAX_SIZE       = int(os.getenv("QUEUE_MAX_SIZE", "1000"))
+QUEUE_DEDUPE_TTL_SEC = int(os.getenv("QUEUE_DEDUPE_TTL_SEC", "900"))
+REQUIRE_ATOMIC_USAGE = os.getenv("REQUIRE_ATOMIC_USAGE", "0").lower() in ("1", "true", "yes")
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
 CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
@@ -95,3 +118,9 @@ CUISINE_LABELS: dict[str, str] = {
 
 AI_MAX_RETRIES = 1          # Number of retries on JSON parse failure
 AI_RETRY_EXTRA_PROMPT = "請務必只回傳純JSON，不要加任何markdown或解釋文字。"
+
+PLAN_DAILY_LIMITS = {
+    "free": int(os.getenv("PLAN_FREE_DAILY_LIMIT", "20")),
+    "pro": int(os.getenv("PLAN_PRO_DAILY_LIMIT", "200")),
+    "enterprise": int(os.getenv("PLAN_ENTERPRISE_DAILY_LIMIT", "2000")),
+}

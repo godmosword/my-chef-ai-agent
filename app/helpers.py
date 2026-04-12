@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import json
 
-from app.config import LINE_CHANNEL_SECRET, LINE_TEXT_MAX
+from app.config import LINE_CHANNEL_SECRET
 
 from linebot.v3.exceptions import InvalidSignatureError
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
-from app.config import ROLE_COLORS, CUISINE_LABELS, LINE_TEXT_MAX
+from app.config import ROLE_COLORS, LINE_TEXT_MAX
 from app.helpers import _safe_str, _parse_to_list
 
 
@@ -114,6 +114,10 @@ def get_main_menu_flex() -> FlexMessage:
                     "type": "button", "style": "secondary",
                     "action": {"type": "message", "label": "🛒 採買食材", "text": "🛒 檢視清單"},
                 },
+                {
+                    "type": "button", "style": "secondary",
+                    "action": {"type": "message", "label": "🔐 資料政策", "text": "隱私聲明"},
+                },
             ],
         },
     }
@@ -210,10 +214,22 @@ def generate_flex_message(
             ],
         },
         "footer": {
-            "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": favorite_action},
+                {
+                    "type": "box", "layout": "horizontal", "spacing": "md",
+                    "contents": [
+                        {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": favorite_action},
+                    ],
+                },
+                {
+                    "type": "text",
+                    "text": "食譜僅供參考，請留意過敏原與食安條件。",
+                    "size": "xxs",
+                    "color": "#92400E",
+                    "wrap": True,
+                },
             ],
         },
     }

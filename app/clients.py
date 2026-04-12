@@ -1,8 +1,10 @@
 """Shared clients: FastAPI, Supabase, AI (OpenAI-compatible), LINE."""
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from linebot.v3.messaging import AsyncApiClient, AsyncMessagingApi, Configuration
+from linebot.v3.messaging import Configuration
 from openai import AsyncOpenAI
 from supabase import create_client, Client
 
@@ -18,10 +20,18 @@ from app.config import (
     logger,
     _mn,
 )
+from app.job_queue import start_queue_workers, stop_queue_workers
 
 # ─── FastAPI ────────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="米其林職人大腦", version="2.0.0")
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    await start_queue_workers()
+    yield
+    await stop_queue_workers()
+
+
+app = FastAPI(title="米其林職人大腦", version="2.0.0", lifespan=_lifespan)
 
 # ─── Supabase（僅在未設定 DATABASE_URL 時啟用；Render Postgres 請用 DATABASE_URL）──
 
