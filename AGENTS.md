@@ -38,7 +38,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 |---------|-------------------|-------|
 | LINE Messaging API | `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Dummy values work for server startup; real values needed for webhook replies |
 | Google Gemini AI | `GEMINI_API_KEY` | Required for AI recipe generation |
-| Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional; app degrades gracefully without it |
+| Render Postgres | `DATABASE_URL` | Optional; when set, memory/favorites use Postgres (see `docs/RENDER_POSTGRES.md`) |
+| Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional if `DATABASE_URL` unset; app degrades gracefully without either |
 
 ### Hello world testing (webhook simulation)
 
