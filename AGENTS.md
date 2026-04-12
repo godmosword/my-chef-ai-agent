@@ -4,7 +4,7 @@
 
 ### Overview
 
-This is a single-file Python FastAPI LINE Bot called **米其林職人大腦** (Michelin Chef AI Brain). It uses Gemini 3.1 Pro to generate structured recipe cards in LINE Flex Message format. The entire application lives in `main.py`.
+This is a modular Python FastAPI LINE Bot called **米其林職人大腦** (Michelin Chef AI Brain). It uses Gemini 3.1 Flash Lite to generate structured recipe cards in LINE Flex Message format. `main.py` is a thin entrypoint; all logic lives in the `app/` package.
 
 ### Running the dev server
 
@@ -25,7 +25,12 @@ Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
 python3 -m pytest tests/ -v
 ```
 
-Note: `test_get_empty_memory_returns_empty_list_when_no_supabase` fails (pre-existing issue — async function called synchronously). 28/29 tests pass.
+All 29 tests pass. Env vars must be set even for tests:
+
+```bash
+LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
+  python3 -m pytest tests/ -v
+```
 
 ### External services (all optional for local dev)
 
@@ -33,7 +38,8 @@ Note: `test_get_empty_memory_returns_empty_list_when_no_supabase` fails (pre-exi
 |---------|-------------------|-------|
 | LINE Messaging API | `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Dummy values work for server startup; real values needed for webhook replies |
 | Google Gemini AI | `GEMINI_API_KEY` | Required for AI recipe generation |
-| Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional; app degrades gracefully without it |
+| Render Postgres | `DATABASE_URL` | Optional; when set, memory/favorites use Postgres (see `docs/RENDER_POSTGRES.md`) |
+| Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional if `DATABASE_URL` unset; app degrades gracefully without either |
 
 ### Hello world testing (webhook simulation)
 
@@ -57,6 +63,6 @@ The webhook will return `"OK"`. The background task will call Gemini AI and gene
 ### Gotchas
 
 - Environment variables are validated at **module import time** (not at request time). If they're missing, the app crashes immediately on startup.
-- There is no `.env` auto-loading (no `python-dotenv`). Set env vars directly or use `cp .env.example .env` and export them.
+- `python-dotenv` is used (`app/config.py` calls `load_dotenv()`). You can create a `.env` file via `cp .env.example .env` and fill in values, or set env vars directly on the command line.
 - The `pytest` binary may not be on PATH; use `python3 -m pytest` instead.
 - When killing the dev server, also kill child processes (reloader + server worker). Use `lsof -ti:8000` to find all PIDs on the port.

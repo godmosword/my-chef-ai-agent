@@ -85,13 +85,18 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
 | `GEMINI_API_KEY` | ✅\* | 使用 Gemini 直連時必填 |
 | `OPENROUTER_API_KEY` | ✅\* | 若改走 OpenRouter 模型時必填 |
-| `SUPABASE_URL` |  | Supabase URL（不填則關閉 DB 功能） |
-| `SUPABASE_KEY` |  | Supabase anon key |
+| `DATABASE_URL` |  | **Render Postgres** 的 Internal Database URL；若設定則記憶／收藏走 Postgres，**不必**再設 Supabase（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)） |
+| `SUPABASE_URL` |  | 僅在未設 `DATABASE_URL` 時使用：Supabase 專案 URL |
+| `SUPABASE_KEY` |  | 僅在未設 `DATABASE_URL` 時使用：Supabase anon key |
 | `DEBUG` |  | 設為 `1` 時會輸出較詳細 log |
 
 > \* 二擇一：  
 > - 使用 `gemini-*` 模型 → 設 `GEMINI_API_KEY`  
-> - 使用其他模型（經由 OpenRouter） → 設 `OPENROUTER_API_KEY`
+> - 使用其他模型（經由 OpenRouter） → 設 `OPENROUTER_API_KEY`  
+>
+> 資料儲存二擇一：  
+> - **Render Postgres** → 設 `DATABASE_URL`（並在資料庫執行建表 SQL，見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
+> - **Supabase** → 設 `SUPABASE_URL` + `SUPABASE_KEY`（兩者皆不設則無對話記憶與收藏持久化）
 
 ### 2.2 Render 建立流程（概要）
 
@@ -104,9 +109,9 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-## 3. Supabase 資料表結構（可選）
+## 3. 資料表結構（可選：Supabase 或 Render Postgres）
 
-若需要對話記憶、偏好與收藏功能，可於 Supabase 建立下列表：
+若需要對話記憶、偏好與收藏功能，請在 **Supabase** 或 **Render Postgres** 建立下列表（兩者 DDL 相同；Render 步驟見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）：
 
 ```sql
 -- 對話記憶

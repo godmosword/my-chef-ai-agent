@@ -15,7 +15,7 @@ from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
 )
-from openai import APITimeoutError
+from openai import APITimeoutError, AuthenticationError, BadRequestError
 
 from app.config import (
     CUISINE_LABELS,
@@ -270,11 +270,24 @@ async def process_ai_reply(event: WebhookMessageEvent) -> None:
     except APITimeoutError:
         msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
 
+    except (AuthenticationError, BadRequestError) as exc:
+        err_msg = str(exc).lower()
+        if "api key" in err_msg and ("expired" in err_msg or "invalid" in err_msg):
+            logger.error("API key issue for user %s: %s", user_id, exc)
+            msg = TextMessage(text="👨‍🍳 AI 金鑰已過期或無效，請聯繫管理員更新 API Key。")
+        else:
+            logger.exception("API request error for user %s", user_id)
+            msg = TextMessage(text=(
+                "👨‍🍳 呼叫 AI 時發生意外：\n"
+                f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
+                "請截圖此錯誤並輸入「清除記憶」重試。"
+            ))
+
     except Exception as exc:
         logger.exception("Unexpected error for user %s", user_id)
         msg = TextMessage(text=(
             "👨‍🍳 呼叫 AI 時發生意外：\n"
-            f"{type(exc).__name__}: {str(exc)}\n\n"
+            f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
             "請截圖此錯誤並輸入「清除記憶」重試。"
         ))
 
@@ -295,7 +308,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         if await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
             await _reply_line(event.reply_token, TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"))
         else:
-            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試或確認已設定 Supabase。"))
+            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 收藏失敗，請稍後再試，或確認已設定 DATABASE_URL（Render Postgres）或 Supabase。"))
         return
 
     # ── Redo recipe ──
