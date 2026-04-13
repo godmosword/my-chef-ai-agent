@@ -10,6 +10,7 @@
 - **文件**
   - [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md) 建表與 Render 綁定步驟；根目錄 [`TODOS.md`](TODOS.md) 工程 backlog（與既有 [`TODO.md`](TODO.md) 並存）。
   - `README.md`：技術棧與 `DATABASE_URL` 行為與 `db.py` 對齊。
+  - [`TODOS.md`](TODOS.md)：新增 **LINE Flex 食譜卡／Rich Menu** UX 待辦（視覺層級、步驟長度、按鈕與品牌一致、配額提示等）。
 
 ### 2026-04-12（v2.1 商業化與平台化）
 
