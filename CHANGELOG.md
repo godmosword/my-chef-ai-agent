@@ -5,16 +5,18 @@
 - **AI JSON**：`SYSTEM_PROMPT` 新增選填欄位 `photo_url`、`video_url`（須為可公開存取之 **https**）。
 - **Flex**：`generate_flex_message` 若有有效 `photo_url` 則設 **hero 大圖**；若有有效 `video_url` 則在 footer 顯示 **「▶ 教學影片」** URI 按鈕（LINE 不支援 bubble 內嵌影片播放器，僅能外開連結）。
 - **`_flex_safe_https_url`**（`helpers.py`）：過濾非 https 或過長 URL，避免 LINE API 拒絕。
+- **測試**：`tests/test_main.py` 擴充 Flex 安全 URL 與食譜卡欄位等；全套件 **40** 則通過。
 
 ### 2026-04-12（Render Postgres 直連與文件）
 
 - **資料層**
   - 支援 **`DATABASE_URL`**：對話記憶、偏好、收藏、菜系情境以 **`psycopg`** 直連 **PostgreSQL**（例如 Render Postgres）；設定時不初始化 Supabase REST client 處理上述核心表。
   - `requirements.txt` 新增 `psycopg[binary]`。
+  - 根目錄 **`init_db.py`**：以 `DATABASE_URL` 建立核心四表（與 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md) 方式 A 一致）。
 - **使用者訊息**
   - 收藏失敗提示同時提及 `DATABASE_URL` 與 Supabase（`handlers.py`）。
 - **文件**
-  - [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md) 建表與 Render 綁定步驟；根目錄 [`TODOS.md`](TODOS.md) 工程 backlog（與既有 [`TODO.md`](TODO.md) 並存）。
+  - [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md) 建表與 Render 綁定步驟；[`TODOS.md`](TODOS.md) 為**唯一**工程／UX backlog；[`TODO.md`](TODO.md) 改為導向 `TODOS.md`。
   - `README.md`：技術棧與 `DATABASE_URL` 行為與 `db.py` 對齊。
   - [`TODOS.md`](TODOS.md)：新增 **LINE Flex 食譜卡／Rich Menu** UX 待辦（視覺層級、步驟長度、按鈕與品牌一致、配額提示等）。
 
@@ -36,7 +38,7 @@
   - `supabase/migrations/20260412120000_commercial_schema.sql`：商業化表 + RPC + RLS 範例。
 - **測試**
   - `tests/test_platform_features.py`（配額、佇列滿 503、admin token）；`tests/test_ai_errors.py`（AI 錯誤使用者文案）。
-  - 全套件 **35** 則通過。
+  - 該版釋出時全套件 **35** 則通過（後續見 2026-04-13 條目擴充至 **40** 則）。
 - **LINE 錯誤訊息**
   - `app/ai_errors.py`：金鑰過期／無效、429、權限等改為中文說明；`DEBUG=1` 時才附技術細節。避免將 Google API 整段 JSON 貼給使用者。
 - **CI／Cloud Run 部署**

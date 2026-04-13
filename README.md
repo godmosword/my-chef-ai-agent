@@ -113,7 +113,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 > - 使用其他模型（經由 OpenRouter） → 設 `OPENROUTER_API_KEY`  
 >
 > 資料儲存：  
-> - **Render Postgres** → 設 `DATABASE_URL`（建表見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
+> - **Render Postgres** → 設 `DATABASE_URL`（建表可執行根目錄 `python3 init_db.py`，或見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
 > - **Supabase** → 設 `SUPABASE_URL` + `SUPABASE_KEY`（可單獨支撐記憶／收藏，也可與 Postgres 並用於用量／訂閱）  
 > - 兩者皆不設則無對話記憶與收藏持久化；商業化用量請見第 3 節 migration。
 
@@ -289,17 +289,17 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/ -v
 ```
 
-目前 **35** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`）。涵蓋範例：
+目前 **40** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`）。涵蓋範例：
 
-- JSON 解析與錯誤處理、Flex Message 組裝、無 Supabase 時記憶／偏好的降級行為
+- JSON 解析與錯誤處理、Flex Message 組裝、食譜卡 **hero／影片連結** 與 **`_flex_safe_https_url`** 安全過濾、無 Supabase 時記憶／偏好的降級行為
 - 配額扣量失敗拒絕、`/callback` 佇列滿回 503、管理訂閱 API 需正確 `X-Admin-Token`
 - AI 錯誤對使用者訊息（金鑰過期等不洩漏原始 JSON）
 
 變更紀錄與待辦清單：
 
 - [`CHANGELOG.md`](CHANGELOG.md)
-- [`TODO.md`](TODO.md)（營運／產品向待辦）
-- [`TODOS.md`](TODOS.md)（工程與文件向 backlog；與 `TODO.md` 互補）
+- [`TODOS.md`](TODOS.md)（**唯一**待辦清單：工程、營運、UX）
+- [`TODO.md`](TODO.md)（僅轉址至 `TODOS.md`）
 
 營運觀測端點：
 

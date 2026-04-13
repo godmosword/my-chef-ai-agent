@@ -1,8 +1,26 @@
 # 待辦與後續方向
 
-本檔案追蹤**已知缺口**、**可選強化**與**維運注意事項**，方便貢獻者與維護者對齊。完成項目請更新此檔或刪除對應條目。
+本檔案為根目錄**唯一**待辦清單（工程、產品、UX、營運一併列於此）。完成項目請勾選或刪除條目；舊檔 [`TODO.md`](TODO.md) 僅保留轉址說明。
 
-與營運／產品相關的待辦另見根目錄 **[`TODO.md`](TODO.md)**（佇列、配額、金流等）。
+---
+
+## 營運與平台（併自原 TODO.md）
+
+### 高優先
+
+- [ ] **Gemini／OpenRouter 429 與配額**：統一退避與重試策略，並在 metrics 區分 `429` 與逾時。
+- [ ] **Readiness**：可選 `GET /ready` 或擴充 health，串接 Supabase ping／AI provider smoke（失敗時是否仍允許 liveness 需定案）。
+- [ ] **Per-user / IP rate limit**：Webhook 與公開端點（`checkout`、`legal`）防濫用。
+
+### 中優先
+
+- [ ] **核心表多租戶**：`user_memory` 等表若需真正 tenant 隔離，補 migration + 讀寫帶 `tenant_id`（現行刪除流程已依 tenant 清用量表）。
+- [ ] **金流**：`BILLING_PROVIDER` 僅識別與連結模板，實際付款回寫訂閱需接各 PSP webhook。
+
+### 低優先
+
+- [ ] **README §3.2 手動 SQL**：與 migration 檔 RPC 回傳欄位名已對齊時，可縮減重複 DDL、改為「僅列核心表」並連結 migration。
+- [ ] **Supabase CLI**：若團隊固定用 CLI，可補 `config.toml` 範本與 CI 驗證 migration。
 
 ---
 
