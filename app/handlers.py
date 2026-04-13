@@ -62,7 +62,9 @@ from app.ai_service import (
     _get_last_recipe_json,
     call_ai_with_retry,
     download_line_image,
+    generate_recipe_image,
     identify_ingredients_from_image,
+    search_youtube_video,
 )
 from app.billing import consume_quota
 from app.observability import incr
@@ -86,6 +88,139 @@ async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage, user_id:
                 incr("line.push_fallback.success_total")
                 return
             raise
+
+
+async def _push_line_message(user_id: str, msg: TextMessage | FlexMessage) -> None:
+    """Send a push message to LINE user with a lightweight retry."""
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            async with AsyncApiClient(line_configuration) as api_client:
+                api = AsyncMessagingApi(api_client)
+                await api.push_message(PushMessageRequest(to=user_id, messages=[msg]))
+            incr("line.push.success_total")
+            return
+        except Exception as exc:
+            last_exc = exc
+            if attempt == 0:
+                await asyncio.sleep(0.3)
+                continue
+            raise
+    if last_exc:
+        raise last_exc
+
+
+async def _background_generate_recipe(
+    *,
+    user_id: str,
+    tenant_id: str,
+    user_message: str,
+) -> None:
+    """
+    Generate recipe in background, fetch media in parallel, then push final result.
+    This avoids reply token timeout for long-running generation.
+    """
+    if not user_id:
+        logger.warning("Skip background generation: missing user_id")
+        return
+    logger.info("Start background recipe generation for user=%s tenant=%s", user_id, tenant_id)
+
+    try:
+        full_history, filtered_history, active_cuisine, prefs = await _fetch_ai_context(user_id)
+        current_cuisine = CUISINE_LABELS.get(active_cuisine or "", active_cuisine or "不拘")
+        effective_system = _build_system_prompt(prefs, current_cuisine)
+
+        history = filtered_history
+        if not history:
+            history = [{"role": "system", "content": effective_system}]
+        elif history[0].get("role") == "system":
+            history[0] = {"role": "system", "content": effective_system}
+        else:
+            history = [{"role": "system", "content": effective_system}] + history
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        history.append({"role": "user", "content": user_message, "timestamp": now_iso})
+        if len(history) > MAX_HISTORY_TURNS + 1:
+            history = [history[0]] + history[-MAX_HISTORY_TURNS:]
+        api_messages = [
+            {
+                "role": m["role"],
+                "content": (
+                    _condense_assistant_message(m.get("content", ""))
+                    if m.get("role") == "assistant"
+                    else m.get("content", "")
+                ),
+            }
+            for m in history
+        ]
+
+        ai_content, ai_data = await call_ai_with_retry(api_messages, user_id=user_id)
+        to_save = full_history + [
+            {"role": "user", "content": user_message, "timestamp": now_iso},
+            {"role": "assistant", "content": ai_content, "timestamp": now_iso},
+        ]
+        if len(to_save) > MAX_HISTORY_TURNS + 1:
+            to_save = [to_save[0]] + to_save[-MAX_HISTORY_TURNS:]
+        asyncio.create_task(save_user_memory(user_id, to_save))
+
+        recipe_name = _safe_str(ai_data.get("recipe_name"), "美味食譜", max_len=80)
+        photo_url, video_url = await asyncio.gather(
+            generate_recipe_image(recipe_name),
+            search_youtube_video(recipe_name),
+        )
+
+        g = ai_data.get
+        flex_dict = generate_flex_message(
+            g("kitchen_talk", []), g("theme", ""), recipe_name,
+            g("ingredients", []), g("steps", []), g("shopping_list", []),
+            g("estimated_total_cost", ""),
+            recipe_name_for_postback=recipe_name,
+            photo_url=_flex_safe_https_url(photo_url),
+            video_url=_flex_safe_https_url(video_url),
+        )
+        msg: TextMessage | FlexMessage = FlexMessage(
+            alt_text=f"職人提案：{recipe_name}",
+            contents=FlexContainer.from_dict(flex_dict),
+        )
+
+    except (json.JSONDecodeError, ValueError) as exc:
+        incr("handler.ai.errors.json_total")
+        logger.error("JSON/Value error for user %s: %s", user_id, exc)
+        try:
+            raw_content = getattr(exc, "raw_content", "無法取得原始內容")
+            msg = build_fallback_recipe_flex(raw_content)
+        except Exception:
+            msg = TextMessage(
+                text=f"👨‍🍳 AI 格式解析失敗：{str(exc)[:100]}\n請輸入「清除記憶」後換個說法試試。"
+            )
+
+    except APITimeoutError:
+        incr("handler.ai.errors.timeout_total")
+        msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
+
+    except (AuthenticationError, BadRequestError) as exc:
+        err_msg = str(exc).lower()
+        if "api key" in err_msg and ("expired" in err_msg or "invalid" in err_msg):
+            logger.error("API key issue for user %s: %s", user_id, exc)
+            msg = TextMessage(text="👨‍🍳 AI 金鑰已過期或無效，請聯繫管理員更新 API Key。")
+        else:
+            logger.exception("API request error for user %s", user_id)
+            msg = TextMessage(text=(
+                "👨‍🍳 呼叫 AI 時發生意外：\n"
+                f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
+                "請截圖此錯誤並輸入「清除記憶」重試。"
+            ))
+
+    except Exception as exc:
+        incr("handler.ai.errors.unexpected_total")
+        logger.exception("Unexpected error for user %s", user_id)
+        msg = TextMessage(text=format_ai_error_for_user(exc))
+
+    try:
+        await _push_line_message(user_id, msg)
+    except Exception as exc:
+        incr("handler.ai.errors.push_total")
+        logger.exception("Push final message failed for user %s: %s", user_id, exc)
 
 
 # ─── Image message handler ──────────────────────────────────────────────────────
@@ -288,91 +423,14 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
     if scenario_prefix:
         user_message = scenario_prefix + user_message
 
-    # ── AI context ──
-
-    full_history, filtered_history, active_cuisine, prefs = await _fetch_ai_context(user_id)
-    current_cuisine = CUISINE_LABELS.get(active_cuisine or "", active_cuisine or "不拘")
-    effective_system = _build_system_prompt(prefs, current_cuisine)
-
-    history = filtered_history
-    if not history:
-        history = [{"role": "system", "content": effective_system}]
-    elif history[0].get("role") == "system":
-        history[0] = {"role": "system", "content": effective_system}
-    else:
-        history = [{"role": "system", "content": effective_system}] + history
-
-    now_iso = datetime.now(timezone.utc).isoformat()
-    history.append({"role": "user", "content": user_message, "timestamp": now_iso})
-    if len(history) > MAX_HISTORY_TURNS + 1:
-        history = [history[0]] + history[-MAX_HISTORY_TURNS:]
-    api_messages = [
-        {
-            "role": m["role"],
-            "content": _condense_assistant_message(m.get("content", "")) if m.get("role") == "assistant" else m.get("content", ""),
-        }
-        for m in history
-    ]
-
-    # ── AI call with retry ──
-
-    try:
-        ai_content, ai_data = await call_ai_with_retry(api_messages, user_id=user_id)
-
-        to_save = full_history + [
-            {"role": "user", "content": user_message, "timestamp": now_iso},
-            {"role": "assistant", "content": ai_content, "timestamp": now_iso},
-        ]
-        if len(to_save) > MAX_HISTORY_TURNS + 1:
-            to_save = [to_save[0]] + to_save[-MAX_HISTORY_TURNS:]
-        asyncio.create_task(save_user_memory(user_id, to_save))
-
-        recipe_name = ai_data.get("recipe_name", "美味食譜")
-        g = ai_data.get
-        flex_dict = generate_flex_message(
-            g("kitchen_talk", []), g("theme", ""), recipe_name,
-            g("ingredients", []), g("steps", []), g("shopping_list", []),
-            g("estimated_total_cost", ""),
-            recipe_name_for_postback=recipe_name,
-            photo_url=_flex_safe_https_url(g("photo_url", "")),
-            video_url=_flex_safe_https_url(g("video_url", "")),
+    await reply(TextMessage(text="👨‍🍳 主廚正在為您研發菜單與擺盤，請稍候片刻..."))
+    asyncio.create_task(
+        _background_generate_recipe(
+            user_id=user_id,
+            tenant_id=tenant_id,
+            user_message=user_message,
         )
-        msg = FlexMessage(alt_text=f"職人提案：{recipe_name}", contents=FlexContainer.from_dict(flex_dict))
-
-    except (json.JSONDecodeError, ValueError) as exc:
-        incr("handler.ai.errors.json_total")
-        logger.error("JSON/Value error for user %s: %s", user_id, exc)
-        try:
-            raw_content = getattr(exc, "raw_content", "無法取得原始內容")
-            msg = build_fallback_recipe_flex(raw_content)
-        except Exception:
-            msg = TextMessage(
-                text=f"👨‍🍳 AI 格式解析失敗：{str(exc)[:100]}\n請輸入「清除記憶」後換個說法試試。"
-            )
-
-    except APITimeoutError:
-        incr("handler.ai.errors.timeout_total")
-        msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
-
-    except (AuthenticationError, BadRequestError) as exc:
-        err_msg = str(exc).lower()
-        if "api key" in err_msg and ("expired" in err_msg or "invalid" in err_msg):
-            logger.error("API key issue for user %s: %s", user_id, exc)
-            msg = TextMessage(text="👨‍🍳 AI 金鑰已過期或無效，請聯繫管理員更新 API Key。")
-        else:
-            logger.exception("API request error for user %s", user_id)
-            msg = TextMessage(text=(
-                "👨‍🍳 呼叫 AI 時發生意外：\n"
-                f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
-                "請截圖此錯誤並輸入「清除記憶」重試。"
-            ))
-
-    except Exception as exc:
-        incr("handler.ai.errors.unexpected_total")
-        logger.exception("Unexpected error for user %s", user_id)
-        msg = TextMessage(text=format_ai_error_for_user(exc))
-
-    await reply(msg)
+    )
 
 
 # ─── Postback handler ────────────────────────────────────────────────────────────

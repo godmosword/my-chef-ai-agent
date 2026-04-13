@@ -53,6 +53,7 @@ METRICS_TOKEN             = os.getenv("METRICS_TOKEN")
 BILLING_PROVIDER          = os.getenv("BILLING_PROVIDER", "manual").lower()
 CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")
 BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
+YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
@@ -101,9 +102,7 @@ SYSTEM_PROMPT = (
     '"theme":"主題","recipe_name":"菜名",'
     '"ingredients":[{"name":"食材","price":"NT$XX"}],'
     '"steps":["步驟"],"shopping_list":["區塊：品項"],'
-    '"estimated_total_cost":"數字",'
-    '"photo_url":"成品參考圖之完整https網址；若無可靠公開圖可填空字串",'
-    '"video_url":"教學或參考影片之完整https網址（YouTube等）；無則空字串。勿填非https"}'
+    '"estimated_total_cost":"數字"}'
 )
 
 ROLE_COLORS: dict[str, str] = {"行政主廚": "#9F1239", "副主廚": "#B45309", "食材總管": "#166534"}

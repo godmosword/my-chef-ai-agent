@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+import urllib.parse
 import httpx
 
 from app.config import (
@@ -12,6 +13,7 @@ from app.config import (
     DEBUG_MODE,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
+    YOUTUBE_API_KEY,
     logger,
 )
 from app.clients import ai_client, AI_MODEL_FOR_CALL
@@ -26,6 +28,70 @@ from app.helpers import (
     _parse_ai_json,
 )
 from app.observability import incr
+
+
+def _recipe_placeholder_image_url(recipe_name: str) -> str:
+    quoted = urllib.parse.quote(recipe_name or "Michelin Dish")
+    return f"https://placehold.co/600x400/EA580C/FFFFFF?text={quoted}"
+
+
+async def generate_recipe_image(recipe_name: str) -> str:
+    """Generate a recipe image URL, with placeholder fallback on any failure."""
+    prompt = (
+        "Professional food photography, Michelin star plating, dark slate background, "
+        "dramatic top lighting, cinematic depth of field, dish: "
+        f"{recipe_name}"
+    )
+    try:
+        response = await ai_client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            quality="hd",
+            timeout=45.0,
+        )
+        image_url = (response.data[0].url if getattr(response, "data", None) else None) or ""
+        if isinstance(image_url, str) and image_url.startswith("https://"):
+            incr("ai.images.generated_total")
+            return image_url
+    except Exception as exc:
+        logger.warning("Image generation failed for recipe %s: %s", recipe_name, exc)
+        incr("ai.images.errors_total")
+    return _recipe_placeholder_image_url(recipe_name)
+
+
+async def search_youtube_video(recipe_name: str) -> str | None:
+    """Search first YouTube tutorial video; return None if unavailable or failed."""
+    if not YOUTUBE_API_KEY:
+        return None
+
+    try:
+        query = f"{recipe_name} 食譜 教學"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://www.googleapis.com/youtube/v3/search",
+                params={
+                    "part": "snippet",
+                    "maxResults": 1,
+                    "type": "video",
+                    "q": query,
+                    "key": YOUTUBE_API_KEY,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        items = data.get("items") or []
+        if not items:
+            return None
+        video_id = ((items[0].get("id") or {}).get("videoId") or "").strip()
+        if not video_id:
+            return None
+        incr("youtube.search.success_total")
+        return f"https://www.youtube.com/watch?v={video_id}"
+    except Exception as exc:
+        logger.warning("YouTube search failed for recipe %s: %s", recipe_name, exc)
+        incr("youtube.search.errors_total")
+        return None
 
 
 async def _fetch_ai_context(user_id: str) -> tuple[list, list, str | None, str | None]:
