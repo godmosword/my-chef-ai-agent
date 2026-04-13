@@ -36,6 +36,7 @@ from app.db import (
     get_user_preferences,
 )
 from app.helpers import (
+    _default_recipe_hero_url,
     _extract_json,
     _filter_history_after_context,
     _parse_ai_json,
@@ -95,8 +96,8 @@ _recipe_image_cache_lock = asyncio.Lock()
 
 
 def _recipe_placeholder_image_url(recipe_name: str) -> str:
-    quoted = urllib.parse.quote(recipe_name or "Michelin Dish")
-    return f"https://placehold.co/600x400/EA580C/FFFFFF?text={quoted}"
+    """LINE 常無法載入 placehold.co；與 Flex 後備一致改用 picsum。"""
+    return _default_recipe_hero_url(recipe_name, "")
 
 
 def _gs_to_https_url(gs_uri: str) -> str | None:

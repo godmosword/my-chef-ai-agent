@@ -4,7 +4,7 @@ from __future__ import annotations
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
 from app.config import ROLE_COLORS, LINE_TEXT_MAX
-from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
+from app.helpers import _default_recipe_hero_url, _flex_safe_https_url, _safe_str, _parse_to_list
 
 
 # ─── Cuisine carousel data ──────────────────────────────────────────────────────
@@ -13,35 +13,35 @@ CUISINE_CAROUSEL_CARDS = [
     {
         "title": "🇹🇼 台灣小吃",
         "cuisine": "taiwanese",
-        "image_url": "https://placehold.co/400x300/EA580C/FFFFFF?text=%F0%9F%87%B9%F0%9F%87%BC+%E5%8F%B0%E7%81%A3%E5%B0%8F%E5%90%83",
+        "image_url": "https://picsum.photos/seed/cuisine-tw/800/520",
         "description": "滷肉飯、蚵仔煎、牛肉麵、珍珠奶茶…道地台灣味，家常好上手。",
         "display_text": "已為您切換至台灣小吃情境！",
     },
     {
         "title": "🇹🇭 泰式料理",
         "cuisine": "thai",
-        "image_url": "https://placehold.co/400x300/166534/FFFFFF?text=%F0%9F%87%B9%F0%9F%87%AD+%E6%B3%B0%E5%BC%8F%E6%96%99%E7%90%86",
+        "image_url": "https://picsum.photos/seed/cuisine-th/800/520",
         "description": "酸辣開胃、香茅檸檬、打拋豬、綠咖哩，南洋風情一次滿足。",
         "display_text": "已為您切換至泰式料理情境！",
     },
     {
         "title": "🇯🇵 日式拉麵與定食",
         "cuisine": "japanese_ramen",
-        "image_url": "https://placehold.co/400x300/9F1239/FFFFFF?text=%F0%9F%87%AF%F0%9F%87%B5+%E6%97%A5%E5%BC%8F%E6%8B%89%E9%BA%B5",
+        "image_url": "https://picsum.photos/seed/cuisine-jp/800/520",
         "description": "拉麵、丼飯、定食、壽司，日式職人精神，在家也能重現。",
         "display_text": "已為您切換至日式拉麵與定食情境！",
     },
     {
         "title": "🇪🇺 歐美家常菜",
         "cuisine": "european_american",
-        "image_url": "https://placehold.co/400x300/1E40AF/FFFFFF?text=%F0%9F%87%AA%F0%9F%87%BA+%E6%AD%90%E7%BE%8E%E5%AE%B6%E5%B8%B8%E8%8F%9C",
+        "image_url": "https://picsum.photos/seed/cuisine-eu/800/520",
         "description": "義大利麵、牛排、燉飯、烤雞，西式經典輕鬆上桌。",
         "display_text": "已為您切換至歐美家常菜情境！",
     },
     {
         "title": "👶 兒童專屬特餐",
         "cuisine": "kids_meal",
-        "image_url": "https://placehold.co/400x300/F59E0B/FFFFFF?text=%F0%9F%91%B6+%E5%85%92%E7%AB%A5%E5%B0%88%E5%B1%AC%E7%89%B9%E9%A4%90",
+        "image_url": "https://picsum.photos/seed/cuisine-kids/800/520",
         "description": "溫和不辣、好咀嚼、營養均衡，專為小朋友設計的安心料理。",
         "display_text": "已為您切換至兒童專屬特餐情境！",
     },
@@ -58,7 +58,7 @@ def _build_cuisine_selector() -> FlexMessage:
                 {"type": "text", "text": c["description"], "size": "sm", "color": "#6B7280", "wrap": True, "margin": "md"},
             ]},
             "footer": {"type": "box", "layout": "vertical", "contents": [
-                {"type": "button", "style": "primary", "color": "#EA580C", "action": {
+                {"type": "button", "style": "primary", "color": "#0F766E", "action": {
                     "type": "postback", "label": "選擇此菜系",
                     "data": f"action=change_cuisine&cuisine={c['cuisine']}", "displayText": c["display_text"],
                 }},
@@ -76,46 +76,47 @@ CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
 def get_main_menu_flex() -> FlexMessage:
-    """Main menu with core action buttons."""
+    """Main menu with core action buttons（暖赭＋青綠主題，按鈕對比一致）。"""
     menu_dict = {
         "type": "bubble",
         "header": {
             "type": "box",
             "layout": "vertical",
+            "paddingAll": "lg",
             "contents": [
-                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "color": "#FFFFFF"}
+                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "size": "lg", "color": "#FFFBEB"}
             ],
-            "backgroundColor": "#EA580C"
+            "backgroundColor": "#7C2D12",
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "md",
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "lg", "backgroundColor": "#FAFAF9",
             "contents": [
                 {
-                    "type": "button", "style": "primary", "color": "#9F1239",
+                    "type": "button", "style": "primary", "height": "sm", "color": "#9A3412",
                     "action": {"type": "message", "label": "🍱 各式菜色", "text": "換菜單"},
                 },
                 {
-                    "type": "button", "style": "primary", "color": "#B45309",
+                    "type": "button", "style": "primary", "height": "sm", "color": "#0F766E",
                     "action": {"type": "message", "label": "🏠 生活需求", "text": "清冰箱模式"},
                 },
                 {
-                    "type": "button", "style": "primary", "color": "#166534",
+                    "type": "button", "style": "primary", "height": "sm", "color": "#155E75",
                     "action": {"type": "message", "label": "💰 預算方案", "text": "幫我規劃預算食譜"},
                 },
                 {
-                    "type": "button", "style": "primary", "color": "#1E40AF",
+                    "type": "button", "style": "primary", "height": "sm", "color": "#4338CA",
                     "action": {"type": "message", "label": "☁️ 心情點餐", "text": "我想根據心情點餐"},
                 },
                 {
-                    "type": "button", "style": "secondary",
+                    "type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4",
                     "action": {"type": "message", "label": "❤️ 我的最愛", "text": "我的最愛"},
                 },
                 {
-                    "type": "button", "style": "secondary",
+                    "type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4",
                     "action": {"type": "message", "label": "🛒 採買食材", "text": "🛒 檢視清單"},
                 },
                 {
-                    "type": "button", "style": "secondary",
+                    "type": "button", "style": "secondary", "height": "sm", "color": "#D6D3D1",
                     "action": {"type": "message", "label": "🔐 資料政策", "text": "隱私聲明"},
                 },
             ],
@@ -188,6 +189,9 @@ def generate_flex_message(
     )
 
     safe_photo = _flex_safe_https_url(photo_url) if photo_url else None
+    if not safe_photo:
+        # 模型給的圖常 404／被 CDN 擋，LINE 會顯示整塊空白；一律提供可抓取的後備圖
+        safe_photo = _default_recipe_hero_url(recipe_name, theme)
     safe_video = _flex_safe_https_url(video_url) if video_url else None
 
     bubble: dict = {
@@ -229,8 +233,8 @@ def generate_flex_message(
                 {
                     "type": "box", "layout": "horizontal", "spacing": "md",
                     "contents": [
-                        {"type": "button", "style": "secondary", "height": "sm", "color": "#FFEDD5", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": favorite_action},
+                        {"type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": "#BE123C", "action": favorite_action},
                     ],
                 },
                 {
@@ -244,14 +248,13 @@ def generate_flex_message(
         },
     }
 
-    if safe_photo:
-        bubble["hero"] = {
-            "type": "image",
-            "url": safe_photo,
-            "size": "full",
-            "aspectRatio": "20:13",
-            "aspectMode": "cover",
-        }
+    bubble["hero"] = {
+        "type": "image",
+        "url": safe_photo,
+        "size": "full",
+        "aspectRatio": "20:13",
+        "aspectMode": "cover",
+    }
 
     footer_contents = bubble["footer"]["contents"]
     if safe_video:
@@ -259,9 +262,9 @@ def generate_flex_message(
             0,
             {
                 "type": "button",
-                "style": "secondary",
+                "style": "primary",
                 "height": "sm",
-                "color": "#1E40AF",
+                "color": "#155E75",
                 "action": {
                     "type": "uri",
                     "label": "▶ 教學影片",

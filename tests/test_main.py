@@ -19,7 +19,7 @@ from main import (
     save_user_memory,
     clear_user_memory,
 )
-from app.helpers import _flex_safe_https_url
+from app.helpers import _default_recipe_hero_url, _flex_safe_https_url
 
 
 # ─── _safe_str ───────────────────────────────────────────────────────────────────
@@ -188,16 +188,23 @@ class TestGenerateFlexMessage:
         assert uri_btn is not None
         assert uri_btn["action"]["uri"] == video
 
-    def test_invalid_urls_omitted(self):
+    def test_invalid_photo_falls_back_to_picsum_hero(self):
         result = generate_flex_message(
             **{**self.SAMPLE_ARGS, "photo_url": "http://insecure.example/x.jpg", "video_url": "not-a-url"},
         )
-        assert "hero" not in result
+        assert result.get("hero", {}).get("type") == "image"
+        assert "picsum.photos/seed/" in result["hero"]["url"]
+        assert result["hero"]["url"] == _default_recipe_hero_url("番茄炒蛋", "台式家常")
         assert not any(
             c.get("action", {}).get("type") == "uri"
             for c in result["footer"]["contents"]
             if isinstance(c, dict)
         )
+
+    def test_always_has_hero_even_without_photo_kwarg(self):
+        result = generate_flex_message(**self.SAMPLE_ARGS)
+        assert result["hero"]["type"] == "image"
+        assert result["hero"]["url"].startswith("https://picsum.photos/")
 
 
 class TestFlexSafeHttpsUrl:

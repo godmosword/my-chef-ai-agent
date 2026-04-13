@@ -12,6 +12,7 @@ os.environ.setdefault("GEMINI_API_KEY", "test_key")
 
 from app import ai_service, handlers  # noqa: E402
 from app.billing import QuotaDecision  # noqa: E402
+from app.helpers import _default_recipe_hero_url  # noqa: E402
 from app.models import WebhookMessageEvent  # noqa: E402
 
 
@@ -23,8 +24,7 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
-    assert url.startswith("https://placehold.co/600x400/EA580C/FFFFFF?text=")
-    assert "%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B" in url
+    assert url == _default_recipe_hero_url("番茄炒蛋", "")
 
 
 @pytest.mark.asyncio
@@ -34,7 +34,7 @@ async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
-    assert "placehold.co" in url
+    assert url == _default_recipe_hero_url("番茄炒蛋", "")
     mock_generate.assert_not_called()
 
 
@@ -58,7 +58,7 @@ async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch)
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("測試菜")
-    assert "placehold.co" in url
+    assert url == _default_recipe_hero_url("測試菜", "")
     mock_generate.assert_not_called()
 
 
@@ -99,7 +99,7 @@ async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatc
     )
 
     url = await ai_service.generate_recipe_image("龍蝦燉飯")
-    assert "placehold.co" in url
+    assert url == _default_recipe_hero_url("龍蝦燉飯", "")
 
 
 @pytest.mark.asyncio
