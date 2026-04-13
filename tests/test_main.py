@@ -19,6 +19,7 @@ from main import (
     save_user_memory,
     clear_user_memory,
 )
+from app.helpers import _flex_safe_https_url
 
 
 # ─── _safe_str ───────────────────────────────────────────────────────────────────
@@ -173,3 +174,40 @@ class TestGenerateFlexMessage:
             estimated_total_cost="150",
         )
         assert result["type"] == "bubble"
+
+    def test_hero_and_video_button_when_https_urls(self):
+        photo = "https://placehold.co/800x520/EA580C/FFFFFF?text=demo"
+        video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "photo_url": photo, "video_url": video},
+        )
+        assert result.get("hero", {}).get("type") == "image"
+        assert result["hero"]["url"] == photo
+        footer_btns = [c for c in result["footer"]["contents"] if c.get("type") == "button"]
+        uri_btn = next((b for b in footer_btns if b.get("action", {}).get("type") == "uri"), None)
+        assert uri_btn is not None
+        assert uri_btn["action"]["uri"] == video
+
+    def test_invalid_urls_omitted(self):
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "photo_url": "http://insecure.example/x.jpg", "video_url": "not-a-url"},
+        )
+        assert "hero" not in result
+        assert not any(
+            c.get("action", {}).get("type") == "uri"
+            for c in result["footer"]["contents"]
+            if isinstance(c, dict)
+        )
+
+
+class TestFlexSafeHttpsUrl:
+    def test_accepts_https(self):
+        u = "https://example.com/path?x=1"
+        assert _flex_safe_https_url(u) == u
+
+    def test_rejects_http(self):
+        assert _flex_safe_https_url("http://example.com/x") is None
+
+    def test_rejects_empty(self):
+        assert _flex_safe_https_url("") is None
+        assert _flex_safe_https_url(None) is None

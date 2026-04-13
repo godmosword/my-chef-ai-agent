@@ -4,7 +4,7 @@ from __future__ import annotations
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
 from app.config import ROLE_COLORS, LINE_TEXT_MAX
-from app.helpers import _safe_str, _parse_to_list
+from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
 
 
 # ─── Cuisine carousel data ──────────────────────────────────────────────────────
@@ -130,8 +130,15 @@ def get_main_menu_flex() -> FlexMessage:
 def generate_flex_message(
     kitchen_talk, theme, recipe_name, ingredients, steps, shopping_list, estimated_total_cost,
     recipe_name_for_postback: str | None = None,
+    *,
+    photo_url: str | None = None,
+    video_url: str | None = None,
 ) -> dict:
-    """Build a recipe Flex Message bubble dict."""
+    """Build a recipe Flex Message bubble dict.
+
+    ``photo_url`` / ``video_url`` should already be validated https URLs (see ``_flex_safe_https_url``).
+    LINE Flex 不支援 bubble 內嵌影片播放器；影片以 footer 的 URI 按鈕開啟外部連結。
+    """
     talk_components = []
     for talk in _parse_to_list(kitchen_talk):
         role = "團隊"
@@ -180,7 +187,10 @@ def generate_flex_message(
         if recipe_name_for_postback else {"type": "message", "label": "❤️ 收藏食譜", "text": "這套食譜很棒"}
     )
 
-    return {
+    safe_photo = _flex_safe_https_url(photo_url) if photo_url else None
+    safe_video = _flex_safe_https_url(video_url) if video_url else None
+
+    bubble: dict = {
         "type": "bubble", "size": "giga",
         "body": {
             "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
@@ -233,6 +243,34 @@ def generate_flex_message(
             ],
         },
     }
+
+    if safe_photo:
+        bubble["hero"] = {
+            "type": "image",
+            "url": safe_photo,
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover",
+        }
+
+    footer_contents = bubble["footer"]["contents"]
+    if safe_video:
+        footer_contents.insert(
+            0,
+            {
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "color": "#1E40AF",
+                "action": {
+                    "type": "uri",
+                    "label": "▶ 教學影片",
+                    "uri": safe_video,
+                },
+            },
+        )
+
+    return bubble
 
 
 # ─── Favorites carousel ─────────────────────────────────────────────────────────

@@ -45,6 +45,7 @@ from app.helpers import (
     _build_scenario_instructions,
     _build_system_prompt,
     _condense_assistant_message,
+    _flex_safe_https_url,
     _parse_to_list,
     _safe_str,
 )
@@ -333,6 +334,8 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
             g("ingredients", []), g("steps", []), g("shopping_list", []),
             g("estimated_total_cost", ""),
             recipe_name_for_postback=recipe_name,
+            photo_url=_flex_safe_https_url(g("photo_url", "")),
+            video_url=_flex_safe_https_url(g("video_url", "")),
         )
         msg = FlexMessage(alt_text=f"職人提案：{recipe_name}", contents=FlexContainer.from_dict(flex_dict))
 

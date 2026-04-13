@@ -101,7 +101,9 @@ SYSTEM_PROMPT = (
     '"theme":"主題","recipe_name":"菜名",'
     '"ingredients":[{"name":"食材","price":"NT$XX"}],'
     '"steps":["步驟"],"shopping_list":["區塊：品項"],'
-    '"estimated_total_cost":"數字"}'
+    '"estimated_total_cost":"數字",'
+    '"photo_url":"成品參考圖之完整https網址；若無可靠公開圖可填空字串",'
+    '"video_url":"教學或參考影片之完整https網址（YouTube等）；無則空字串。勿填非https"}'
 )
 
 ROLE_COLORS: dict[str, str] = {"行政主廚": "#9F1239", "副主廚": "#B45309", "食材總管": "#166534"}

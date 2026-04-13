@@ -11,7 +11,7 @@
 ## 功能總覽
 
 - **廚房角色扮演**：行政主廚、副主廚、食材總管三方討論後給出菜單  
-- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 全部以 JSON 回傳  
+- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost`，以及選填 **`photo_url`／`video_url`**（皆須 **https**；圖片顯示於食譜卡 hero，影片以外部連結按鈕「▶ 教學影片」開啟，因 LINE Flex 無內嵌播放器）全部以 JSON 回傳  
 - **多輪對話與情境**：
   - `🍳 隨機配菜`：隨機料理風格配菜
   - `🛒 檢視清單`：查看上一道菜的採買清單

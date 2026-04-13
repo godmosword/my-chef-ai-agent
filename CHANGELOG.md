@@ -1,5 +1,11 @@
 ## 變更紀錄
 
+### 2026-04-13（食譜 Flex：參考圖與教學影片連結）
+
+- **AI JSON**：`SYSTEM_PROMPT` 新增選填欄位 `photo_url`、`video_url`（須為可公開存取之 **https**）。
+- **Flex**：`generate_flex_message` 若有有效 `photo_url` 則設 **hero 大圖**；若有有效 `video_url` 則在 footer 顯示 **「▶ 教學影片」** URI 按鈕（LINE 不支援 bubble 內嵌影片播放器，僅能外開連結）。
+- **`_flex_safe_https_url`**（`helpers.py`）：過濾非 https 或過長 URL，避免 LINE API 拒絕。
+
 ### 2026-04-12（Render Postgres 直連與文件）
 
 - **資料層**

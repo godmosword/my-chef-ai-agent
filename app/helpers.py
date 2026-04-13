@@ -6,6 +6,7 @@ import base64
 import hashlib
 import hmac
 import json
+from urllib.parse import urlparse
 
 from app.config import LINE_CHANNEL_SECRET
 
@@ -124,6 +125,22 @@ def _filter_history_after_context(history: list, context_updated_at: str | None)
 
 
 # ─── Signature ──────────────────────────────────────────────────────────────────
+
+def _flex_safe_https_url(raw: object, *, max_len: int = 2000) -> str | None:
+    """
+    LINE Flex hero image / URI button 僅接受可公開存取的 https URL。
+    若格式不符或過長則回傳 None（略過顯示，避免 API 錯誤）。
+    """
+    s = str(raw or "").strip()
+    if not s or s in ("-", "null", "None"):
+        return None
+    if len(s) > max_len:
+        return None
+    parsed = urlparse(s)
+    if parsed.scheme != "https" or not parsed.netloc:
+        return None
+    return s
+
 
 def _validate_signature(body: bytes, signature: str) -> None:
     if not LINE_CHANNEL_SECRET or not signature:
