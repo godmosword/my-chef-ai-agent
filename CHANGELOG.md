@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-04-13（圖文選單資產與預覽）
+
+- **圖文選單底圖**：`richmenu.jpg` 更新為米其林風六格設計（金橫幅／米白格線條圖示、**2500×1686**、小於 **1 MB** 以符合 LINE 上限）。
+- **`scripts/render_richmenu_michelin.py`**：可選，程式產出同尺寸亮色底圖，並自動挑選可完整顯示繁中的系統字型；若改由設計稿出圖，可直接覆蓋 `richmenu.jpg` 後上傳。
+- **`docs/preview_richmenu.html`**：本機以瀏覽器疊上 `richmenu_config.json` 熱區，預覽點擊區是否對齊底圖。
+- **提醒**：`git push` 與 Render 部署**不會**更新 LINE 上的圖文選單；變更圖檔或 JSON 後須執行 **`python3 setup_richmenu.py`**。
+
+---
+
 ## 文件與協作流程
 
 - **`CONTRIBUTING.md`**：貢獻方式、測試指令，以及 plan／里程碑收尾時必同步更新 **`TODOS.md`**、**`CHANGELOG.md`**、**`README.md`**（詳見 **`AGENTS.md`**）。

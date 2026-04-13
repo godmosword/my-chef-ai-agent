@@ -167,6 +167,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 完整規格、bounds 對照、參考連結與 413 排查請見 **[`docs/RICH_MENU.md`](docs/RICH_MENU.md)**。
 
 - Rich Menu 資產：[`richmenu.jpg`](richmenu.jpg)（或 `richmenu.png`，須 **≤1 MB** 以符合 LINE 上限）+ [`richmenu_config.json`](richmenu_config.json)  
+- **本機預覽熱區**：開啟 [`docs/preview_richmenu.html`](docs/preview_richmenu.html)（疊上 `richmenu_config.json` 的 bounds，確認與底圖對齊）。  
+- **可選程式出圖**：[`scripts/render_richmenu_michelin.py`](scripts/render_richmenu_michelin.py) 可產出 2500×1686 的亮色米其林風底圖（需 `Pillow`，見 `requirements-dev.txt`）；設計稿亦可直接匯出／覆蓋 `richmenu.jpg`。  
 - 重新部署到 LINE：
 
 ```bash
@@ -176,7 +178,7 @@ python3 setup_richmenu.py
 - 若你使用不同路徑或多環境檔名，可設：
   - `RICHMENU_IMAGE_PATH`
   - `RICHMENU_CONFIG_PATH`
-- 圖或 config 只要有改，都要重新執行一次上傳腳本才會生效。
+- 圖或 config 只要有改，都要重新執行一次上傳腳本才會生效。**僅 `git push` 不會更新 LINE 上的圖文選單。**
 
 ---
 
@@ -213,6 +215,8 @@ my-chef-ai-agent/
 ├── TODOS.md                # 工程／產品 backlog（TODO.md 轉址至此）
 ├── AGENTS.md
 ├── .cursor/rules/          # Cursor：plan 收尾同步文件提醒
+├── scripts/
+│   └── render_richmenu_michelin.py  # 可選：程式產出 richmenu.jpg（Pillow）
 ├── setup_richmenu.py
 ├── richmenu_config.json
 ├── richmenu.jpg            # 圖文選單圖（預設；須 ≤1 MB）

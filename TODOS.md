@@ -6,6 +6,14 @@
 
 ---
 
+## 紀錄（非 backlog，供對齊進度）
+
+| 日期 | 摘要 |
+|------|------|
+| 2026-04-13 | 圖文選單：`richmenu.jpg` 換版、`docs/preview_richmenu.html` 熱區預覽、可選 `scripts/render_richmenu_michelin.py`；README／CHANGELOG 已同步。LINE 端仍須自行執行 `python3 setup_richmenu.py`。 |
+
+---
+
 ## 一、平台與後端
 
 ### 建議優先
