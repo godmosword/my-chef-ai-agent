@@ -1,0 +1,41 @@
+"""Tests for /ready and HTTP rate limiting."""
+from __future__ import annotations
+
+import os
+
+import pytest
+from fastapi.testclient import TestClient
+
+os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
+os.environ.setdefault("LINE_CHANNEL_SECRET", "test_secret")
+os.environ.setdefault("GEMINI_API_KEY", "test_key")
+
+from app.clients import app  # noqa: E402
+
+
+def test_ready_ok_when_no_database_configured(monkeypatch):
+    """Isolate from developer .env that may set DATABASE_URL or Supabase."""
+    monkeypatch.setattr("app.routes.DATABASE_URL", None)
+    monkeypatch.setattr("app.routes.supabase", None)
+    monkeypatch.setattr("app.db.DATABASE_URL", None)
+    monkeypatch.setattr("app.clients.supabase", None)
+
+    client = TestClient(app)
+    r = client.get("/ready")
+    assert r.status_code == 200
+    body = r.json()
+    assert body.get("ready") is True
+    assert body.get("checks", {}).get("database") == "skipped_not_configured"
+
+
+def test_public_rate_limit_returns_429(monkeypatch):
+    from app import rate_limit
+
+    rate_limit._timestamps.clear()
+    monkeypatch.setattr("app.rate_limit.RATE_LIMIT_PUBLIC_PER_MINUTE", 2)
+    client = TestClient(app)
+    for i in range(2):
+        r = client.get("/legal/disclaimer")
+        assert r.status_code == 200, f"iteration {i}"
+    r = client.get("/legal/disclaimer")
+    assert r.status_code == 429

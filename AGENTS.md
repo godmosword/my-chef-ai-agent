@@ -18,9 +18,11 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
   python3 -m uvicorn main:app --reload --port 8000
 ```
 
-Health check: `GET /` returns `{"status":"ok","message":"..."}`.
+Health check: `GET /` returns `{"status":"ok","message":"..."}` (liveness，不檢查外部依賴)。
 
-Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
+Readiness: `GET /ready` 在已設定 `DATABASE_URL` 或 Supabase 時會做輕量 DB ping；失敗回 **503**（見 `docs/SCHEMA_MIGRATIONS.md`）。
+
+Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header). 對外 `POST /callback`、`GET /billing/checkout`、`GET /legal/*` 有每 IP 每分鐘速率限制（`RATE_LIMIT_*`，0 關閉）。
 
 ### Running tests
 
@@ -28,7 +30,7 @@ Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
 python3 -m pytest tests/ -v
 ```
 
-目前：`python3 -m pytest tests/ -v` 通過 **51/51**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
+目前：`python3 -m pytest tests/ -v` 通過 **55/55**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
@@ -78,3 +80,4 @@ The webhook will return `"OK"`. A **queue worker** will call Gemini AI and gener
 - `IMAGE_PROVIDER=vertex_imagen` 時需可用 GCP 憑證（`VERTEX_SERVICE_ACCOUNT_JSON` 或 `GOOGLE_APPLICATION_CREDENTIALS` / ADC）；缺失時會回退佔位圖。
 - The `pytest` binary may not be on PATH; use `python3 -m pytest` instead.
 - When killing the dev server, also kill child processes (reloader + server worker). Use `lsof -ti:8000` to find all PIDs on the port.
+- AI `chat.completions` 對 **429／逾時／連線錯誤** 會在 `app/ai_service.py` 內做指數退避重試（`AI_TRANSPORT_MAX_RETRIES` 等），並寫入 metrics：`ai.completion.errors.rate_limit_total`、`timeout_total`、`connection_total`。

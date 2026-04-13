@@ -11,10 +11,48 @@ from psycopg.rows import dict_row
 
 from app.config import DATABASE_URL, REQUIRE_ATOMIC_USAGE, logger
 from app.clients import supabase
+from app.observability import incr
 
 
 def _db_active() -> bool:
     return bool(DATABASE_URL) or bool(supabase)
+
+
+def is_database_configured() -> bool:
+    """True when DATABASE_URL or Supabase client is configured (persistence available)."""
+    return _db_active()
+
+
+def _pg_ping() -> bool:
+    assert DATABASE_URL
+    with psycopg.connect(DATABASE_URL, connect_timeout=3, autocommit=True) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+    return True
+
+
+def _sb_ping() -> bool:
+    if not supabase:
+        return False
+    supabase.table("user_memory").select("user_id").limit(1).execute()
+    return True
+
+
+async def ping_database() -> bool:
+    """
+    Return True if no DB is configured, or if a lightweight read succeeds.
+    Used by GET /ready; failures mean Postgres/Supabase is unreachable or misconfigured.
+    """
+    if not _db_active():
+        return True
+    try:
+        if DATABASE_URL:
+            return await asyncio.to_thread(_pg_ping)
+        return await asyncio.to_thread(_sb_ping)
+    except Exception as exc:
+        logger.warning("Database ping failed: %s", exc)
+        return False
 
 
 def _delete_user_data_postgres(user_id: str) -> None:
@@ -271,6 +309,7 @@ def safe_db(fallback=None):
                 return await asyncio.to_thread(sync_fn, *args, **kwargs)
             except Exception as exc:
                 logger.warning("DB %s failed: %s", sync_fn.__name__, exc)
+                incr(f"db.ops.errors.{sync_fn.__name__}_total")
                 return fallback
         return wrapped
     return deco

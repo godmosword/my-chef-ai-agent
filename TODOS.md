@@ -8,14 +8,14 @@
 
 ### 高優先
 
-- [ ] **Gemini／OpenRouter 429 與配額**：統一退避與重試策略，並在 metrics 區分 `429` 與逾時。
-- [ ] **Readiness**：可選 `GET /ready` 或擴充 health，串接 Supabase ping／AI provider smoke（失敗時是否仍允許 liveness 需定案）。
-- [ ] **Per-user / IP rate limit**：Webhook 與公開端點（`checkout`、`legal`）防濫用。
+- [x] **Gemini／OpenRouter 429 與配額**：`chat.completions` 對 429／`APITimeoutError`／`APIConnectionError` 指數退避（`AI_TRANSPORT_*`）；metrics：`ai.completion.errors.rate_limit_total`、`timeout_total`、`connection_total`。
+- [x] **Readiness**：`GET /ready` 在有設定 DB 時做輕量 ping，失敗 503；liveness 仍為 `GET /`（不做 AI smoke）。
+- [x] **Per-IP rate limit**：`POST /callback`、`GET /billing/checkout`、`GET /legal/*` 每 IP 每分鐘上限（`RATE_LIMIT_*`）；per-user webhook 節流仍見下方「速率限制」。
 
 ### 中優先
 
 - [ ] **核心表多租戶**：`user_memory` 等表若需真正 tenant 隔離，補 migration + 讀寫帶 `tenant_id`（現行刪除流程已依 tenant 清用量表）。
-- [ ] **金流**：`BILLING_PROVIDER` 僅識別與連結模板，實際付款回寫訂閱需接各 PSP webhook。
+- [ ] **金流**（可緩）：`BILLING_PROVIDER` 僅識別與連結模板，實際付款回寫訂閱需接各 PSP webhook。
 
 ### 低優先
 
@@ -26,8 +26,8 @@
 
 ## 高優先（影響正確性或使用者體驗）
 
-- [ ] **收藏／記憶錯誤分流**：區分「未設定資料庫」與「DB 連線／schema 錯誤」，回覆與 log 更精準（目前多數失敗共用簡短訊息）。
-- [ ] **遷移與 schema 版本**：若 DDL 變更，提供單一 migration 策略（例如 `schema_migrations` 表或文件化手動步驟），避免 Render Postgres 與 Supabase 雙軌漂移。
+- [x] **收藏／記憶錯誤分流**：收藏 postback 已區分「未設定資料庫」與「已設定但寫入失敗」；DB 例外於 `safe_db` 計 `db.ops.errors.<fn>_total`。
+- [x] **遷移與 schema 版本**：已補 `docs/SCHEMA_MIGRATIONS.md`（單一來源、雙軌注意、與 `/ready` 關係）。
 
 ---
 
@@ -36,7 +36,7 @@
 - [x] **Vertex AI + Imagen 食譜主圖**：程式已支援 `IMAGE_PROVIDER=vertex_imagen`（`app/ai_service.py`）、`VERTEX_*`／`GCP_PROJECT_ID`、SA JSON 或 ADC；同菜名可設 `IMAGE_CACHE_TTL_SEC`（預設 300，0 關閉）做 in-memory 去重。**營運側**仍須在 GCP 啟用 Vertex／Imagen 並配置憑證；跨 instance／CDN 快取見後續。
 - [ ] **整合測試**：以 testcontainers 或 CI 內嵌 Postgres 驗證 `DATABASE_URL` 路徑（目前單元測試以無 DB 為主）。
 - [ ] **handlers 拆分**：`process_ai_reply` 較長，可抽「指令路由」與「AI 回覆」兩層，降低合併衝突。
-- [ ] **設定載入**：文件化「import 時即讀 env」的限制，或評估延遲初始化 clients（需權衡首次請求延遲與測試複雜度）。
+- [ ] **設定載入**：延遲初始化 clients 仍待評估；「import 時即讀 env」見 `AGENTS.md` Gotchas。
 
 ---
 
@@ -60,7 +60,7 @@
 ## 低優先（產品或工程優化）
 
 - [ ] **偏好寫入**：若產品需要使用者編輯 `user_preferences`，補 UI 或指令與 API（目前以讀取為主）。
-- [ ] **速率限制**：webhook 層對單一 `userId` 簡單節流，降低濫用與 AI 成本。
+- [ ] **速率限制（per userId）**：webhook 佇列前對單一 LINE `userId` 簡單節流（目前僅 per-IP）；可降低濫用與 AI 成本。
 - [ ] **可觀測性**：結構化 log（request id、user id hash）與可選 OpenTelemetry，便於 Render 上除錯。
 
 ---

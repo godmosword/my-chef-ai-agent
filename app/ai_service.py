@@ -3,13 +3,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import time
 import urllib.parse
+
 import httpx
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 
 from app.config import (
     AI_MAX_RETRIES,
     AI_RETRY_EXTRA_PROMPT,
+    AI_TRANSPORT_BASE_DELAY_SEC,
+    AI_TRANSPORT_MAX_RETRIES,
     DEBUG_MODE,
     GCP_PROJECT_ID,
     IMAGE_CACHE_TTL_SEC,
@@ -36,6 +41,50 @@ from app.helpers import (
     _parse_ai_json,
 )
 from app.observability import incr
+
+
+async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
+    """
+    chat.completions.create with exponential backoff on 429, timeouts, and connection errors.
+    JSON / business errors are not retried here (handled by call_ai_with_retry).
+    """
+    max_tries = 1 + max(0, AI_TRANSPORT_MAX_RETRIES)
+    delay = AI_TRANSPORT_BASE_DELAY_SEC
+    last_exc: BaseException | None = None
+
+    for attempt in range(max_tries):
+        try:
+            return await ai_client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+        except RateLimitError as exc:
+            last_exc = exc
+            incr("ai.completion.errors.rate_limit_total")
+            logger.warning(
+                "AI rate limited user=%s attempt=%d/%d: %s",
+                user_id, attempt + 1, max_tries, exc,
+            )
+        except APITimeoutError as exc:
+            last_exc = exc
+            incr("ai.completion.errors.timeout_total")
+            logger.warning(
+                "AI timeout user=%s attempt=%d/%d: %s",
+                user_id, attempt + 1, max_tries, exc,
+            )
+        except APIConnectionError as exc:
+            last_exc = exc
+            incr("ai.completion.errors.connection_total")
+            logger.warning(
+                "AI connection error user=%s attempt=%d/%d: %s",
+                user_id, attempt + 1, max_tries, exc,
+            )
+
+        if attempt + 1 >= max_tries:
+            break
+        jitter = random.uniform(0.0, 0.25)
+        await asyncio.sleep(min(8.0, delay) + jitter)
+        delay = min(8.0, delay * 2)
+
+    assert last_exc is not None
+    raise last_exc
 
 _VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 _vertex_credentials = None
@@ -351,7 +400,8 @@ async def call_ai_with_retry(
             logger.info("AI retry %d/%d for user %s", attempt, max_retries, user_id)
 
         t0 = time.perf_counter()
-        response = await ai_client.chat.completions.create(
+        response = await _chat_completions_create_resilient(
+            user_id=user_id,
             model=AI_MODEL_FOR_CALL,
             messages=messages,
             temperature=0.3,
@@ -440,7 +490,8 @@ async def identify_ingredients_from_image(image_bytes: bytes) -> str:
         }
     ]
 
-    response = await ai_client.chat.completions.create(
+    response = await _chat_completions_create_resilient(
+        user_id="vision",
         model=AI_MODEL_FOR_CALL,
         messages=messages,
         temperature=0.2,

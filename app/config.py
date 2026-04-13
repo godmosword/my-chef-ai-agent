@@ -62,6 +62,12 @@ VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
 # 食譜主圖 URL in-memory 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
 IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "300")))
+# AI chat.completions 遇 429／逾時／連線錯誤時的額外重試次數（不含第一次請求）
+AI_TRANSPORT_MAX_RETRIES = max(0, int(os.getenv("AI_TRANSPORT_MAX_RETRIES", "3")))
+AI_TRANSPORT_BASE_DELAY_SEC = max(0.05, float(os.getenv("AI_TRANSPORT_BASE_DELAY_SEC", "0.5")))
+# 每 IP 每分鐘請求上限；0 關閉該類型限制
+RATE_LIMIT_CALLBACK_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_CALLBACK_PER_MINUTE", "120")))
+RATE_LIMIT_PUBLIC_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_PUBLIC_PER_MINUTE", "90")))
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
@@ -125,7 +131,7 @@ CUISINE_LABELS: dict[str, str] = {
 
 # ─── AI retry configuration ────────────────────────────────────────────────────
 
-AI_MAX_RETRIES = 1          # Number of retries on JSON parse failure
+AI_MAX_RETRIES = 1          # Number of retries on JSON parse failure (malformed JSON only)
 AI_RETRY_EXTRA_PROMPT = "請務必只回傳純JSON，不要加任何markdown或解釋文字。"
 
 PLAN_DAILY_LIMITS = {

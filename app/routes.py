@@ -3,16 +3,25 @@ from __future__ import annotations
 
 import json
 
-from fastapi import Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.config import ADMIN_API_TOKEN, DEFAULT_TENANT_ID, MAX_WEBHOOK_BODY, METRICS_TOKEN, logger
-from app.clients import app, AI_MODEL_FOR_CALL
-from app.db import get_daily_usage, get_user_subscription, set_user_subscription
+from app.config import (
+    ADMIN_API_TOKEN,
+    DATABASE_URL,
+    DEFAULT_TENANT_ID,
+    MAX_WEBHOOK_BODY,
+    METRICS_TOKEN,
+    logger,
+)
+from app.clients import AI_MODEL_FOR_CALL, app, supabase
+from app.db import get_daily_usage, get_user_subscription, ping_database, set_user_subscription
 from app.models import WebhookMessageEvent, WebhookPostbackEvent, WebhookImageEvent
 from app.helpers import _validate_signature
 from app.job_queue import QueueJob, enqueue_job
 from app.observability import incr, new_request_id, reset_request_id, set_request_id, snapshot
+from app.rate_limit import enforce_callback_rate_limit, enforce_public_rate_limit
 from app.subscriptions import build_checkout_url
 
 from linebot.v3.exceptions import InvalidSignatureError
@@ -56,10 +65,30 @@ async def health_check():
     }
 
 
+@app.get("/ready")
+async def readiness():
+    """
+    Readiness: when a database is configured, require a successful lightweight query.
+    Liveness remains GET / (no dependency checks). AI smoke is intentionally omitted.
+    """
+    ok_db = await ping_database()
+    if not DATABASE_URL and supabase is None:
+        checks = {"database": "skipped_not_configured"}
+        return {"ready": True, "checks": checks}
+    checks = {"database": "ok" if ok_db else "error"}
+    if not ok_db:
+        return JSONResponse(
+            status_code=503,
+            content={"ready": False, "checks": checks},
+        )
+    return {"ready": True, "checks": checks}
+
+
 @app.post("/callback")
 async def callback(
     request: Request,
     x_line_signature: str | None = Header(None, alias="X-Line-Signature"),
+    _rate_limit: None = Depends(enforce_callback_rate_limit),
 ):
     tenant_id = request.headers.get("X-Tenant-ID") or DEFAULT_TENANT_ID
     body = await request.body()
@@ -186,6 +215,7 @@ async def checkout(
     user_id: str,
     plan_key: str = "pro",
     tenant_id: str = DEFAULT_TENANT_ID,
+    _rate_limit: None = Depends(enforce_public_rate_limit),
 ):
     return {
         "checkout_url": build_checkout_url(user_id=user_id, tenant_id=tenant_id, plan_key=plan_key),
@@ -195,14 +225,14 @@ async def checkout(
 
 
 @app.get("/legal/disclaimer")
-async def legal_disclaimer():
+async def legal_disclaimer(_rate_limit: None = Depends(enforce_public_rate_limit)):
     return {
         "message": "本服務提供 AI 食譜建議，僅供參考；請自行評估過敏原、飲食限制與食品安全條件。",
     }
 
 
 @app.get("/legal/privacy")
-async def legal_privacy():
+async def legal_privacy(_rate_limit: None = Depends(enforce_public_rate_limit)):
     return {
         "data_collected": ["對話內容", "圖片訊息（若上傳）", "收藏食譜", "用量與訂閱狀態"],
         "retention": "依營運需求保存，使用者可透過「刪除我的資料」提出刪除要求。",

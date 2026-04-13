@@ -37,6 +37,7 @@ from app.db import (
     delete_user_data,
     delete_favorite_recipe,
     get_favorite_recipes,
+    is_database_configured,
     save_favorite_recipe,
     save_user_memory,
     update_user_cuisine_context,
@@ -441,7 +442,18 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
     if data.startswith("save_recipe:"):
         recipe_name = _safe_str(data[len("save_recipe:"):].strip(), "美味食譜", max_len=200)
         recipe_data = await _get_last_recipe_json(event.user_id) or {"recipe_name": recipe_name}
-        if await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
+        if not is_database_configured():
+            await _reply_line(
+                event.reply_token,
+                TextMessage(
+                    text=(
+                        "👨‍🍳 尚未連結資料庫，無法收藏食譜。\n"
+                        "請管理員在部署環境設定 **DATABASE_URL**（Render Postgres）或 **Supabase**。"
+                    )
+                ),
+                user_id=event.user_id,
+            )
+        elif await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
             await _reply_line(
                 event.reply_token,
                 TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"),
@@ -451,7 +463,10 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             await _reply_line(
                 event.reply_token,
                 TextMessage(
-                    text="👨‍🍳 收藏失敗，請稍後再試，或確認已設定 DATABASE_URL（Render Postgres）或 Supabase。"
+                    text=(
+                        "👨‍🍳 收藏寫入失敗（資料庫連線或表格異常）。\n"
+                        "請稍後再試；若持續發生，請管理員檢查 Postgres／Supabase 連線與 migration。"
+                    )
                 ),
                 user_id=event.user_id,
             )
@@ -476,10 +491,20 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             recipe_id = int(recipe_id_str)
         except ValueError:
             recipe_id = 0
-        if recipe_id and await delete_favorite_recipe(event.user_id, recipe_id):
+        if not is_database_configured():
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 尚未連結資料庫，無法變更收藏。請管理員設定 DATABASE_URL 或 Supabase。"),
+                user_id=event.user_id,
+            )
+        elif recipe_id and await delete_favorite_recipe(event.user_id, recipe_id):
             await _reply_line(event.reply_token, TextMessage(text="🗑️ 已從收藏中移除！"), user_id=event.user_id)
         else:
-            await _reply_line(event.reply_token, TextMessage(text="👨‍🍳 刪除失敗，請稍後再試。"), user_id=event.user_id)
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 刪除失敗（連線或資料異常），請稍後再試。"),
+                user_id=event.user_id,
+            )
         return
 
     # ── Change cuisine ──
