@@ -37,7 +37,6 @@ from app.db import (
     get_user_preferences,
 )
 from app.helpers import (
-    _default_recipe_hero_url,
     _extract_json,
     _filter_history_after_context,
     _parse_ai_json,
@@ -96,9 +95,9 @@ _recipe_image_url_cache: dict[str, tuple[str, float]] = {}
 _recipe_image_cache_lock = asyncio.Lock()
 
 
-def _recipe_placeholder_image_url(recipe_name: str) -> str:
-    """LINE 常無法載入 placehold.co；與 Flex 後備一致改用 picsum。"""
-    return _default_recipe_hero_url(recipe_name, "")
+def _recipe_placeholder_image_url(_recipe_name: str) -> str:
+    """無真實食譜圖時回傳空字串；Flex 改以文字區塊示意，避免隨機圖與菜名無關。"""
+    return ""
 
 
 def _gs_to_https_url(gs_uri: str) -> str | None:

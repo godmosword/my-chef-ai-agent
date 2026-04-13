@@ -20,7 +20,7 @@ from main import (
     clear_user_memory,
 )
 from app.flex_messages import build_fallback_recipe_flex
-from app.helpers import _default_recipe_hero_url, _flex_safe_https_url
+from app.helpers import _flex_safe_https_url
 
 
 # ─── _safe_str ───────────────────────────────────────────────────────────────────
@@ -189,23 +189,24 @@ class TestGenerateFlexMessage:
         assert uri_btn is not None
         assert uri_btn["action"]["uri"] == video
 
-    def test_invalid_photo_falls_back_to_picsum_hero(self):
+    def test_invalid_photo_uses_text_banner_not_random_image(self):
         result = generate_flex_message(
             **{**self.SAMPLE_ARGS, "photo_url": "http://insecure.example/x.jpg", "video_url": "not-a-url"},
         )
-        assert result.get("hero", {}).get("type") == "image"
-        assert "picsum.photos/seed/" in result["hero"]["url"]
-        assert result["hero"]["url"] == _default_recipe_hero_url("番茄炒蛋", "台式家常")
+        assert "hero" not in result
+        first = result["body"]["contents"][0]
+        assert first["type"] == "box"
+        assert first.get("backgroundColor") == "#7C2D12"
         assert not any(
             c.get("action", {}).get("type") == "uri"
             for c in result["footer"]["contents"]
             if isinstance(c, dict)
         )
 
-    def test_always_has_hero_even_without_photo_kwarg(self):
+    def test_no_photo_kwarg_shows_text_banner_not_picsum(self):
         result = generate_flex_message(**self.SAMPLE_ARGS)
-        assert result["hero"]["type"] == "image"
-        assert result["hero"]["url"].startswith("https://picsum.photos/")
+        assert "hero" not in result
+        assert result["body"]["contents"][0]["type"] == "box"
 
 
 class TestBuildFallbackRecipeFlex:

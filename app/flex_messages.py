@@ -4,7 +4,7 @@ from __future__ import annotations
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
 from app.config import ROLE_COLORS, LINE_TEXT_MAX
-from app.helpers import _default_recipe_hero_url, _flex_safe_https_url, _safe_str, _parse_to_list
+from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
 
 
 # ─── Cuisine carousel data ──────────────────────────────────────────────────────
@@ -13,46 +13,79 @@ CUISINE_CAROUSEL_CARDS = [
     {
         "title": "🇹🇼 台灣小吃",
         "cuisine": "taiwanese",
-        "image_url": "https://picsum.photos/seed/cuisine-tw/800/520",
+        "hero_bg": "#EA580C",
         "description": "滷肉飯、蚵仔煎、牛肉麵、珍珠奶茶…道地台灣味，家常好上手。",
         "display_text": "已為您切換至台灣小吃情境！",
     },
     {
         "title": "🇹🇭 泰式料理",
         "cuisine": "thai",
-        "image_url": "https://picsum.photos/seed/cuisine-th/800/520",
+        "hero_bg": "#166534",
         "description": "酸辣開胃、香茅檸檬、打拋豬、綠咖哩，南洋風情一次滿足。",
         "display_text": "已為您切換至泰式料理情境！",
     },
     {
         "title": "🇯🇵 日式拉麵與定食",
         "cuisine": "japanese_ramen",
-        "image_url": "https://picsum.photos/seed/cuisine-jp/800/520",
+        "hero_bg": "#9F1239",
         "description": "拉麵、丼飯、定食、壽司，日式職人精神，在家也能重現。",
         "display_text": "已為您切換至日式拉麵與定食情境！",
     },
     {
         "title": "🇪🇺 歐美家常菜",
         "cuisine": "european_american",
-        "image_url": "https://picsum.photos/seed/cuisine-eu/800/520",
+        "hero_bg": "#1E40AF",
         "description": "義大利麵、牛排、燉飯、烤雞，西式經典輕鬆上桌。",
         "display_text": "已為您切換至歐美家常菜情境！",
     },
     {
         "title": "👶 兒童專屬特餐",
         "cuisine": "kids_meal",
-        "image_url": "https://picsum.photos/seed/cuisine-kids/800/520",
+        "hero_bg": "#F59E0B",
         "description": "溫和不辣、好咀嚼、營養均衡，專為小朋友設計的安心料理。",
         "display_text": "已為您切換至兒童專屬特餐情境！",
     },
 ]
 
 
+def _recipe_text_hero_block(recipe_name: str, theme: str) -> dict:
+    """無真實成品圖時使用：避免 picsum 等隨機圖與菜名無關造成誤導。"""
+    label = _safe_str(theme, "TODAY'S PICK", max_len=40).upper()
+    name = _safe_str(recipe_name, "本日料理", max_len=60)
+    return {
+        "type": "box",
+        "layout": "vertical",
+        "paddingAll": "xxl",
+        "backgroundColor": "#7C2D12",
+        "height": "200px",
+        "justifyContent": "center",
+        "alignItems": "center",
+        "contents": [
+            {"type": "text", "text": "🍽 今日提案", "size": "xs", "color": "#FED7AA", "weight": "bold"},
+            {"type": "text", "text": label, "size": "xxs", "color": "#FDBA74", "margin": "sm", "wrap": True, "align": "center"},
+            {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": "#FFFBEB", "wrap": True, "align": "center", "margin": "md"},
+            {"type": "text", "text": "（無成品照片時僅為示意區塊）", "size": "xxs", "color": "#FDBA74", "wrap": True, "align": "center"},
+        ],
+    }
+
+
 def _build_cuisine_selector() -> FlexMessage:
     bubbles = [
         {
             "type": "bubble",
-            "hero": {"type": "image", "url": c["image_url"], "size": "full", "aspectRatio": "20:13", "aspectMode": "cover"},
+            "hero": {
+                "type": "box",
+                "layout": "vertical",
+                "paddingAll": "xxl",
+                "backgroundColor": c["hero_bg"],
+                "height": "200px",
+                "justifyContent": "center",
+                "alignItems": "center",
+                "contents": [
+                    {"type": "text", "text": "菜系情境", "size": "xs", "color": "#FFFBEB", "weight": "bold"},
+                    {"type": "text", "text": c["title"], "size": "xl", "weight": "bold", "color": "#FFFFFF", "wrap": True, "align": "center", "margin": "md"},
+                ],
+            },
             "body": {"type": "box", "layout": "vertical", "contents": [
                 {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": "#1F2937"},
                 {"type": "text", "text": c["description"], "size": "sm", "color": "#6B7280", "wrap": True, "margin": "md"},
@@ -189,9 +222,6 @@ def generate_flex_message(
     )
 
     safe_photo = _flex_safe_https_url(photo_url) if photo_url else None
-    if not safe_photo:
-        # 模型給的圖常 404／被 CDN 擋，LINE 會顯示整塊空白；一律提供可抓取的後備圖
-        safe_photo = _default_recipe_hero_url(recipe_name, theme)
     safe_video = _flex_safe_https_url(video_url) if video_url else None
 
     bubble: dict = {
@@ -199,6 +229,7 @@ def generate_flex_message(
         "body": {
             "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
             "contents": [
+                *([] if safe_photo else [_recipe_text_hero_block(recipe_name, theme)]),
                 {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": "#EA580C", "contents": []},
                 {"type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingBottom": "lg", "contents": [
                     {"type": "text", "text": _safe_str(theme, "RECOMMENDATION").upper(), "size": "xs", "color": "#D97706", "weight": "bold", "letterSpacing": "2px"},
@@ -248,13 +279,14 @@ def generate_flex_message(
         },
     }
 
-    bubble["hero"] = {
-        "type": "image",
-        "url": safe_photo,
-        "size": "full",
-        "aspectRatio": "20:13",
-        "aspectMode": "cover",
-    }
+    if safe_photo:
+        bubble["hero"] = {
+            "type": "image",
+            "url": safe_photo,
+            "size": "full",
+            "aspectRatio": "20:13",
+            "aspectMode": "cover",
+        }
 
     footer_contents = bubble["footer"]["contents"]
     if safe_video:

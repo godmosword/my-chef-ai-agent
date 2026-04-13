@@ -126,17 +126,6 @@ def _filter_history_after_context(history: list, context_updated_at: str | None)
 
 # ─── Signature ──────────────────────────────────────────────────────────────────
 
-def _default_recipe_hero_url(recipe_name: str, theme: str = "") -> str:
-    """
-    食譜卡 hero 後備圖。模型給的 photo_url 常失效或被 CDN 擋，導致 LINE 顯示空白。
-    使用 picsum 固定 seed（依菜名＋主題 hash），LINE 可穩定抓取之 https 圖。
-    """
-    seed_raw = f"{_safe_str(recipe_name, 'dish', max_len=80)}|{_safe_str(theme, '', max_len=40)}"
-    h = hashlib.sha256(seed_raw.encode("utf-8")).hexdigest()[:20]
-    seed = "".join(c if c.isalnum() else "x" for c in h)
-    return f"https://picsum.photos/seed/r{seed}/800/520"
-
-
 def _flex_safe_https_url(raw: object, *, max_len: int = 2000) -> str | None:
     """
     LINE Flex hero image / URI button 僅接受可公開存取的 https URL。

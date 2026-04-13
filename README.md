@@ -11,7 +11,7 @@
 ## 功能總覽
 
 - **廚房角色扮演**：行政主廚、副主廚、食材總管三方討論後給出菜單  
-- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 以 JSON 回傳；圖片與影片連結由後端多媒體流程補齊（不是 LLM 憑空產生）。食譜卡 hero 若仍無可用圖，會使用 **`picsum.photos` 後備圖**（依菜名＋主題 seed），避免 LINE 顯示空白；若有 `video_url` 則以 footer「▶ 教學影片」URI 外開。
+- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 以 JSON 回傳；圖片與影片連結由後端多媒體流程補齊（不是 LLM 憑空產生）。**若無有效成品圖 URL**（例如僅 `placeholder`、產圖失敗），食譜卡 **不顯示與菜名無關的隨機圖**，改為 **文字色塊標頭**；有 **Vertex Imagen／DALL·E 等** 回傳之 `https` 圖時才顯示 hero 大圖。`video_url` 若有則以 footer「▶ 教學影片」URI 外開。
 - **多輪對話與情境**：
   - `🍳 隨機配菜`：隨機料理風格配菜
   - `🛒 檢視清單`：查看上一道菜的採買清單

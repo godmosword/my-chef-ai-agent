@@ -1,5 +1,10 @@
 ## 變更紀錄
 
+### 2026-04-13（修正：食譜圖不與菜名矛盾）
+
+- 移除 **picsum** 作為食譜／佔位圖（隨機照片易與料理無關）。
+- 無真實 `https` 成品圖時，食譜卡頂部改為 **文字示意區**；菜系輪播改 **色塊 hero**。
+
 ### 2026-04-13（修復：食譜 JSON 截斷與 fallback 體驗）
 
 - **`MAX_COMPLETION_TOKENS`**：預設改為 **4096**（可用環境變數覆寫），降低長食譜 JSON 被 `finish_reason=length` 截斷的機率。
@@ -20,9 +25,9 @@
 
 ### 2026-04-13（食譜圖後備與按鈕配色）
 
-- **食譜卡 hero**：若仍無可用主圖（含後端產圖失敗），以 **`picsum.photos` 固定 seed**（依菜名＋主題）作為後備，避免 LINE 顯示整塊空白。
-- **`generate_recipe_image` 佔位**：`_recipe_placeholder_image_url` 由 `placehold.co` 改為 **`picsum.photos`**（與 Flex 後備同源），修正 LINE 無法載入佔位圖的問題。
-- **菜系輪播**：hero 圖由 `placehold.co` 改為 **picsum**（較易被 LINE 伺服器抓取）。
+- **食譜卡 hero**：僅在具備**有效 https 成品圖**（Vertex／DALL·E 等）時顯示；否則以 **文字色塊標頭** 取代，**不再使用 picsum／placehold 隨機圖**（避免與菜名無關誤導）。
+- **`generate_recipe_image` 佔位**：無真圖時回傳空字串，由 Flex 文字區塊承接。
+- **菜系輪播**：hero 改為 **色塊＋標題**（非隨機照片）。
 - **按鈕配色**：食譜 footer（重新構思／收藏／教學影片）與 **Flex 主選單**（`get_main_menu_flex`）改為赭紅＋青綠＋石板灰主題，對比更一致。
 
 ### 2026-04-13（食譜 Flex：參考圖與教學影片連結）
