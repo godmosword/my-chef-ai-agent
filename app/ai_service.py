@@ -29,7 +29,6 @@ from app.config import (
     VERTEX_IMAGEN_MODEL,
     VERTEX_IMAGEN_OUTPUT_GCS_URI,
     VERTEX_LOCATION,
-    VERTEX_SERVICE_ACCOUNT_JSON,
     YOUTUBE_API_KEY,
     logger,
 )
@@ -46,6 +45,7 @@ from app.helpers import (
     _parse_ai_json,
 )
 from app.observability import incr
+from app.recipe_hero_media import register_recipe_hero_png
 
 
 async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
@@ -91,9 +91,6 @@ async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
     assert last_exc is not None
     raise last_exc
 
-_VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
-_vertex_credentials = None
-_vertex_credentials_lock = asyncio.Lock()
 # Backward-compatible alias for tests that clear in-memory cache directly.
 _recipe_image_url_cache = _memory_cache
 
@@ -177,64 +174,15 @@ async def _resolve_public_image_url(raw_url: str) -> str | None:
     return _gs_to_https_url(raw_url)
 
 
-async def _get_vertex_access_token() -> str | None:
-    """Load and refresh Vertex credentials via service account JSON or ADC."""
-    global _vertex_credentials
-
-    async with _vertex_credentials_lock:
-        if _vertex_credentials is None:
-            try:
-                from google.auth import default as google_auth_default
-                from google.oauth2 import service_account
-            except Exception as exc:
-                logger.warning("google-auth is unavailable for Vertex: %s", exc)
-                return None
-
-            if VERTEX_SERVICE_ACCOUNT_JSON:
-                try:
-                    info = json.loads(VERTEX_SERVICE_ACCOUNT_JSON)
-                    _vertex_credentials = service_account.Credentials.from_service_account_info(
-                        info, scopes=[_VERTEX_SCOPE]
-                    )
-                except Exception as exc:
-                    logger.warning("Failed to load Vertex credentials from VERTEX_SERVICE_ACCOUNT_JSON: %s", exc)
-
-            if _vertex_credentials is None:
-                try:
-                    creds, _ = google_auth_default(scopes=[_VERTEX_SCOPE])
-                    _vertex_credentials = creds
-                except Exception as exc:
-                    logger.warning("Failed to load Vertex credentials from ADC: %s", exc)
-                    return None
-
-        try:
-            from google.auth.transport.requests import Request
-        except Exception as exc:
-            logger.warning("google-auth transport is unavailable for Vertex: %s", exc)
-            return None
-
-        def _refresh_token() -> str | None:
-            if not _vertex_credentials:
-                return None
-            if not _vertex_credentials.valid or _vertex_credentials.expired or not _vertex_credentials.token:
-                _vertex_credentials.refresh(Request())
-            return _vertex_credentials.token
-
-        try:
-            token = await asyncio.to_thread(_refresh_token)
-            return token if isinstance(token, str) and token else None
-        except Exception as exc:
-            logger.warning("Failed to refresh Vertex access token: %s", exc)
-            return None
-
-
-async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
-    """Generate recipe image using Vertex Imagen and return public HTTPS URL if available."""
+def vertex_imagen_generate_sync(recipe_name: str) -> str | bytes | None:
+    """Call Vertex Imagen via SDK (blocking). Returns ``https://`` URL, ``gs://`` URI, PNG bytes, or None."""
     if not GCP_PROJECT_ID:
         return None
-
-    token = await _get_vertex_access_token()
-    if not token:
+    try:
+        import vertexai
+        from vertexai.preview.vision_models import ImageGenerationModel
+    except Exception as exc:
+        logger.warning("vertex_imagen: SDK import failed: %s", exc)
         return None
 
     prompt = (
@@ -242,52 +190,70 @@ async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
         "dramatic top lighting, cinematic depth of field, dish: "
         f"{recipe_name}"
     )
-    endpoint = (
-        f"https://{VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/"
-        f"locations/{VERTEX_LOCATION}/publishers/google/models/{VERTEX_IMAGEN_MODEL}:predict"
-    )
+    try:
+        vertexai.init(project=GCP_PROJECT_ID, location=VERTEX_LOCATION)
+        model = ImageGenerationModel.from_pretrained(VERTEX_IMAGEN_MODEL)
+    except Exception as exc:
+        logger.warning("vertex_imagen: init/from_pretrained failed: %s", exc)
+        return None
 
-    params: dict[str, object] = {
-        "sampleCount": 1,
-        "aspectRatio": "4:3",
+    kwargs: dict = {
+        "prompt": prompt,
+        "number_of_images": 1,
+        "aspect_ratio": "4:3",
+        "add_watermark": True,
+        "safety_filter_level": "block_some",
+        "person_generation": "allow_adult",
     }
-    if VERTEX_IMAGEN_OUTPUT_GCS_URI:
-        params["storageUri"] = VERTEX_IMAGEN_OUTPUT_GCS_URI
-
-    payload = {
-        "instances": [{"prompt": prompt}],
-        "parameters": params,
-    }
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
+    if (VERTEX_IMAGEN_OUTPUT_GCS_URI or "").strip():
+        kwargs["output_gcs_uri"] = VERTEX_IMAGEN_OUTPUT_GCS_URI.strip()
 
     t0 = time.perf_counter()
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(endpoint, json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-        elapsed = time.perf_counter() - t0
-        incr("ai.images.vertex.latency_seconds_total", elapsed)
+        response = model.generate_images(**kwargs)
     except Exception as exc:
         elapsed = time.perf_counter() - t0
         incr("ai.images.vertex.latency_seconds_total", elapsed)
-        logger.warning("Vertex Imagen request failed for recipe %s: %s", recipe_name, exc)
+        logger.warning("vertex_imagen: generate_images failed for %s: %s", recipe_name, exc)
+        return None
+    elapsed = time.perf_counter() - t0
+    incr("ai.images.vertex.latency_seconds_total", elapsed)
+
+    if not getattr(response, "images", None):
+        return None
+    first = response.images[0]
+    gcs = getattr(first, "_gcs_uri", None)
+    if isinstance(gcs, str) and gcs.startswith("gs://"):
+        return gcs
+    loaded = getattr(first, "_loaded_bytes", None)
+    if isinstance(loaded, (bytes, bytearray)) and len(loaded) > 0:
+        return bytes(loaded)
+    return None
+
+
+async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
+    """Generate recipe image using Vertex Imagen SDK; return public https URL when possible."""
+    if not GCP_PROJECT_ID:
         return None
 
-    predictions = data.get("predictions") or []
-    if not predictions:
+    try:
+        raw = await asyncio.to_thread(vertex_imagen_generate_sync, recipe_name)
+    except Exception as exc:
+        logger.warning("vertex_imagen: worker thread failed for %s: %s", recipe_name, exc)
         return None
-    first = predictions[0] or {}
 
-    for key in ("imageUrl", "url", "uri", "gcsUri"):
-        value = first.get(key)
-        if isinstance(value, str):
-            resolved = await _resolve_public_image_url(value)
-            if resolved:
-                return resolved
+    if raw is None:
+        return None
+    if isinstance(raw, (bytes, bytearray)):
+        b = bytes(raw)
+        if not b:
+            return None
+        return await register_recipe_hero_png(b)
+    if isinstance(raw, str):
+        if raw.startswith("https://"):
+            return raw
+        if raw.startswith("gs://"):
+            return await _resolve_public_image_url(raw)
     return None
 
 

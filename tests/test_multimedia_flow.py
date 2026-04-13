@@ -5,12 +5,14 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from fastapi.testclient import TestClient
 
 os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
 os.environ.setdefault("LINE_CHANNEL_SECRET", "test_secret")
 os.environ.setdefault("GEMINI_API_KEY", "test_key")
 
-from app import ai_service, config, handlers  # noqa: E402
+from app import ai_service, config, handlers, recipe_hero_media  # noqa: E402
+from app.clients import app  # noqa: E402
 from app.billing import QuotaDecision  # noqa: E402
 from app.models import WebhookMessageEvent  # noqa: E402
 from app.models import WebhookPostbackEvent  # noqa: E402
@@ -110,6 +112,66 @@ async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatc
 async def test_generate_recipe_image_with_vertex_returns_none_without_project(monkeypatch):
     monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", None)
     assert await ai_service._generate_recipe_image_with_vertex("任意菜名") is None
+
+
+@pytest.mark.asyncio
+async def test_register_recipe_hero_png_roundtrip(monkeypatch):
+    monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://cdn.example.com")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+    png = b"\x89PNG\r\n\x1a\n" + b"x" * 8
+    url = await recipe_hero_media.register_recipe_hero_png(png)
+    assert url.startswith("https://cdn.example.com/media/recipe-hero/")
+    token = url.rsplit("/", 1)[-1]
+    data, status = await recipe_hero_media.get_recipe_hero_png(token)
+    assert status == 200
+    assert data == png
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+
+
+def test_media_recipe_hero_http_404():
+    client = TestClient(app)
+    assert client.get("/media/recipe-hero/not-a-real-token").status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_vertex_inline_bytes_uses_media_url(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
+    monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", "demo-proj")
+    monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://app.example.com")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+    monkeypatch.setattr(
+        ai_service,
+        "vertex_imagen_generate_sync",
+        lambda _name: b"\x89PNG\r\n\x1a\nfake",
+    )
+
+    url = await ai_service.generate_recipe_image("測試圖")
+    assert url.startswith("https://app.example.com/media/recipe-hero/")
+    client = TestClient(app)
+    token = url.rsplit("/", 1)[-1]
+    r = client.get(f"/media/recipe-hero/{token}")
+    assert r.status_code == 200
+    assert r.content.startswith(b"\x89PNG")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_vertex_bytes_falls_back_without_public_base(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
+    monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", "demo-proj")
+    monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+    monkeypatch.setattr(
+        ai_service,
+        "vertex_imagen_generate_sync",
+        lambda _name: b"\x89PNG\r\n\x1a\nonly-bytes",
+    )
+
+    url = await ai_service.generate_recipe_image("無公開網址")
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
 
 
 @pytest.mark.asyncio

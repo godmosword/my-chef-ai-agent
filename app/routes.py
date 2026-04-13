@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 from fastapi import Depends, Header, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from app.config import (
@@ -31,6 +31,7 @@ from app.observability import (
     snapshot,
 )
 from app.rate_limit import enforce_callback_rate_limit, enforce_public_rate_limit, enforce_user_rate_limit
+from app.recipe_hero_media import get_recipe_hero_png
 from app.subscriptions import build_checkout_url
 
 from linebot.v3.exceptions import InvalidSignatureError
@@ -83,6 +84,19 @@ async def health_check():
         "model": AI_MODEL_FOR_CALL,
         "message": "米其林職人大腦 (Gemini 3.1 Flash Lite 驅動中)",
     }
+
+
+@app.get("/media/recipe-hero/{token}")
+async def recipe_hero_image(
+    token: str,
+    _rate_limit: None = Depends(enforce_public_rate_limit),
+):
+    """公開短期 PNG（Vertex 無 GCS 時供 LINE Flex 主圖 https URL）。"""
+    data, status = await get_recipe_hero_png(token)
+    if status != 200 or not data:
+        raise HTTPException(status_code=404, detail="Not found")
+    incr("http.recipe_hero_media.served_total")
+    return Response(content=data, media_type="image/png")
 
 
 @app.get("/ready")

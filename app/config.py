@@ -67,7 +67,10 @@ load_dotenv()
 
 # ─── GCP Vertex AI 憑證處理 ──────────────────────────────────────────────────────
 # 若提供 GOOGLE_APPLICATION_CREDENTIALS_JSON，啟動時寫入暫存檔並設定
-# GOOGLE_APPLICATION_CREDENTIALS，供 google-auth／Vertex ADC 讀取。
+# GOOGLE_APPLICATION_CREDENTIALS，供 google-auth、Vertex SDK（google-cloud-aiplatform）
+# 與 ADC 讀取。
+# 另可設定 VERTEX_SERVICE_ACCOUNT_JSON（單行 JSON）；兩者皆無則依賴既有
+# GOOGLE_APPLICATION_CREDENTIALS 檔案路徑或執行環境 ADC。
 
 GCP_JSON_STR = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON") or "").strip()
 
