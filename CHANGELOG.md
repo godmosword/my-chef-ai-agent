@@ -1,5 +1,15 @@
 ## 變更紀錄
 
+### 2026-04-13（Vertex 主圖、快取、Readiness、節流與 AI 韌性）
+
+- **Vertex AI Imagen**：`IMAGE_PROVIDER=vertex_imagen` 時以 Vertex `predict` 產生食譜主圖；`GCP_PROJECT_ID`、`VERTEX_*`、SA JSON 或 ADC；失敗回佔位圖；metrics 與 `google-auth` 依賴（見 `README.md`／`AGENTS.md`）。
+- **食譜主圖快取**：`IMAGE_CACHE_TTL_SEC`（預設 300，0 關閉）對 `vertex_imagen`／`openai_compatible` 做 in-memory TTL；`ai.images.cache.hit_total`。
+- **Readiness**：`GET /ready` 在有設定 DB 時做輕量 ping，失敗 503；`docs/SCHEMA_MIGRATIONS.md` 說明 migration 與雙軌策略。
+- **Rate limit**：`POST /callback`、`GET /billing/checkout`、`GET /legal/*` 每 IP 每分鐘上限（`RATE_LIMIT_*`，0 關閉）；`http.rate_limit.blocked_total`。
+- **AI 傳輸重試**：`chat.completions` 遇 429／逾時／連線錯誤時指數退避（`AI_TRANSPORT_*`）；`ai.completion.errors.rate_limit_total`、`timeout_total`、`connection_total`。
+- **收藏錯誤分流**：未設定資料庫與寫入失敗分開提示；`safe_db` 例外時 `db.ops.errors.<函式>_total`。
+- **測試**：`tests/conftest.py`、`test_ready_and_rate_limit.py`、`test_ai_transport_retry.py` 等；全套件 **55** 則通過。
+
 ### 2026-04-13（食譜 Flex：參考圖與教學影片連結）
 
 - **AI JSON**：`SYSTEM_PROMPT` 新增選填欄位 `photo_url`、`video_url`（須為可公開存取之 **https**）。
