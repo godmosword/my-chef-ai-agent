@@ -12,6 +12,7 @@ from app.config import (
     AI_RETRY_EXTRA_PROMPT,
     DEBUG_MODE,
     GCP_PROJECT_ID,
+    IMAGE_CACHE_TTL_SEC,
     IMAGE_PROVIDER,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
@@ -39,6 +40,9 @@ from app.observability import incr
 _VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 _vertex_credentials = None
 _vertex_credentials_lock = asyncio.Lock()
+
+_recipe_image_url_cache: dict[str, tuple[str, float]] = {}
+_recipe_image_cache_lock = asyncio.Lock()
 
 
 def _recipe_placeholder_image_url(recipe_name: str) -> str:
@@ -173,23 +177,59 @@ async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
     return None
 
 
+def _recipe_image_cache_key(recipe_name: str) -> str:
+    return f"{IMAGE_PROVIDER}:{recipe_name.strip().casefold()}"
+
+
+async def _recipe_image_cache_get(key: str) -> str | None:
+    if IMAGE_CACHE_TTL_SEC <= 0:
+        return None
+    now = time.monotonic()
+    async with _recipe_image_cache_lock:
+        row = _recipe_image_url_cache.get(key)
+        if not row:
+            return None
+        url, exp = row
+        if exp <= now:
+            del _recipe_image_url_cache[key]
+            return None
+        incr("ai.images.cache.hit_total")
+        return url
+
+
+async def _recipe_image_cache_set(key: str, url: str) -> None:
+    if IMAGE_CACHE_TTL_SEC <= 0:
+        return
+    exp = time.monotonic() + float(IMAGE_CACHE_TTL_SEC)
+    async with _recipe_image_cache_lock:
+        _recipe_image_url_cache[key] = (url, exp)
+
+
 async def generate_recipe_image(recipe_name: str) -> str:
     """Generate a recipe image URL via provider selector, with safe fallback."""
     if IMAGE_PROVIDER == "placeholder":
         incr("ai.images.provider.placeholder_total")
         return _recipe_placeholder_image_url(recipe_name)
 
+    cache_key = _recipe_image_cache_key(recipe_name)
+    cached = await _recipe_image_cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     if IMAGE_PROVIDER == "vertex_imagen":
         try:
             url = await _generate_recipe_image_with_vertex(recipe_name)
             if isinstance(url, str) and url.startswith("https://"):
                 incr("ai.images.vertex.success_total")
+                await _recipe_image_cache_set(cache_key, url)
                 return url
             incr("ai.images.vertex.errors_total")
         except Exception as exc:
             logger.warning("Vertex image generation failed for recipe %s: %s", recipe_name, exc)
             incr("ai.images.vertex.errors_total")
-        return _recipe_placeholder_image_url(recipe_name)
+        out = _recipe_placeholder_image_url(recipe_name)
+        await _recipe_image_cache_set(cache_key, out)
+        return out
 
     if IMAGE_PROVIDER != "openai_compatible":
         logger.warning("Unknown IMAGE_PROVIDER=%s; fallback to placeholder", IMAGE_PROVIDER)
@@ -199,7 +239,9 @@ async def generate_recipe_image(recipe_name: str) -> str:
     # Gemini OpenAI-compatible chat endpoint does not support images API.
     if USE_GEMINI_DIRECT:
         incr("ai.images.skipped_gemini_direct_total")
-        return _recipe_placeholder_image_url(recipe_name)
+        out = _recipe_placeholder_image_url(recipe_name)
+        await _recipe_image_cache_set(cache_key, out)
+        return out
 
     prompt = (
         "Professional food photography, Michelin star plating, dark slate background, "
@@ -217,11 +259,14 @@ async def generate_recipe_image(recipe_name: str) -> str:
         image_url = (response.data[0].url if getattr(response, "data", None) else None) or ""
         if isinstance(image_url, str) and image_url.startswith("https://"):
             incr("ai.images.generated_total")
+            await _recipe_image_cache_set(cache_key, image_url)
             return image_url
     except Exception as exc:
         logger.warning("Image generation failed for recipe %s: %s", recipe_name, exc)
         incr("ai.images.errors_total")
-    return _recipe_placeholder_image_url(recipe_name)
+    out = _recipe_placeholder_image_url(recipe_name)
+    await _recipe_image_cache_set(cache_key, out)
+    return out
 
 
 async def search_youtube_video(recipe_name: str) -> str | None:

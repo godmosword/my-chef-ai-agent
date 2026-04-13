@@ -76,6 +76,20 @@ async def test_generate_recipe_image_uses_vertex_provider_when_configured(monkey
 
 
 @pytest.mark.asyncio
+async def test_generate_recipe_image_vertex_second_call_uses_cache(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
+    vertex_mock = AsyncMock(return_value="https://storage.googleapis.com/demo-bucket/food.png")
+    monkeypatch.setattr(ai_service, "_generate_recipe_image_with_vertex", vertex_mock)
+
+    name = "龍蝦燉飯"
+    u1 = await ai_service.generate_recipe_image(name)
+    u2 = await ai_service.generate_recipe_image(name)
+    assert u1 == u2 == "https://storage.googleapis.com/demo-bucket/food.png"
+    vertex_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatch):
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     monkeypatch.setattr(

@@ -33,7 +33,7 @@
 
 ## 中優先（品質與可維護性）
 
-- [ ] **Vertex AI + Imagen 食譜主圖**：在 GCP 建立專案並啟用 Vertex AI（Imagen text-to-image）；以服務帳號 JSON、ADC 或 Render／Cloud Run 的 Workload Identity 驗證；於 `app/ai_service.py` 的 `generate_recipe_image` 改接 Imagen API，取代目前 **Gemini 直連時的佔位圖**（OpenRouter 等非 Gemini 路由可保留或改走同一套 Vertex）。補環境變數範例（例：`GCP_PROJECT_ID`、`VERTEX_LOCATION`、`GOOGLE_APPLICATION_CREDENTIALS` 或等效）、`.env.example`／`AGENTS.md` 部署說明與配額／計費注意事項。
+- [x] **Vertex AI + Imagen 食譜主圖**：程式已支援 `IMAGE_PROVIDER=vertex_imagen`（`app/ai_service.py`）、`VERTEX_*`／`GCP_PROJECT_ID`、SA JSON 或 ADC；同菜名可設 `IMAGE_CACHE_TTL_SEC`（預設 300，0 關閉）做 in-memory 去重。**營運側**仍須在 GCP 啟用 Vertex／Imagen 並配置憑證；跨 instance／CDN 快取見後續。
 - [ ] **整合測試**：以 testcontainers 或 CI 內嵌 Postgres 驗證 `DATABASE_URL` 路徑（目前單元測試以無 DB 為主）。
 - [ ] **handlers 拆分**：`process_ai_reply` 較長，可抽「指令路由」與「AI 回覆」兩層，降低合併衝突。
 - [ ] **設定載入**：文件化「import 時即讀 env」的限制，或評估延遲初始化 clients（需權衡首次請求延遲與測試複雜度）。
@@ -42,7 +42,7 @@
 
 ## LINE 介面與 UX（Flex 食譜卡／Rich Menu）
 
-- [ ] **食譜參考圖與影片**：`photo_url` 已由後端生成（Gemini 直連為佔位圖；見 **Vertex AI + Imagen** 待辦）；`video_url` 由 YouTube Data API。若需自有 CDN 或簽名 URL，再補上傳與快取流程。
+- [ ] **食譜參考圖與影片**：`photo_url` 由後端依 `IMAGE_PROVIDER`（Vertex 或佔位圖／DALL·E）；`video_url` 由 YouTube Data API。若需自有 CDN 或簽名 URL、跨機快取，再補上傳與外部快取流程。
 - [ ] **食譜卡視覺層級**：確保菜名／主題在第一屏可見；總價區塊可降字級或移至 footer 旁，避免搶過菜名（見 `app/flex_messages.py` 食譜 bubble）。
 - [ ] **步驟區過長**：預設只顯示前 2～3 步 +「展開」postback，或請 AI 輸出較短句，減少單卡捲動長度。
 - [ ] **收藏按鈕樣式**：橘色主按鈕與「重新構思」secondary 對比可微調飽和度／邊框，全站統一主／次按鈕語意。

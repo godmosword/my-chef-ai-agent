@@ -42,7 +42,7 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 | LINE Messaging API | `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Dummy values work for server startup; real values needed for webhook replies |
 | Google Gemini AI | `GEMINI_API_KEY` | Required for AI recipe generation |
 | YouTube Data API | `YOUTUBE_API_KEY` | Optional; enables recipe tutorial video lookup |
-| Vertex AI Imagen | `IMAGE_PROVIDER=vertex_imagen`, `GCP_PROJECT_ID` (+ `VERTEX_LOCATION`, `VERTEX_IMAGEN_MODEL`) | Optional; enables real recipe hero image generation (falls back to placeholder on failure) |
+| Vertex AI Imagen | `IMAGE_PROVIDER=vertex_imagen`, `GCP_PROJECT_ID` (+ `VERTEX_LOCATION`, `VERTEX_IMAGEN_MODEL`)；可選 `IMAGE_CACHE_TTL_SEC`（預設 300，0 關閉）對同菜名去重 | Optional; enables real recipe hero image generation (falls back to placeholder on failure) |
 | Render Postgres | `DATABASE_URL` | Optional; when set, memory/favorites use Postgres (see `docs/RENDER_POSTGRES.md`) |
 | Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional if `DATABASE_URL` unset; app degrades gracefully without either |
 

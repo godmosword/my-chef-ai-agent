@@ -60,6 +60,8 @@ VERTEX_LOCATION           = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generate-002")
 VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
+# 食譜主圖 URL in-memory 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
+IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "300")))
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
