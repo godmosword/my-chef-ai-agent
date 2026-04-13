@@ -19,6 +19,7 @@ from main import (
     save_user_memory,
     clear_user_memory,
 )
+from app import flex_theme
 from app.flex_messages import build_fallback_recipe_flex
 import app.flex_messages as flex_messages
 from app.helpers import _flex_safe_https_url
@@ -197,7 +198,7 @@ class TestGenerateFlexMessage:
         assert "hero" not in result
         first = result["body"]["contents"][0]
         assert first["type"] == "box"
-        assert first.get("backgroundColor") == "#7C2D12"
+        assert first.get("backgroundColor") == flex_theme.HERO_BLOCK_BG
         assert not any(
             c.get("action", {}).get("type") == "uri"
             for c in result["footer"]["contents"]

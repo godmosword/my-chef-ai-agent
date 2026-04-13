@@ -228,8 +228,6 @@ SYSTEM_PROMPT = (
     '"estimated_total_cost":"數字"}'
 )
 
-ROLE_COLORS: dict[str, str] = {"行政主廚": "#9F1239", "副主廚": "#B45309", "食材總管": "#166534"}
-
 CUISINE_LABELS: dict[str, str] = {
     "taiwanese": "台灣小吃",
     "thai": "泰式料理",

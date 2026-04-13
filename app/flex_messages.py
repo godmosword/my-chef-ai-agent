@@ -10,8 +10,8 @@ from app.config import (
     LEGAL_PRIVACY_URL,
     LINE_TEXT_MAX,
     RECIPE_STEPS_PREVIEW_COUNT,
-    ROLE_COLORS,
 )
+from app import flex_theme as fx
 from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
 
 
@@ -21,35 +21,35 @@ CUISINE_CAROUSEL_CARDS = [
     {
         "title": "🇹🇼 台灣小吃",
         "cuisine": "taiwanese",
-        "hero_bg": "#EA580C",
+        "hero_bg": fx.CUISINE_HERO_TAIWANESE,
         "description": "滷肉飯、蚵仔煎、牛肉麵、珍珠奶茶…道地台灣味，家常好上手。",
         "display_text": "已為您切換至台灣小吃情境！",
     },
     {
         "title": "🇹🇭 泰式料理",
         "cuisine": "thai",
-        "hero_bg": "#166534",
+        "hero_bg": fx.CUISINE_HERO_THAI,
         "description": "酸辣開胃、香茅檸檬、打拋豬、綠咖哩，南洋風情一次滿足。",
         "display_text": "已為您切換至泰式料理情境！",
     },
     {
         "title": "🇯🇵 日式拉麵與定食",
         "cuisine": "japanese_ramen",
-        "hero_bg": "#9F1239",
+        "hero_bg": fx.CUISINE_HERO_JAPANESE,
         "description": "拉麵、丼飯、定食、壽司，日式職人精神，在家也能重現。",
         "display_text": "已為您切換至日式拉麵與定食情境！",
     },
     {
         "title": "🇪🇺 歐美家常菜",
         "cuisine": "european_american",
-        "hero_bg": "#1E40AF",
+        "hero_bg": fx.CUISINE_HERO_EU,
         "description": "義大利麵、牛排、燉飯、烤雞，西式經典輕鬆上桌。",
         "display_text": "已為您切換至歐美家常菜情境！",
     },
     {
         "title": "👶 兒童專屬特餐",
         "cuisine": "kids_meal",
-        "hero_bg": "#F59E0B",
+        "hero_bg": fx.CUISINE_HERO_KIDS,
         "description": "溫和不辣、好咀嚼、營養均衡，專為小朋友設計的安心料理。",
         "display_text": "已為您切換至兒童專屬特餐情境！",
     },
@@ -64,15 +64,15 @@ def _recipe_text_hero_block(recipe_name: str, theme: str) -> dict:
         "type": "box",
         "layout": "vertical",
         "paddingAll": "xxl",
-        "backgroundColor": "#7C2D12",
+        "backgroundColor": fx.HERO_BLOCK_BG,
         "height": "200px",
         "justifyContent": "center",
         "alignItems": "center",
         "contents": [
-            {"type": "text", "text": "🍽 今日提案", "size": "xs", "color": "#FED7AA", "weight": "bold"},
-            {"type": "text", "text": label, "size": "xxs", "color": "#FDBA74", "margin": "sm", "wrap": True, "align": "center"},
-            {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": "#FFFBEB", "wrap": True, "align": "center", "margin": "md"},
-            {"type": "text", "text": "（無主圖時：色塊標題為示意，非成品照）", "size": "xxs", "color": "#FDBA74", "wrap": True, "align": "center"},
+            {"type": "text", "text": "🍽 今日提案", "size": "xs", "color": fx.HERO_KICKER, "weight": "bold"},
+            {"type": "text", "text": label, "size": "xxs", "color": fx.HERO_SUB, "margin": "sm", "wrap": True, "align": "center"},
+            {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": fx.HERO_TITLE, "wrap": True, "align": "center", "margin": "md"},
+            {"type": "text", "text": "（無主圖時：色塊標題為示意，非成品照）", "size": "xxs", "color": fx.HERO_SUB, "wrap": True, "align": "center"},
         ],
     }
 
@@ -90,16 +90,16 @@ def _build_cuisine_selector() -> FlexMessage:
                 "justifyContent": "center",
                 "alignItems": "center",
                 "contents": [
-                    {"type": "text", "text": "菜系情境", "size": "xs", "color": "#FFFBEB", "weight": "bold"},
-                    {"type": "text", "text": c["title"], "size": "xl", "weight": "bold", "color": "#FFFFFF", "wrap": True, "align": "center", "margin": "md"},
+                    {"type": "text", "text": "菜系情境", "size": "xs", "color": fx.CUISINE_HERO_LABEL, "weight": "bold"},
+                    {"type": "text", "text": c["title"], "size": "xl", "weight": "bold", "color": fx.CUISINE_HERO_TITLE, "wrap": True, "align": "center", "margin": "md"},
                 ],
             },
             "body": {"type": "box", "layout": "vertical", "contents": [
-                {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": "#1F2937"},
-                {"type": "text", "text": c["description"], "size": "sm", "color": "#6B7280", "wrap": True, "margin": "md"},
+                {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": fx.CUISINE_BODY_TITLE},
+                {"type": "text", "text": c["description"], "size": "sm", "color": fx.CUISINE_BODY_DESC, "wrap": True, "margin": "md"},
             ]},
             "footer": {"type": "box", "layout": "vertical", "contents": [
-                {"type": "button", "style": "primary", "color": "#0F766E", "action": {
+                {"type": "button", "style": "primary", "color": fx.CUISINE_FOOTER_BTN, "action": {
                     "type": "postback", "label": "選擇此菜系",
                     "data": f"action=change_cuisine&cuisine={c['cuisine']}", "displayText": c["display_text"],
                 }},
@@ -117,7 +117,7 @@ CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
 def get_main_menu_flex() -> FlexMessage:
-    """Main menu with core action buttons（暖赭＋青綠主題，按鈕對比一致）。"""
+    """Main menu with core action buttons（石板墨＋天青主題）。"""
     menu_dict = {
         "type": "bubble",
         "header": {
@@ -125,39 +125,39 @@ def get_main_menu_flex() -> FlexMessage:
             "layout": "vertical",
             "paddingAll": "lg",
             "contents": [
-                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "size": "lg", "color": "#FFFBEB"}
+                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "size": "lg", "color": fx.MENU_HEADER_TEXT}
             ],
-            "backgroundColor": "#7C2D12",
+            "backgroundColor": fx.MENU_HEADER_BG,
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "lg", "backgroundColor": "#FAFAF9",
+            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "lg", "backgroundColor": fx.MENU_BODY_BG,
             "contents": [
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": "#9A3412",
+                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_CUISINE,
                     "action": {"type": "message", "label": "🍱 各式菜色", "text": "換菜單"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": "#0F766E",
+                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_FRIDGE,
                     "action": {"type": "message", "label": "🏠 生活需求", "text": "清冰箱模式"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": "#155E75",
+                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_BUDGET,
                     "action": {"type": "message", "label": "💰 預算方案", "text": "幫我規劃預算食譜"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": "#4338CA",
+                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_MOOD,
                     "action": {"type": "message", "label": "☁️ 心情點餐", "text": "我想根據心情點餐"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4",
+                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
                     "action": {"type": "message", "label": "❤️ 我的最愛", "text": "我的最愛"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4",
+                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
                     "action": {"type": "message", "label": "🛒 採買食材", "text": "🛒 檢視清單"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": "#D6D3D1",
+                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_TERTIARY,
                     "action": {"type": "message", "label": "🔐 資料政策", "text": "隱私聲明"},
                 },
             ],
@@ -190,12 +190,12 @@ def generate_flex_message(
         if isinstance(talk, dict):
             role = talk.get("role", talk.get("角色", "團隊"))
             content = talk.get("content", talk.get("內容", str(talk)))
-        color = next((c for k, c in ROLE_COLORS.items() if k in role), "#78350F")
+        color = next((c for k, c in fx.ROLE_COLORS.items() if k in role), fx.ROLE_FALLBACK)
         talk_components.append({
             "type": "box", "layout": "baseline", "spacing": "sm", "margin": "md",
             "contents": [
                 {"type": "text", "text": _safe_str(role, "團隊"), "color": color, "weight": "bold", "size": "xs", "flex": 0},
-                {"type": "text", "text": _safe_str(content, "...", LINE_TEXT_MAX), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
+                {"type": "text", "text": _safe_str(content, "...", LINE_TEXT_MAX), "color": fx.TALK_CONTENT, "size": "sm", "wrap": True, "flex": 1},
             ],
         })
 
@@ -205,10 +205,10 @@ def generate_flex_message(
             "contents": [
                 {"type": "text", "text": _safe_str(
                     item.get("name", item.get("食材", str(item))) if isinstance(item, dict) else str(item), "食材"
-                ), "color": "#522504", "size": "sm", "flex": 1, "wrap": True},
+                ), "color": fx.ING_NAME, "size": "sm", "flex": 1, "wrap": True},
                 {"type": "text", "text": _safe_str(
                     item.get("price", item.get("價格", "-")) if isinstance(item, dict) else "-", "-"
-                ), "color": "#431407", "size": "sm", "weight": "bold", "align": "end", "flex": 0},
+                ), "color": fx.ING_PRICE, "size": "sm", "weight": "bold", "align": "end", "flex": 0},
             ],
         }
         for item in _parse_to_list(ingredients)
@@ -223,14 +223,14 @@ def generate_flex_message(
         {
             "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
             "contents": [
-                {"type": "text", "text": f"{i+1:02d}", "color": "#EA580C", "weight": "bold", "size": "sm", "flex": 0},
-                {"type": "text", "text": _safe_str(step, "進行中", LINE_TEXT_MAX).lstrip("0123456789. "), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
+                {"type": "text", "text": f"{i+1:02d}", "color": fx.STEP_NUM, "weight": "bold", "size": "sm", "flex": 0},
+                {"type": "text", "text": _safe_str(step, "進行中", LINE_TEXT_MAX).lstrip("0123456789. "), "color": fx.TITLE_PRIMARY, "size": "sm", "wrap": True, "flex": 1},
             ],
         }
         for i, step in enumerate(visible_steps)
     ]
 
-    shop_rows = [{"type": "text", "text": f"• {_safe_str(s, '生鮮')}", "size": "sm", "color": "#78350F", "margin": "sm"} for s in _parse_to_list(shopping_list)]
+    shop_rows = [{"type": "text", "text": f"• {_safe_str(s, '生鮮')}", "size": "sm", "color": fx.SHOP_BULLET, "margin": "sm"} for s in _parse_to_list(shopping_list)]
     favorite_action = (
         {"type": "postback", "label": "❤️ 收藏食譜", "data": f"save_recipe:{_safe_str(recipe_name_for_postback, '美味食譜')}"[:300]}
         if recipe_name_for_postback else {"type": "message", "label": "❤️ 收藏食譜", "text": "這套食譜很棒"}
@@ -242,40 +242,40 @@ def generate_flex_message(
     bubble: dict = {
         "type": "bubble", "size": "giga",
         "body": {
-            "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": "#FFFFFF",
+            "type": "box", "layout": "vertical", "paddingAll": "none", "backgroundColor": fx.SURFACE_CARD,
             "contents": [
                 *([] if safe_photo else [_recipe_text_hero_block(recipe_name, theme)]),
-                {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": "#EA580C", "contents": []},
+                {"type": "box", "layout": "vertical", "height": "5px", "backgroundColor": fx.ACCENT_TOP_STRIP, "contents": []},
                 {"type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingBottom": "lg", "contents": [
-                    {"type": "text", "text": _safe_str(theme, "RECOMMENDATION").upper(), "size": "xs", "color": "#D97706", "weight": "bold", "letterSpacing": "2px"},
-                    {"type": "text", "text": _safe_str(recipe_name, "本日料理"), "size": "xxl", "weight": "bold", "color": "#431407", "margin": "md", "wrap": True},
+                    {"type": "text", "text": _safe_str(theme, "RECOMMENDATION").upper(), "size": "xs", "color": fx.THEME_LABEL, "weight": "bold", "letterSpacing": "2px"},
+                    {"type": "text", "text": _safe_str(recipe_name, "本日料理"), "size": "xxl", "weight": "bold", "color": fx.TITLE_PRIMARY, "margin": "md", "wrap": True},
                 ]},
-                {"type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": "#FFFBEB", "cornerRadius": "lg", "contents": [
-                    {"type": "text", "text": "KITCHEN CONFERENCE", "size": "xxs", "weight": "bold", "color": "#B45309", "margin": "xs"},
+                {"type": "box", "layout": "vertical", "margin": "md", "marginHorizontal": "xxl", "paddingAll": "lg", "backgroundColor": fx.PANEL_CONFERENCE_BG, "cornerRadius": "lg", "contents": [
+                    {"type": "text", "text": "KITCHEN CONFERENCE", "size": "xxs", "weight": "bold", "color": fx.PANEL_CONFERENCE_LABEL, "margin": "xs"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": talk_components},
                 ]},
                 {"type": "box", "layout": "vertical", "paddingAll": "xxl", "contents": [
-                    {"type": "text", "text": "SHOPPING LIST", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
+                    {"type": "text", "text": "SHOPPING LIST", "size": "xxs", "weight": "bold", "color": fx.SECTION_LABEL, "letterSpacing": "1px"},
                     {"type": "box", "layout": "vertical", "margin": "lg", "contents": shop_rows or [{"type": "text", "text": "全聯生鮮"}]},
                 ]},
-                {"type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "backgroundColor": "#FFF7ED", "borderColor": "#FED7AA", "borderWidth": "1px", "cornerRadius": "lg", "contents": [
-                    {"type": "text", "text": "INGREDIENTS & COST", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
+                {"type": "box", "layout": "vertical", "margin": "xxl", "paddingAll": "xl", "backgroundColor": fx.PANEL_COST_OUTER_BG, "borderColor": fx.PANEL_COST_BORDER, "borderWidth": "1px", "cornerRadius": "lg", "contents": [
+                    {"type": "text", "text": "INGREDIENTS & COST", "size": "xxs", "weight": "bold", "color": fx.SECTION_LABEL, "letterSpacing": "1px"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": ingredient_rows or [{"type": "text", "text": "-"}]},
-                    {"type": "separator", "margin": "xl", "color": "#FED7AA"},
-                    {"type": "box", "layout": "horizontal", "margin": "lg", "paddingAll": "md", "backgroundColor": "#FFEDD5", "cornerRadius": "md", "contents": [
-                        {"type": "text", "text": "TOTAL", "size": "sm", "weight": "bold", "color": "#9A3412", "flex": 0},
-                        {"type": "text", "text": f"NT$ {_safe_str(estimated_total_cost, '估算中')}", "size": "xxl", "weight": "bold", "color": "#431407", "align": "end"},
+                    {"type": "separator", "margin": "xl", "color": fx.SEP_COLOR},
+                    {"type": "box", "layout": "horizontal", "margin": "lg", "paddingAll": "md", "backgroundColor": fx.TOTAL_BAND_BG, "cornerRadius": "md", "contents": [
+                        {"type": "text", "text": "TOTAL", "size": "sm", "weight": "bold", "color": fx.TOTAL_LABEL, "flex": 0},
+                        {"type": "text", "text": f"NT$ {_safe_str(estimated_total_cost, '估算中')}", "size": "xxl", "weight": "bold", "color": fx.TITLE_PRIMARY, "align": "end"},
                     ]},
                 ]},
                 {"type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingTop": "none", "contents": [
-                    {"type": "text", "text": "PREPARATION STEPS", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
+                    {"type": "text", "text": "PREPARATION STEPS", "size": "xxs", "weight": "bold", "color": fx.SECTION_LABEL, "letterSpacing": "1px"},
                     {"type": "box", "layout": "vertical", "margin": "sm", "contents": step_rows or [{"type": "text", "text": "-"}]},
                     *(
                         [{
                             "type": "text",
                             "text": f"尚有 {len(all_steps) - len(visible_steps)} 步，點下方按鈕展開",
                             "size": "xxs",
-                            "color": "#9A3412",
+                            "color": fx.MORE_STEPS_HINT,
                             "margin": "md",
                             "wrap": True,
                         }]
@@ -290,15 +290,15 @@ def generate_flex_message(
                 {
                     "type": "box", "layout": "horizontal", "spacing": "md",
                     "contents": [
-                        {"type": "button", "style": "secondary", "height": "sm", "color": "#D6D3D1", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                        {"type": "button", "style": "primary", "height": "sm", "color": "#BE123C", "action": favorite_action},
+                        {"type": "button", "style": "secondary", "height": "sm", "color": fx.FOOTER_BTN_SECONDARY, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": fx.FOOTER_BTN_FAVORITE, "action": favorite_action},
                     ],
                 },
                 {
                     "type": "text",
                     "text": "食譜僅供參考，請留意過敏原與食安條件。",
                     "size": "xxs",
-                    "color": "#92400E",
+                    "color": fx.FOOTER_DISCLAIMER,
                     "wrap": True,
                 },
             ],
@@ -322,7 +322,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "primary",
                 "height": "sm",
-                "color": "#155E75",
+                "color": fx.VIDEO_BTN,
                 "action": {
                     "type": "uri",
                     "label": "▶ 教學影片",
@@ -341,7 +341,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "secondary",
                 "height": "sm",
-                "color": "#E2E8F0",
+                "color": fx.EXPAND_BTN_BG,
                 "action": {
                     "type": "postback",
                     "label": "展開完整步驟",
@@ -408,12 +408,12 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
             "body": {
                 "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "lg",
                 "contents": [
-                    {"type": "text", "text": _safe_str(theme, "收藏").upper(), "size": "xxs", "color": "#D97706", "weight": "bold"},
-                    {"type": "text", "text": _safe_str(recipe_name, "美味食譜"), "size": "lg", "weight": "bold", "color": "#431407", "wrap": True},
-                    {"type": "text", "text": f"食材：{ingredient_preview or '—'}", "size": "xs", "color": "#78350F", "wrap": True, "margin": "md"},
+                    {"type": "text", "text": _safe_str(theme, "收藏").upper(), "size": "xxs", "color": fx.FAV_THEME_LABEL, "weight": "bold"},
+                    {"type": "text", "text": _safe_str(recipe_name, "美味食譜"), "size": "lg", "weight": "bold", "color": fx.FAV_TITLE, "wrap": True},
+                    {"type": "text", "text": f"食材：{ingredient_preview or '—'}", "size": "xs", "color": fx.FAV_ING, "wrap": True, "margin": "md"},
                     {"type": "box", "layout": "horizontal", "margin": "lg", "contents": [
-                        {"type": "text", "text": "預估花費", "size": "xs", "color": "#9A3412", "flex": 1},
-                        {"type": "text", "text": f"NT$ {_safe_str(cost, '—')}", "size": "md", "weight": "bold", "color": "#431407", "align": "end"},
+                        {"type": "text", "text": "預估花費", "size": "xs", "color": fx.FAV_COST_LABEL, "flex": 1},
+                        {"type": "text", "text": f"NT$ {_safe_str(cost, '—')}", "size": "md", "weight": "bold", "color": fx.FAV_TITLE, "align": "end"},
                     ]},
                 ],
             },
@@ -421,7 +421,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
                 "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "md",
                 "contents": [
                     {
-                        "type": "button", "style": "primary", "height": "sm", "color": "#EA580C",
+                        "type": "button", "style": "primary", "height": "sm", "color": fx.FAV_REDO_BTN,
                         "action": {
                             "type": "postback",
                             "label": "🔄 再做一次",
@@ -483,17 +483,17 @@ def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
         "body": {
             "type": "box", "layout": "vertical", "paddingAll": "xl",
             "contents": [
-                {"type": "box", "layout": "vertical", "height": "4px", "backgroundColor": "#F59E0B", "contents": []},
-                {"type": "text", "text": title, "size": "lg", "weight": "bold", "color": "#431407", "margin": "lg", "wrap": True},
-                {"type": "text", "text": hint, "size": "xs", "color": "#B45309", "margin": "md", "wrap": True},
-                {"type": "text", "text": body_text, "size": "sm", "color": "#431407", "wrap": True, "margin": "lg"},
+                {"type": "box", "layout": "vertical", "height": "4px", "backgroundColor": fx.FALLBACK_STRIP, "contents": []},
+                {"type": "text", "text": title, "size": "lg", "weight": "bold", "color": fx.FALLBACK_TITLE, "margin": "lg", "wrap": True},
+                {"type": "text", "text": hint, "size": "xs", "color": fx.FALLBACK_HINT, "margin": "md", "wrap": True},
+                {"type": "text", "text": body_text, "size": "sm", "color": fx.FALLBACK_BODY, "wrap": True, "margin": "lg"},
             ],
         },
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "lg",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                {"type": "button", "style": "primary", "height": "sm", "color": "#BE123C", "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
+                {"type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                {"type": "button", "style": "primary", "height": "sm", "color": fx.FOOTER_BTN_FAVORITE, "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
             ],
         },
     }
