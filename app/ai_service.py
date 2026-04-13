@@ -13,6 +13,7 @@ from app.config import (
     DEBUG_MODE,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
+    USE_GEMINI_DIRECT,
     YOUTUBE_API_KEY,
     logger,
 )
@@ -37,6 +38,11 @@ def _recipe_placeholder_image_url(recipe_name: str) -> str:
 
 async def generate_recipe_image(recipe_name: str) -> str:
     """Generate a recipe image URL, with placeholder fallback on any failure."""
+    # Gemini OpenAI-compatible 端點不支援 DALL·E images；避免每次等待逾時。
+    if USE_GEMINI_DIRECT:
+        incr("ai.images.skipped_gemini_direct_total")
+        return _recipe_placeholder_image_url(recipe_name)
+
     prompt = (
         "Professional food photography, Michelin star plating, dark slate background, "
         "dramatic top lighting, cinematic depth of field, dish: "

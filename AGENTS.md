@@ -28,7 +28,7 @@ Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
 python3 -m pytest tests/ -v
 ```
 
-目前：`python3 -m pytest tests/ -v` 通過 **40/40**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
+目前：`python3 -m pytest tests/ -v` 通過 **47/47**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \

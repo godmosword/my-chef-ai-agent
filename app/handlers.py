@@ -92,7 +92,6 @@ async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage, user_id:
 
 async def _push_line_message(user_id: str, msg: TextMessage | FlexMessage) -> None:
     """Send a push message to LINE user with a lightweight retry."""
-    last_exc: Exception | None = None
     for attempt in range(2):
         try:
             async with AsyncApiClient(line_configuration) as api_client:
@@ -101,13 +100,10 @@ async def _push_line_message(user_id: str, msg: TextMessage | FlexMessage) -> No
             incr("line.push.success_total")
             return
         except Exception as exc:
-            last_exc = exc
             if attempt == 0:
                 await asyncio.sleep(0.3)
                 continue
             raise
-    if last_exc:
-        raise last_exc
 
 
 async def _background_generate_recipe(

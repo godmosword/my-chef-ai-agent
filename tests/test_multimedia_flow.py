@@ -17,6 +17,7 @@ from app.models import WebhookMessageEvent  # noqa: E402
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch):
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
     mock_images = SimpleNamespace(generate=AsyncMock(side_effect=RuntimeError("boom")))
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
 
@@ -27,12 +28,24 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_https_url(monkeypatch):
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
     response = SimpleNamespace(data=[SimpleNamespace(url="https://cdn.example.com/food.png")])
     mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("牛肉麵")
     assert url == "https://cdn.example.com/food.png"
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch):
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", True)
+    mock_generate = AsyncMock()
+    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+
+    url = await ai_service.generate_recipe_image("測試菜")
+    assert "placehold.co" in url
+    mock_generate.assert_not_called()
 
 
 @pytest.mark.asyncio

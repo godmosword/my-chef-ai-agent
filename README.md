@@ -289,7 +289,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/ -v
 ```
 
-目前 **40** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`）。涵蓋範例：
+目前 **47** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`、`tests/test_multimedia_flow.py`）。涵蓋範例：
 
 - JSON 解析與錯誤處理、Flex Message 組裝、食譜卡 **hero／影片連結** 與 **`_flex_safe_https_url`** 安全過濾、無 Supabase 時記憶／偏好的降級行為
 - 配額扣量失敗拒絕、`/callback` 佇列滿回 503、管理訂閱 API 需正確 `X-Admin-Token`
@@ -339,7 +339,8 @@ my-chef-ai-agent/
 ├── tests/
 │   ├── test_main.py
 │   ├── test_platform_features.py
-│   └── test_ai_errors.py
+│   ├── test_ai_errors.py
+│   └── test_multimedia_flow.py
 ├── docs/
 │   ├── DEPLOY_GCP.md
 │   ├── RENDER_POSTGRES.md
