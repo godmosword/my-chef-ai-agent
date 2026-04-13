@@ -205,7 +205,7 @@ my-chef-ai-agent/
 │   └── ...
 ├── docs/
 ├── migrations/             # Postgres schema 單一來源（例：多租戶）
-├── .github/workflows/      # CI（migration + pytest）
+├── .github/workflows/      # CI：migration + pytest；push main 通過後同次執行 Cloud Run 部署
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md         # 貢獻指南與 plan 收尾必做項目
 ├── TODOS.md                # 工程／產品 backlog（TODO.md 轉址至此）

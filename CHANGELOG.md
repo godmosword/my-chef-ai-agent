@@ -10,6 +10,7 @@
 
 - **`CONTRIBUTING.md`**：貢獻方式、測試指令，以及 plan／里程碑收尾時必同步更新 **`TODOS.md`**、**`CHANGELOG.md`**、**`README.md`**（詳見 **`AGENTS.md`**）。
 - **`.cursor/rules/plan-ship-docs.mdc`**：Cursor 規則（`alwaysApply: true`），提醒 agent 收尾時一併更新上述三份文件。
+- **GitHub Actions**：`deploy.yml` 併入 **`ci.yml`**；push `main` 時改為**同一 workflow 一次排程**——先跑測試，通過後再部署 Cloud Run（PR 仍只跑測試）。
 
 ### LINE 介面
 

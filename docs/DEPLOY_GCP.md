@@ -114,8 +114,8 @@ git push origin main
 ```
 
 2. 前往 GitHub 上方 **Actions** 分頁  
-3. 確認「Deploy to GCP Cloud Run」workflow 執行中  
-4. 等待約 3–5 分鐘至成功（綠色 ✓）
+3. 確認 **「CI」** workflow 執行中（會先跑 **test**，通過後再跑 **deploy** 至 Cloud Run；與過去獨立 `deploy.yml` 合併為同一排程）  
+4. 等待約 3–5 分鐘至整個 workflow 成功（綠色 ✓）
 
 ---
 
