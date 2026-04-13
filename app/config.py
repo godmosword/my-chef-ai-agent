@@ -83,7 +83,8 @@ else:
 
 MAX_MESSAGE_LENGTH    = 500
 MAX_HISTORY_TURNS     = 3
-MAX_COMPLETION_TOKENS = 2048
+# 食譜 JSON 較長；2048 易在 Gemini 上被截斷成不合法 JSON。可用環境變數覆寫。
+MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "4096")))
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
@@ -110,9 +111,13 @@ SCENARIO_BUDGET = (["預算", "便宜", "省錢", "方案"], "預算方案：行
 SCENARIO_MOOD   = (["心情", "壓力", "開心", "難過"], "心情點餐：副主廚需根據情緒推薦溫暖或清爽的口感，提供情緒支持。")
 
 SYSTEM_PROMPT = (
-    "你是米其林三星廚房(行政主廚/副主廚/食材總管)。三位各一句(≤15字)討論後產出食譜。"
-    "僅回傳JSON，不加說明：\n"
-    '{"kitchen_talk":[{"role":"角色","content":"≤15字"}],'
+    "你是米其林三星廚房(行政主廚/副主廚/食材總管)。先由三人各一句（每句≤12字），再產出精簡食譜。"
+    "僅回傳 JSON，勿 markdown。為避免輸出過長被截斷：kitchen_talk 固定 3 筆；ingredients 最多 6 項；"
+    "steps 最多 6 步（每步一句）；shopping_list 最多 8 字串；字數盡量精簡。\n"
+    '{"kitchen_talk":['
+    '{"role":"行政主廚","content":"≤12字"},'
+    '{"role":"副主廚","content":"≤12字"},'
+    '{"role":"食材總管","content":"≤12字"}],'
     '"theme":"主題","recipe_name":"菜名",'
     '"ingredients":[{"name":"食材","price":"NT$XX"}],'
     '"steps":["步驟"],"shopping_list":["區塊：品項"],'
@@ -131,8 +136,14 @@ CUISINE_LABELS: dict[str, str] = {
 
 # ─── AI retry configuration ────────────────────────────────────────────────────
 
-AI_MAX_RETRIES = 1          # Number of retries on JSON parse failure (malformed JSON only)
+AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "2")))  # JSON 解析失敗時額外呼叫次數（不含首次）
 AI_RETRY_EXTRA_PROMPT = "請務必只回傳純JSON，不要加任何markdown或解釋文字。"
+# 當 API 回傳 finish_reason=length（輸出被截斷）時，追加此提示再請模型重出精簡完整 JSON
+AI_TRUNCATION_RECOVERY_PROMPT = (
+    "上一則回應可能因長度被截斷，導致 JSON 不完整。請**重新輸出一份完整且可解析**的 JSON（同一料理主題），並嚴格遵守："
+    "kitchen_talk 固定 3 筆、每則 content ≤12 字；ingredients ≤6 項；steps ≤6 步；shopping_list ≤8 字串。"
+    "字數盡量精簡。僅 JSON，勿 markdown、勿註解。"
+)
 
 PLAN_DAILY_LIMITS = {
     "free": int(os.getenv("PLAN_FREE_DAILY_LIMIT", "20")),

@@ -19,6 +19,7 @@ from main import (
     save_user_memory,
     clear_user_memory,
 )
+from app.flex_messages import build_fallback_recipe_flex
 from app.helpers import _default_recipe_hero_url, _flex_safe_https_url
 
 
@@ -205,6 +206,19 @@ class TestGenerateFlexMessage:
         result = generate_flex_message(**self.SAMPLE_ARGS)
         assert result["hero"]["type"] == "image"
         assert result["hero"]["url"].startswith("https://picsum.photos/")
+
+
+class TestBuildFallbackRecipeFlex:
+    def test_truncated_json_shows_short_snippet_not_full_dump(self):
+        raw = '{"kitchen_talk":[{"role":"副主廚","content":"選用當季時'
+        flex = build_fallback_recipe_flex(raw)
+        d = flex.contents.dict()
+        body = d["body"]["contents"]
+        texts = [c.get("text", "") for c in body if c.get("type") == "text"]
+        joined = "\n".join(texts)
+        assert "截斷" in joined
+        assert "技術摘要" in joined
+        assert len(joined) < len(raw) + 500
 
 
 class TestFlexSafeHttpsUrl:

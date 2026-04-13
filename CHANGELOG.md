@@ -1,5 +1,13 @@
 ## 變更紀錄
 
+### 2026-04-13（修復：食譜 JSON 截斷與 fallback 體驗）
+
+- **`MAX_COMPLETION_TOKENS`**：預設改為 **4096**（可用環境變數覆寫），降低長食譜 JSON 被 `finish_reason=length` 截斷的機率。
+- **`AI_MAX_RETRIES`**：預設改為 **2**；當解析失敗且 **`finish_reason=length`** 時，下一輪會帶入 **`AI_TRUNCATION_RECOVERY_PROMPT`** 要求精簡完整 JSON（提示跨輪保留）。
+- **`SYSTEM_PROMPT`**：明確限制 kitchen_talk／ingredients／steps／shopping_list 數量與字數，減少輸出過長。
+- **`build_fallback_recipe_flex`**：若內容像被截斷的 JSON，改顯示**短摘要＋引導**而非整段 raw JSON；footer 按鈕色與食譜卡一致。
+- **`.env.example`**：補充 `MAX_COMPLETION_TOKENS`、`AI_MAX_RETRIES`。
+
 ### 2026-04-13（Vertex 主圖、快取、Readiness、節流與 AI 韌性）
 
 - **Vertex AI Imagen**：`IMAGE_PROVIDER=vertex_imagen` 時以 Vertex `predict` 產生食譜主圖；`GCP_PROJECT_ID`、`VERTEX_*`、SA JSON 或 ADC；失敗回佔位圖；metrics 與 `google-auth` 依賴（見 `README.md`／`AGENTS.md`）。

@@ -13,6 +13,7 @@ from openai import APIConnectionError, APITimeoutError, RateLimitError
 from app.config import (
     AI_MAX_RETRIES,
     AI_RETRY_EXTRA_PROMPT,
+    AI_TRUNCATION_RECOVERY_PROMPT,
     AI_TRANSPORT_BASE_DELAY_SEC,
     AI_TRANSPORT_MAX_RETRIES,
     DEBUG_MODE,
@@ -391,9 +392,11 @@ async def call_ai_with_retry(
     """
     last_raw = ""
     last_error: Exception | None = None
+    # 跨輪保留：截斷修復提示（messages 每輪重建，不可只在迴圈內 append）
+    extra_user_messages: list[dict] = []
 
     for attempt in range(1 + max_retries):
-        messages = list(api_messages)
+        messages = list(api_messages) + list(extra_user_messages)
 
         # On retry, add an extra system message demanding pure JSON
         if attempt > 0:
@@ -434,6 +437,9 @@ async def call_ai_with_retry(
             )
 
         last_raw = ai_content
+        choice0 = response.choices[0] if getattr(response, "choices", None) else None
+        finish = (getattr(choice0, "finish_reason", None) or "").lower()
+
         try:
             parsed = _parse_ai_json(ai_content)
             return ai_content, parsed
@@ -441,6 +447,10 @@ async def call_ai_with_retry(
             last_error = exc
             incr("ai.errors.json_parse_total")
             logger.warning("JSON parse failed (attempt %d) for user %s: %s", attempt, user_id, exc)
+            if finish == "length" and attempt < max_retries:
+                extra_user_messages.append({"role": "user", "content": AI_TRUNCATION_RECOVERY_PROMPT})
+                incr("ai.errors.truncation_recovery_retry_total")
+                logger.info("Output truncated (finish_reason=length); recovery prompt queued for user %s", user_id)
             continue
 
     # All attempts failed — attach raw AI response to the exception for fallback use

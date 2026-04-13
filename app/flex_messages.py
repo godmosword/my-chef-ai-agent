@@ -345,16 +345,31 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
 
 def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
     """Create a simple Flex Message from raw AI text when JSON parsing fails."""
+    raw = (raw_text or "").strip()
+    looks_like_json = raw.startswith("{") and '"kitchen_talk"' in raw[:800]
+
     # Try to extract a title from the text
     title = "AI 料理建議"
-    lines = raw_text.strip().split("\n")
+    if looks_like_json:
+        title = "回應被截斷或格式不完整"
+    lines = raw.split("\n")
     if lines:
         first_line = lines[0].strip()[:50]
-        if first_line:
+        if first_line and not looks_like_json:
             title = first_line
 
-    # Truncate body
-    body_text = raw_text[:LINE_TEXT_MAX] if len(raw_text) > LINE_TEXT_MAX else raw_text
+    hint = (
+        "模型回傳的 JSON 可能因長度被截斷。請點「再試一次」或輸入「清除記憶」後重說需求；"
+        "我們已自動提高長度上限並加入重試。"
+        if looks_like_json
+        else "⚠️ 格式略有不同，但內容仍可參考："
+    )
+    # 勿把整段 JSON 塞進 Flex（難讀且易超長）；僅顯示開頭片段供進階使用者對照
+    if looks_like_json:
+        snippet = raw[:420] + ("…" if len(raw) > 420 else "")
+        body_text = f"技術摘要（前幾百字）：\n{snippet}"
+    else:
+        body_text = raw[:LINE_TEXT_MAX] if len(raw) > LINE_TEXT_MAX else raw
 
     bubble = {
         "type": "bubble",
@@ -363,15 +378,15 @@ def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
             "contents": [
                 {"type": "box", "layout": "vertical", "height": "4px", "backgroundColor": "#F59E0B", "contents": []},
                 {"type": "text", "text": title, "size": "lg", "weight": "bold", "color": "#431407", "margin": "lg", "wrap": True},
-                {"type": "text", "text": "⚠️ 格式略有不同，但內容仍可參考：", "size": "xs", "color": "#B45309", "margin": "md"},
+                {"type": "text", "text": hint, "size": "xs", "color": "#B45309", "margin": "md", "wrap": True},
                 {"type": "text", "text": body_text, "size": "sm", "color": "#431407", "wrap": True, "margin": "lg"},
             ],
         },
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "lg",
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                {"type": "button", "style": "primary", "height": "sm", "color": "#EA580C", "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
+                {"type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                {"type": "button", "style": "primary", "height": "sm", "color": "#BE123C", "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
             ],
         },
     }
