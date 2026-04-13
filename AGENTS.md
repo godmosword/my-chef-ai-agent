@@ -63,6 +63,12 @@ print(urllib.request.urlopen(req).read())
 
 The webhook will return `"OK"`. A **queue worker** will call Gemini AI and generate a Flex Message, but the LINE reply will fail with "Invalid reply token" (expected with synthetic tokens). Check server logs for the `AI user=... elapsed=... tokens=...` line to confirm AI integration works.
 
+### Git／部署流程（維護者偏好）
+
+- **之後若要觸發 deploy：請直接 commit／push 到 `main`，不要為此另開 PR。**
+- 建議流程：`git checkout main` → `git pull origin main` → 修改 → `git commit` → `git push origin main`（或由 CI 監聽 `main` 自動部署）。
+- 直接推 `main` 會跳過 PR 審查；若需保留審查，可改回 feature branch + PR 模式。
+
 ### Gotchas
 
 - Environment variables are validated at **module import time** (not at request time). If they're missing, the app crashes immediately on startup.
