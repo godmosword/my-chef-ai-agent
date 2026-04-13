@@ -164,6 +164,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 
 ## Rich Menu 更新流程
 
+完整規格、bounds 對照、參考連結與 413 排查請見 **[`docs/RICH_MENU.md`](docs/RICH_MENU.md)**。
+
 - Rich Menu 資產：[`richmenu.jpg`](richmenu.jpg)（或 `richmenu.png`，須 **≤1 MB** 以符合 LINE 上限）+ [`richmenu_config.json`](richmenu_config.json)  
 - 重新部署到 LINE：
 
