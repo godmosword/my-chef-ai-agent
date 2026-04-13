@@ -1,5 +1,16 @@
 ## 變更紀錄
 
+### 2026-04-12（Render Postgres 直連與文件）
+
+- **資料層**
+  - 支援 **`DATABASE_URL`**：對話記憶、偏好、收藏、菜系情境以 **`psycopg`** 直連 **PostgreSQL**（例如 Render Postgres）；設定時不初始化 Supabase REST client 處理上述核心表。
+  - `requirements.txt` 新增 `psycopg[binary]`。
+- **使用者訊息**
+  - 收藏失敗提示同時提及 `DATABASE_URL` 與 Supabase（`handlers.py`）。
+- **文件**
+  - [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md) 建表與 Render 綁定步驟；根目錄 [`TODOS.md`](TODOS.md) 工程 backlog（與既有 [`TODO.md`](TODO.md) 並存）。
+  - `README.md`：技術棧與 `DATABASE_URL` 行為與 `db.py` 對齊。
+
 ### 2026-04-12（v2.1 商業化與平台化）
 
 - **佇列與可靠性**

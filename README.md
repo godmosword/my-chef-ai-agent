@@ -37,7 +37,7 @@
 - **Web**：FastAPI + Uvicorn  
 - **AI**：Gemini 3.1 Flash Lite（預設透過 `MODEL_NAME=gemini-3.1-flash-lite-preview`）  
 - **訊息**：LINE Bot SDK v3（非同步版 `AsyncMessagingApi`）  
-- **資料庫**：Supabase（可關閉，未設定時自動降級為無狀態模式）  
+- **資料庫**：**Render Postgres**（`DATABASE_URL` + `psycopg`，記憶／收藏）與 **Supabase**（用量／訂閱等 REST，可關閉）；皆未設定時自動降級為無狀態模式  
 - **託管環境**：Render（`render.yaml`） / GCP Cloud Run（可選）  
 
 ---
@@ -90,7 +90,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
 | `GEMINI_API_KEY` | ✅\* | 使用 Gemini 直連時必填 |
 | `OPENROUTER_API_KEY` | ✅\* | 若改走 OpenRouter 模型時必填 |
-| `DATABASE_URL` |  | **Render Postgres** Internal URL；若設定則對話記憶／收藏優先走 Postgres，**可不設** Supabase（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）。訂閱與每日用量等商業化功能仍建議搭配 Supabase 與專案內 migration。 |
+| `DATABASE_URL` |  | **Render Postgres** Internal URL；若設定則對話記憶／收藏以 **`psycopg` 直連 Postgres**（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)），此時不會用 Supabase REST 讀寫上述核心表。訂閱與每日用量等商業化功能仍建議搭配 Supabase 與專案內 migration。 |
 | `SUPABASE_URL` |  | 未設 `DATABASE_URL` 時用於記憶／收藏；有設 `DATABASE_URL` 時仍可用於用量／訂閱等 REST 表。不填則關閉對應 Supabase 功能。 |
 | `SUPABASE_KEY` |  | Supabase 金鑰；生產建議 **service role**（僅後端、勿進前端）。 |
 | `DEBUG` |  | 設為 `1` 時會輸出較詳細 log |
@@ -278,7 +278,7 @@ $$;
 | 「小孩」「兒童」「兒子」 | 啟用兒童餐情境，溫和不辣、好咀嚼 |
 | 傳送**圖片**（食物／冰箱食材） | AI 辨識食材後產出食譜 |
 | `我的最愛` / `收藏` / `最愛食譜` | 顯示收藏食譜輪播，可刪除單筆 |
-| Flex 卡片上的「❤️ 收藏食譜」 | 透過 Supabase 寫入 `favorite_recipes` |
+| Flex 卡片上的「❤️ 收藏食譜」 | 寫入 `favorite_recipes`（有 `DATABASE_URL` 時走 Postgres，否則走 Supabase REST） |
 
 ---
 
@@ -298,7 +298,8 @@ python3 -m pytest tests/ -v
 變更紀錄與待辦清單：
 
 - [`CHANGELOG.md`](CHANGELOG.md)
-- [`TODO.md`](TODO.md)
+- [`TODO.md`](TODO.md)（營運／產品向待辦）
+- [`TODOS.md`](TODOS.md)（工程與文件向 backlog；與 `TODO.md` 互補）
 
 營運觀測端點：
 
@@ -323,7 +324,7 @@ my-chef-ai-agent/
 │   ├── routes.py           # /、/callback 路由
 │   ├── handlers.py         # process_ai_reply、process_postback_reply、process_image_reply
 │   ├── ai_service.py       # AI 呼叫與重試、圖片辨識食材
-│   ├── db.py               # Supabase 非同步封裝（記憶、偏好、收藏、菜系、用量／訂閱）
+│   ├── db.py               # Postgres（DATABASE_URL）或 Supabase（記憶、偏好、收藏、菜系、用量／訂閱）
 │   ├── billing.py          # 配額檢查與扣量
 │   ├── job_queue.py        # Webhook 事件佇列與 worker
 │   ├── observability.py    # request_id、metrics counters
@@ -337,13 +338,16 @@ my-chef-ai-agent/
 ├── .env.example
 ├── tests/
 │   ├── test_main.py
-│   └── test_platform_features.py
+│   ├── test_platform_features.py
+│   └── test_ai_errors.py
 ├── docs/
 │   ├── DEPLOY_GCP.md
+│   ├── RENDER_POSTGRES.md
 │   └── LEGAL_POLICY.md
 ├── supabase/migrations/   # 商業化 schema + increment_usage_daily RPC
 ├── CHANGELOG.md
 ├── TODO.md
+├── TODOS.md
 ├── pytest.ini
 ├── .github/workflows/deploy.yml
 └── AGENTS.md
