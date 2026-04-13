@@ -14,11 +14,9 @@ from app.clients import app  # noqa: E402
 
 
 def test_ready_ok_when_no_database_configured(monkeypatch):
-    """Isolate from developer .env that may set DATABASE_URL or Supabase."""
+    """Isolate from developer .env that may set DATABASE_URL."""
     monkeypatch.setattr("app.routes.DATABASE_URL", None)
-    monkeypatch.setattr("app.routes.supabase", None)
     monkeypatch.setattr("app.db.DATABASE_URL", None)
-    monkeypatch.setattr("app.clients.supabase", None)
 
     client = TestClient(app)
     r = client.get("/ready")
@@ -39,3 +37,32 @@ def test_public_rate_limit_returns_429(monkeypatch):
         assert r.status_code == 200, f"iteration {i}"
     r = client.get("/legal/disclaimer")
     assert r.status_code == 429
+
+
+def test_callback_user_rate_limit_returns_429(monkeypatch):
+    from app import rate_limit, routes
+
+    rate_limit._timestamps.clear()
+    monkeypatch.setattr("app.rate_limit.RATE_LIMIT_USER_PER_MINUTE", 1)
+    monkeypatch.setattr("app.rate_limit.RATE_LIMIT_USER_BURST", 0)
+    monkeypatch.setattr(routes, "_validate_signature", lambda *_: None)
+
+    async def _ok_enqueue(_job):
+        return "text"
+
+    monkeypatch.setattr(routes, "enqueue_job", _ok_enqueue)
+    client = TestClient(app)
+    payload = {
+        "events": [
+            {
+                "type": "message",
+                "replyToken": "token123",
+                "source": {"userId": "Urate"},
+                "message": {"type": "text", "id": "m1", "text": "番茄炒蛋"},
+            }
+        ]
+    }
+    r1 = client.post("/callback", json=payload, headers={"X-Line-Signature": "ok", "X-Tenant-ID": "t1"})
+    assert r1.status_code == 200
+    r2 = client.post("/callback", json=payload, headers={"X-Line-Signature": "ok", "X-Tenant-ID": "t1"})
+    assert r2.status_code == 429

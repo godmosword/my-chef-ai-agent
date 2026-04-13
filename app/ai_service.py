@@ -6,6 +6,7 @@ import json
 import random
 import time
 import urllib.parse
+from datetime import timedelta
 
 import httpx
 from openai import APIConnectionError, APITimeoutError, RateLimitError
@@ -18,7 +19,9 @@ from app.config import (
     AI_TRANSPORT_MAX_RETRIES,
     DEBUG_MODE,
     GCP_PROJECT_ID,
+    GCS_SIGNED_URL_TTL_SEC,
     IMAGE_CACHE_TTL_SEC,
+    IMAGE_PUBLIC_BASE_URL,
     IMAGE_PROVIDER,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
@@ -36,6 +39,7 @@ from app.db import (
     get_user_cuisine_context,
     get_user_preferences,
 )
+from app.image_cache import _memory_cache, get_cached_image_url, set_cached_image_url
 from app.helpers import (
     _extract_json,
     _filter_history_after_context,
@@ -90,9 +94,8 @@ async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
 _VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
 _vertex_credentials = None
 _vertex_credentials_lock = asyncio.Lock()
-
-_recipe_image_url_cache: dict[str, tuple[str, float]] = {}
-_recipe_image_cache_lock = asyncio.Lock()
+# Backward-compatible alias for tests that clear in-memory cache directly.
+_recipe_image_url_cache = _memory_cache
 
 
 def _recipe_placeholder_image_url(_recipe_name: str) -> str:
@@ -109,7 +112,65 @@ def _gs_to_https_url(gs_uri: str) -> str | None:
     bucket, obj = path.split("/", 1)
     if not bucket or not obj:
         return None
-    return f"https://storage.googleapis.com/{bucket}/{obj}"
+    safe_obj = urllib.parse.quote(obj, safe="/")
+    return f"https://storage.googleapis.com/{bucket}/{safe_obj}"
+
+
+async def _gs_to_signed_url(gs_uri: str) -> str | None:
+    """Create a signed URL for GCS object when google-cloud-storage is available."""
+    if not gs_uri.startswith("gs://") or GCS_SIGNED_URL_TTL_SEC <= 0:
+        return None
+    path = gs_uri.removeprefix("gs://")
+    if "/" not in path:
+        return None
+    bucket_name, obj = path.split("/", 1)
+    if not bucket_name or not obj:
+        return None
+    try:
+        from google.cloud import storage
+    except Exception as exc:
+        logger.warning("google-cloud-storage unavailable for signed URLs: %s", exc)
+        return None
+
+    def _sign() -> str | None:
+        client = storage.Client(project=GCP_PROJECT_ID or None)
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(obj)
+        return blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(seconds=GCS_SIGNED_URL_TTL_SEC),
+            method="GET",
+        )
+
+    try:
+        signed = await asyncio.to_thread(_sign)
+        if isinstance(signed, str) and signed.startswith("https://"):
+            return signed
+    except Exception as exc:
+        logger.warning("Failed generating signed URL for %s: %s", gs_uri, exc)
+    return None
+
+
+async def _resolve_public_image_url(raw_url: str) -> str | None:
+    if raw_url.startswith("https://"):
+        return raw_url
+    if not raw_url.startswith("gs://"):
+        return None
+    path = raw_url.removeprefix("gs://")
+    if "/" not in path:
+        return None
+    bucket, obj = path.split("/", 1)
+    if not bucket or not obj:
+        return None
+
+    if IMAGE_PUBLIC_BASE_URL:
+        safe_obj = urllib.parse.quote(obj, safe="/")
+        return f"{IMAGE_PUBLIC_BASE_URL}/{bucket}/{safe_obj}"
+
+    signed = await _gs_to_signed_url(raw_url)
+    if signed:
+        return signed
+    return _gs_to_https_url(raw_url)
 
 
 async def _get_vertex_access_token() -> str | None:
@@ -220,10 +281,9 @@ async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
     for key in ("imageUrl", "url", "uri", "gcsUri"):
         value = first.get(key)
         if isinstance(value, str):
-            if value.startswith("https://"):
-                return value
-            if value.startswith("gs://"):
-                return _gs_to_https_url(value)
+            resolved = await _resolve_public_image_url(value)
+            if resolved:
+                return resolved
     return None
 
 
@@ -234,25 +294,13 @@ def _recipe_image_cache_key(recipe_name: str) -> str:
 async def _recipe_image_cache_get(key: str) -> str | None:
     if IMAGE_CACHE_TTL_SEC <= 0:
         return None
-    now = time.monotonic()
-    async with _recipe_image_cache_lock:
-        row = _recipe_image_url_cache.get(key)
-        if not row:
-            return None
-        url, exp = row
-        if exp <= now:
-            del _recipe_image_url_cache[key]
-            return None
-        incr("ai.images.cache.hit_total")
-        return url
+    return await get_cached_image_url(key)
 
 
 async def _recipe_image_cache_set(key: str, url: str) -> None:
     if IMAGE_CACHE_TTL_SEC <= 0:
         return
-    exp = time.monotonic() + float(IMAGE_CACHE_TTL_SEC)
-    async with _recipe_image_cache_lock:
-        _recipe_image_url_cache[key] = (url, exp)
+    await set_cached_image_url(key, url)
 
 
 async def generate_recipe_image(recipe_name: str) -> str:
@@ -353,20 +401,20 @@ async def search_youtube_video(recipe_name: str) -> str | None:
         return None
 
 
-async def _fetch_ai_context(user_id: str) -> tuple[list, list, str | None, str | None]:
+async def _fetch_ai_context(user_id: str, tenant_id: str = "default") -> tuple[list, list, str | None, str | None]:
     """Parallel DB queries for history, cuisine context, and preferences."""
     full_history, (active_cuisine, context_updated_at), prefs = await asyncio.gather(
-        get_user_memory(user_id),
-        get_user_cuisine_context(user_id),
-        get_user_preferences(user_id),
+        get_user_memory(user_id, tenant_id=tenant_id),
+        get_user_cuisine_context(user_id, tenant_id=tenant_id),
+        get_user_preferences(user_id, tenant_id=tenant_id),
     )
     filtered = _filter_history_after_context(full_history, context_updated_at)
     return full_history, filtered, active_cuisine, prefs
 
 
-async def _get_last_recipe_json(user_id: str) -> dict | None:
+async def _get_last_recipe_json(user_id: str, tenant_id: str = "default") -> dict | None:
     """Extract the last recipe JSON from conversation history."""
-    history = await get_user_memory(user_id)
+    history = await get_user_memory(user_id, tenant_id=tenant_id)
     for msg in reversed(history):
         if msg.get("role") != "assistant":
             continue

@@ -8,7 +8,7 @@ from typing import Literal
 
 from app.config import QUEUE_DEDUPE_TTL_SEC, QUEUE_MAX_SIZE, QUEUE_WORKER_COUNT, logger
 from app.models import WebhookImageEvent, WebhookMessageEvent, WebhookPostbackEvent
-from app.observability import incr
+from app.observability import incr, reset_request_id, reset_user_hash, set_request_id, set_user_hash
 
 JobType = Literal["text", "image", "postback"]
 JobEvent = WebhookMessageEvent | WebhookImageEvent | WebhookPostbackEvent
@@ -19,6 +19,9 @@ class QueueJob:
     job_type: JobType
     event: JobEvent
     event_id: str
+    request_id: str = "-"
+    user_hash: str = "-"
+    trace_carrier: dict[str, str] | None = None
 
 
 _job_queue: asyncio.Queue[QueueJob] = asyncio.Queue(maxsize=QUEUE_MAX_SIZE)
@@ -58,18 +61,57 @@ async def enqueue_job(job: QueueJob) -> JobType | Literal["deduplicated", "queue
 async def _process_job(job: QueueJob) -> None:
     from app.handlers import process_ai_reply, process_image_reply, process_postback_reply
 
-    if job.job_type == "text":
-        await process_ai_reply(job.event)  # type: ignore[arg-type]
-    elif job.job_type == "image":
-        await process_image_reply(job.event)  # type: ignore[arg-type]
-    else:
-        await process_postback_reply(job.event)  # type: ignore[arg-type]
+    trace_token = None
+    try:
+        if job.trace_carrier:
+            from opentelemetry import context as otel_context
+            from opentelemetry.propagate import extract
+
+            ctx = extract(job.trace_carrier)
+            trace_token = otel_context.attach(ctx)
+    except Exception:
+        trace_token = None
+
+    try:
+        tracer = None
+        try:
+            from opentelemetry import trace
+
+            tracer = trace.get_tracer("chef-agent.queue")
+        except Exception:
+            tracer = None
+
+        if tracer:
+            with tracer.start_as_current_span(f"queue.process_{job.job_type}"):
+                if job.job_type == "text":
+                    await process_ai_reply(job.event)  # type: ignore[arg-type]
+                elif job.job_type == "image":
+                    await process_image_reply(job.event)  # type: ignore[arg-type]
+                else:
+                    await process_postback_reply(job.event)  # type: ignore[arg-type]
+        else:
+            if job.job_type == "text":
+                await process_ai_reply(job.event)  # type: ignore[arg-type]
+            elif job.job_type == "image":
+                await process_image_reply(job.event)  # type: ignore[arg-type]
+            else:
+                await process_postback_reply(job.event)  # type: ignore[arg-type]
+    finally:
+        if trace_token is not None:
+            try:
+                from opentelemetry import context as otel_context
+
+                otel_context.detach(trace_token)
+            except Exception:
+                pass
 
 
 async def _worker_loop(worker_id: int) -> None:
     logger.info("Queue worker started: %s", worker_id)
     while True:
         job = await _job_queue.get()
+        req_token = set_request_id(job.request_id)
+        user_token = set_user_hash(job.user_hash)
         try:
             incr("queue.processing_total")
             await _process_job(job)
@@ -78,6 +120,8 @@ async def _worker_loop(worker_id: int) -> None:
             incr("queue.errors_total")
             logger.exception("Queue worker failed processing event %s", job.event_id)
         finally:
+            reset_request_id(req_token)
+            reset_user_hash(user_token)
             _job_queue.task_done()
 
 

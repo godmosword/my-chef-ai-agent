@@ -17,9 +17,5 @@ services:
       # Render Postgres：在 Dashboard Link Database 後會自動帶入 DATABASE_URL；亦可手動貼 Internal URL
       - key: DATABASE_URL
         sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
       - key: GEMINI_API_KEY
         sync: false

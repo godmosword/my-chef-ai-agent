@@ -4,25 +4,21 @@ from __future__ import annotations
 import asyncio
 import json
 import random
-from datetime import datetime, timezone
 from urllib.parse import parse_qs
 
 from linebot.v3.messaging import (
     AsyncApiClient,
     AsyncMessagingApi,
-    FlexContainer,
     FlexMessage,
     PushMessageRequest,
     ReplyMessageRequest,
     TextMessage,
 )
-from openai import APITimeoutError, AuthenticationError, BadRequestError
 
 from app.config import (
     CUISINE_LABELS,
     CUISINE_SELECTOR_KEYWORDS,
     FAVORITES_KEYWORDS,
-    MAX_HISTORY_TURNS,
     MAX_MESSAGE_LENGTH,
     RANDOM_SIDEDISH_CMD,
     RANDOM_STYLES,
@@ -37,35 +33,28 @@ from app.db import (
     delete_user_data,
     delete_favorite_recipe,
     get_favorite_recipes,
+    get_user_memory,
     is_database_configured,
     save_favorite_recipe,
     save_user_memory,
     update_user_cuisine_context,
 )
 from app.helpers import (
-    _build_scenario_instructions,
-    _build_system_prompt,
-    _condense_assistant_message,
-    _flex_safe_https_url,
+    _extract_json,
     _parse_to_list,
     _safe_str,
 )
+from app.handlers_commands import dispatch_recipe_generation
+from app.handlers_recipe_flow import background_generate_recipe
 from app.flex_messages import (
     CUISINE_SELECTOR_MSG,
-    build_fallback_recipe_flex,
     build_favorites_carousel,
-    generate_flex_message,
     get_main_menu_flex,
 )
-from app.ai_errors import format_ai_error_for_user
 from app.ai_service import (
-    _fetch_ai_context,
     _get_last_recipe_json,
-    call_ai_with_retry,
     download_line_image,
-    generate_recipe_image,
     identify_ingredients_from_image,
-    search_youtube_video,
 )
 from app.billing import consume_quota
 from app.observability import incr
@@ -102,9 +91,26 @@ async def _push_line_message(user_id: str, msg: TextMessage | FlexMessage) -> No
             return
         except Exception as exc:
             if attempt == 0:
+                logger.warning("Push retry user=%s due to: %s", user_id, exc)
                 await asyncio.sleep(0.3)
                 continue
             raise
+
+
+async def _get_recipe_json_by_timestamp(user_id: str, timestamp: str, tenant_id: str = "default") -> dict | None:
+    if not timestamp:
+        return None
+    history = await get_user_memory(user_id, tenant_id=tenant_id)
+    for msg in reversed(history):
+        if msg.get("role") != "assistant":
+            continue
+        if (msg.get("timestamp") or "") != timestamp:
+            continue
+        try:
+            return _extract_json(msg.get("content") or "")
+        except (ValueError, json.JSONDecodeError):
+            return None
+    return None
 
 
 async def _background_generate_recipe(
@@ -112,112 +118,19 @@ async def _background_generate_recipe(
     user_id: str,
     tenant_id: str,
     user_message: str,
+    quota_remaining: int | None = None,
+    quota_limit: int | None = None,
+    quota_plan_key: str | None = None,
 ) -> None:
-    """
-    Generate recipe in background, fetch media in parallel, then push final result.
-    This avoids reply token timeout for long-running generation.
-    """
-    if not user_id:
-        logger.warning("Skip background generation: missing user_id")
-        return
-    logger.info("Start background recipe generation for user=%s tenant=%s", user_id, tenant_id)
-
-    try:
-        full_history, filtered_history, active_cuisine, prefs = await _fetch_ai_context(user_id)
-        current_cuisine = CUISINE_LABELS.get(active_cuisine or "", active_cuisine or "不拘")
-        effective_system = _build_system_prompt(prefs, current_cuisine)
-
-        history = filtered_history
-        if not history:
-            history = [{"role": "system", "content": effective_system}]
-        elif history[0].get("role") == "system":
-            history[0] = {"role": "system", "content": effective_system}
-        else:
-            history = [{"role": "system", "content": effective_system}] + history
-
-        now_iso = datetime.now(timezone.utc).isoformat()
-        history.append({"role": "user", "content": user_message, "timestamp": now_iso})
-        if len(history) > MAX_HISTORY_TURNS + 1:
-            history = [history[0]] + history[-MAX_HISTORY_TURNS:]
-        api_messages = [
-            {
-                "role": m["role"],
-                "content": (
-                    _condense_assistant_message(m.get("content", ""))
-                    if m.get("role") == "assistant"
-                    else m.get("content", "")
-                ),
-            }
-            for m in history
-        ]
-
-        ai_content, ai_data = await call_ai_with_retry(api_messages, user_id=user_id)
-        to_save = full_history + [
-            {"role": "user", "content": user_message, "timestamp": now_iso},
-            {"role": "assistant", "content": ai_content, "timestamp": now_iso},
-        ]
-        if len(to_save) > MAX_HISTORY_TURNS + 1:
-            to_save = [to_save[0]] + to_save[-MAX_HISTORY_TURNS:]
-        asyncio.create_task(save_user_memory(user_id, to_save))
-
-        recipe_name = _safe_str(ai_data.get("recipe_name"), "美味食譜", max_len=80)
-        photo_url, video_url = await asyncio.gather(
-            generate_recipe_image(recipe_name),
-            search_youtube_video(recipe_name),
-        )
-
-        g = ai_data.get
-        flex_dict = generate_flex_message(
-            g("kitchen_talk", []), g("theme", ""), recipe_name,
-            g("ingredients", []), g("steps", []), g("shopping_list", []),
-            g("estimated_total_cost", ""),
-            recipe_name_for_postback=recipe_name,
-            photo_url=_flex_safe_https_url(photo_url),
-            video_url=_flex_safe_https_url(video_url),
-        )
-        msg: TextMessage | FlexMessage = FlexMessage(
-            alt_text=f"職人提案：{recipe_name}",
-            contents=FlexContainer.from_dict(flex_dict),
-        )
-
-    except (json.JSONDecodeError, ValueError) as exc:
-        incr("handler.ai.errors.json_total")
-        logger.error("JSON/Value error for user %s: %s", user_id, exc)
-        try:
-            raw_content = getattr(exc, "raw_content", "無法取得原始內容")
-            msg = build_fallback_recipe_flex(raw_content)
-        except Exception:
-            msg = TextMessage(
-                text=f"👨‍🍳 AI 格式解析失敗：{str(exc)[:100]}\n請輸入「清除記憶」後換個說法試試。"
-            )
-
-    except APITimeoutError:
-        incr("handler.ai.errors.timeout_total")
-        msg = TextMessage(text="👨‍🍳 AI 廚房反應太慢，請稍後再試！")
-
-    except (AuthenticationError, BadRequestError) as exc:
-        err_msg = str(exc).lower()
-        if "api key" in err_msg and ("expired" in err_msg or "invalid" in err_msg):
-            logger.error("API key issue for user %s: %s", user_id, exc)
-            msg = TextMessage(text="👨‍🍳 AI 金鑰已過期或無效，請聯繫管理員更新 API Key。")
-        else:
-            logger.exception("API request error for user %s", user_id)
-            msg = TextMessage(text=(
-                "👨‍🍳 呼叫 AI 時發生意外：\n"
-                f"{type(exc).__name__}: {str(exc)[:200]}\n\n"
-                "請截圖此錯誤並輸入「清除記憶」重試。"
-            ))
-
-    except Exception as exc:
-        incr("handler.ai.errors.unexpected_total")
-        logger.exception("Unexpected error for user %s", user_id)
-        msg = TextMessage(text=format_ai_error_for_user(exc))
-
-    try:
-        await _push_line_message(user_id, msg)
-    except Exception as exc:
-        incr("handler.ai.errors.push_total")
-        logger.exception("Push final message failed for user %s: %s", user_id, exc)
+    await background_generate_recipe(
+        user_id=user_id,
+        tenant_id=tenant_id,
+        user_message=user_message,
+        push_fn=_push_line_message,
+        quota_remaining=quota_remaining,
+        quota_limit=quota_limit,
+        quota_plan_key=quota_plan_key,
+    )
 
 
 # ─── Image message handler ──────────────────────────────────────────────────────
@@ -297,8 +210,13 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
         return
 
     if stripped in RESET_KEYWORDS:
-        await clear_user_memory(user_id)
-        await reply(TextMessage(text=f"👨‍🍳 歡迎！廚房已備妥，{AI_MODEL_FOR_CALL} 已就緒。請問想吃什麼？"))
+        await clear_user_memory(user_id, tenant_id=tenant_id)
+        await reply(TextMessage(
+            text=(
+                f"👨‍🍳 歡迎！廚房已備妥，{AI_MODEL_FOR_CALL} 已就緒。\n"
+                "可直接輸入料理需求，或點螢幕下方圖文選單快速開始。"
+            )
+        ))
         return
 
     if stripped in {"選單", "開始"}:
@@ -367,7 +285,7 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
     # ── Browse favorites ──
 
     if stripped in FAVORITES_KEYWORDS:
-        favorites = await get_favorite_recipes(user_id)
+        favorites = await get_favorite_recipes(user_id, tenant_id=tenant_id)
         if not favorites:
             await reply(TextMessage(
                 text="👨‍🍳 您還沒有收藏任何食譜呢！\n在食譜卡片上按「❤️ 收藏食譜」就能存下喜歡的菜色。"
@@ -379,7 +297,7 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
     # ── Shopping list ──
 
     if stripped == VIEW_SHOPPING_CMD:
-        last_recipe = await _get_last_recipe_json(user_id)
+        last_recipe = await _get_last_recipe_json(user_id, tenant_id=tenant_id)
         if not last_recipe:
             await reply(TextMessage(text="👨‍🍳 尚未有食譜紀錄，請先輸入想吃的料理！"))
             return
@@ -396,37 +314,13 @@ async def process_ai_reply(event: WebhookMessageEvent, *, skip_quota_check: bool
     if stripped == RANDOM_SIDEDISH_CMD:
         user_message = f"請用「{random.choice(RANDOM_STYLES)}」風格研發一道隨機配菜，不需要我先指定食材。"
 
-    if not skip_quota_check:
-        quota = await consume_quota(
-            user_id=user_id,
-            tenant_id=tenant_id,
-            units=1,
-            event_type="text_recipe_generation",
-        )
-        if not quota.allowed:
-            upgrade_url = build_checkout_url(user_id=user_id, tenant_id=tenant_id, plan_key="pro")
-            await reply(TextMessage(
-                text=(
-                    "👨‍🍳 今日免費額度已用完。\n"
-                    f"目前方案：{quota.plan_key}，每日上限 {quota.limit} 次。\n"
-                    f"你可以明天再來，或升級方案解鎖更多配方次數：{upgrade_url}"
-                )
-            ))
-            return
-
-    # ── Scenario detection ──
-
-    scenario_prefix = _build_scenario_instructions(user_message)
-    if scenario_prefix:
-        user_message = scenario_prefix + user_message
-
-    await reply(TextMessage(text="👨‍🍳 主廚正在為您研發菜單與擺盤，請稍候片刻..."))
-    asyncio.create_task(
-        _background_generate_recipe(
-            user_id=user_id,
-            tenant_id=tenant_id,
-            user_message=user_message,
-        )
+    await dispatch_recipe_generation(
+        user_id=user_id,
+        tenant_id=tenant_id,
+        user_message=user_message,
+        reply_fn=reply,
+        background_fn=_background_generate_recipe,
+        skip_quota_check=skip_quota_check,
     )
 
 
@@ -441,19 +335,19 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
     # ── Save recipe ──
     if data.startswith("save_recipe:"):
         recipe_name = _safe_str(data[len("save_recipe:"):].strip(), "美味食譜", max_len=200)
-        recipe_data = await _get_last_recipe_json(event.user_id) or {"recipe_name": recipe_name}
+        recipe_data = await _get_last_recipe_json(event.user_id, tenant_id=event.tenant_id) or {"recipe_name": recipe_name}
         if not is_database_configured():
             await _reply_line(
                 event.reply_token,
                 TextMessage(
                     text=(
                         "👨‍🍳 尚未連結資料庫，無法收藏食譜。\n"
-                        "請管理員在部署環境設定 **DATABASE_URL**（Render Postgres）或 **Supabase**。"
+                        "請管理員在部署環境設定 **DATABASE_URL**（Render Postgres）。"
                     )
                 ),
                 user_id=event.user_id,
             )
-        elif await save_favorite_recipe(event.user_id, recipe_name, recipe_data):
+        elif await save_favorite_recipe(event.user_id, recipe_name, recipe_data, tenant_id=event.tenant_id):
             await _reply_line(
                 event.reply_token,
                 TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"),
@@ -465,7 +359,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
                 TextMessage(
                     text=(
                         "👨‍🍳 收藏寫入失敗（資料庫連線或表格異常）。\n"
-                        "請稍後再試；若持續發生，請管理員檢查 Postgres／Supabase 連線與 migration。"
+                        "請稍後再試；若持續發生，請管理員檢查 Postgres 連線與 migration。"
                     )
                 ),
                 user_id=event.user_id,
@@ -484,6 +378,51 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         await process_ai_reply(fake_event)
         return
 
+    # ── Expand recipe steps ──
+    if action == "expand_steps":
+        requested_ts = (parsed.get("ts") or [""])[0]
+        if requested_ts:
+            recipe = await _get_recipe_json_by_timestamp(
+                event.user_id,
+                requested_ts,
+                tenant_id=event.tenant_id,
+            )
+        else:
+            recipe = await _get_last_recipe_json(event.user_id, tenant_id=event.tenant_id)
+        if not recipe:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 找不到最近食譜，請先生成一道新料理。"),
+                user_id=event.user_id,
+            )
+            return
+        name = _safe_str((parsed.get("name") or [recipe.get("recipe_name") or "這道料理"])[0], "這道料理", max_len=48)
+        steps = _parse_to_list(recipe.get("steps", []))
+        if not steps:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text=f"👨‍🍳「{name}」目前沒有可展開的步驟。"),
+                user_id=event.user_id,
+            )
+            return
+        requested_name = _safe_str((parsed.get("name") or [""])[0], "")
+        if requested_name and _safe_str(recipe.get("recipe_name"), "") and requested_name != _safe_str(recipe.get("recipe_name"), ""):
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 這張卡片的步驟已過期，請重新開啟最新食譜再試一次。"),
+                user_id=event.user_id,
+            )
+            return
+        lines = [f"📋 {name} 完整步驟"] + [
+            f"{i + 1}. {_safe_str(step, '步驟內容待補')}" for i, step in enumerate(steps)
+        ]
+        await _reply_line(
+            event.reply_token,
+            TextMessage(text="\n".join(lines)[:5000]),
+            user_id=event.user_id,
+        )
+        return
+
     # ── Delete favorite ──
     if action == "delete_favorite":
         recipe_id_str = (parsed.get("id") or ["0"])[0]
@@ -494,10 +433,10 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         if not is_database_configured():
             await _reply_line(
                 event.reply_token,
-                TextMessage(text="👨‍🍳 尚未連結資料庫，無法變更收藏。請管理員設定 DATABASE_URL 或 Supabase。"),
+                TextMessage(text="👨‍🍳 尚未連結資料庫，無法變更收藏。請管理員設定 DATABASE_URL。"),
                 user_id=event.user_id,
             )
-        elif recipe_id and await delete_favorite_recipe(event.user_id, recipe_id):
+        elif recipe_id and await delete_favorite_recipe(event.user_id, recipe_id, tenant_id=event.tenant_id):
             await _reply_line(event.reply_token, TextMessage(text="🗑️ 已從收藏中移除！"), user_id=event.user_id)
         else:
             await _reply_line(
@@ -511,7 +450,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
     if action == "change_cuisine":
         cuisine = (parsed.get("cuisine") or [""])[0]
         if cuisine:
-            await update_user_cuisine_context(event.user_id, cuisine)
+            await update_user_cuisine_context(event.user_id, cuisine, tenant_id=event.tenant_id)
             fake_event = WebhookMessageEvent(
                 reply_token=event.reply_token,
                 user_id=event.user_id,

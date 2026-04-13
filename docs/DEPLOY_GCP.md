@@ -99,8 +99,7 @@ git push -u origin main
 | `LINE_CHANNEL_ACCESS_TOKEN` | Access Token | [LINE Developers](https://developers.line.biz/) → Channel → Messaging API |
 | `LINE_CHANNEL_SECRET` | Channel Secret | LINE Developers → Basic settings |
 | `GEMINI_API_KEY` | API 金鑰 | [Google AI Studio](https://aistudio.google.com/apikey) |
-| `SUPABASE_URL` | 專案 URL | [Supabase Dashboard](https://supabase.com/dashboard)（選填） |
-| `SUPABASE_KEY` | anon key | Supabase Settings → API（選填） |
+| `DATABASE_URL` | Postgres 連線字串 | Render Postgres 或其他 PostgreSQL（選填，建議正式環境設定） |
 
 ---
 

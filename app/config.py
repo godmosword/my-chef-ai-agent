@@ -1,12 +1,16 @@
 """Environment, constants, and logging configuration."""
 from __future__ import annotations
 
+import json
 import logging
 import os
+import tempfile
+import atexit
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
-from app.observability import get_request_id
+from app.observability import get_request_id, get_user_hash
 
 # ─── Logging ────────────────────────────────────────────────────────────────────
 
@@ -14,23 +18,87 @@ from app.observability import get_request_id
 class RequestIdFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.request_id = get_request_id()
+        record.user_hash = get_user_hash()
+        trace_id = "-"
+        span_id = "-"
+        try:
+            from opentelemetry import trace
+
+            span = trace.get_current_span()
+            span_ctx = span.get_span_context() if span else None
+            if span_ctx and span_ctx.is_valid:
+                trace_id = f"{span_ctx.trace_id:032x}"
+                span_id = f"{span_ctx.span_id:016x}"
+        except Exception:
+            pass
+        record.trace_id = trace_id
+        record.span_id = span_id
         return True
 
-logging.basicConfig(
-    level=logging.DEBUG if os.getenv("DEBUG", "").lower() in ("1", "true", "yes") else logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s [req:%(request_id)s]: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "request_id": getattr(record, "request_id", "-"),
+            "user_hash": getattr(record, "user_hash", "-"),
+            "trace_id": getattr(record, "trace_id", "-"),
+            "span_id": getattr(record, "span_id", "-"),
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
+
+logging.basicConfig(level=logging.DEBUG if os.getenv("DEBUG", "").lower() in ("1", "true", "yes") else logging.INFO)
 logger = logging.getLogger("chef-agent")
 _request_filter = RequestIdFilter()
 logging.getLogger().addFilter(_request_filter)
 for _handler in logging.getLogger().handlers:
+    _handler.setFormatter(JsonLogFormatter())
     _handler.addFilter(_request_filter)
 logger.addFilter(_request_filter)
 
 # ─── Environment ────────────────────────────────────────────────────────────────
 
 load_dotenv()
+
+# ─── GCP Vertex AI 憑證處理 ──────────────────────────────────────────────────────
+# 若提供 GOOGLE_APPLICATION_CREDENTIALS_JSON，啟動時寫入暫存檔並設定
+# GOOGLE_APPLICATION_CREDENTIALS，供 google-auth／Vertex ADC 讀取。
+
+GCP_JSON_STR = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON") or "").strip()
+
+if GCP_JSON_STR:
+    _gcp_temp_creds_path: str | None = None
+    try:
+        json.loads(GCP_JSON_STR)
+        temp_creds = tempfile.NamedTemporaryFile(
+            suffix=".json",
+            delete=False,
+            mode="w",
+            encoding="utf-8",
+        )
+        temp_creds.write(GCP_JSON_STR)
+        temp_creds.close()
+        _gcp_temp_creds_path = temp_creds.name
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = _gcp_temp_creds_path
+        logger.info("✅ GCP 憑證已動態寫入暫存檔")
+
+        def _cleanup_gcp_temp_creds() -> None:
+            if not _gcp_temp_creds_path:
+                return
+            try:
+                if os.path.exists(_gcp_temp_creds_path):
+                    os.remove(_gcp_temp_creds_path)
+            except Exception:
+                pass
+
+        atexit.register(_cleanup_gcp_temp_creds)
+    except Exception as e:
+        logger.error("❌ 無法處理 GCP 憑證 JSON: %s", e)
 
 
 def _require_env(name: str) -> str:
@@ -43,16 +111,16 @@ def _require_env(name: str) -> str:
 LINE_CHANNEL_ACCESS_TOKEN = _require_env("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET       = _require_env("LINE_CHANNEL_SECRET")
 MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite-preview")
-SUPABASE_URL              = os.getenv("SUPABASE_URL")
-SUPABASE_KEY              = os.getenv("SUPABASE_KEY")
-# Render Postgres（或任何 PostgreSQL）連線字串；若設定則資料層優先使用 Postgres，不必再設 Supabase
+# Render Postgres（或任何 PostgreSQL）連線字串
 DATABASE_URL              = (os.getenv("DATABASE_URL") or "").strip() or None
 DEFAULT_TENANT_ID         = os.getenv("DEFAULT_TENANT_ID", "default")
 ADMIN_API_TOKEN           = os.getenv("ADMIN_API_TOKEN")
 METRICS_TOKEN             = os.getenv("METRICS_TOKEN")
+LOG_USER_HASH_SALT        = os.getenv("LOG_USER_HASH_SALT", "local-dev-salt")
 BILLING_PROVIDER          = os.getenv("BILLING_PROVIDER", "manual").lower()
 CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")
 BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
+PUBLIC_APP_BASE_URL       = (os.getenv("PUBLIC_APP_BASE_URL") or "").strip().rstrip("/")
 YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
 IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "placeholder").lower()
 GCP_PROJECT_ID            = os.getenv("GCP_PROJECT_ID")
@@ -62,12 +130,24 @@ VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
 # 食譜主圖 URL in-memory 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
 IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "300")))
+IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip().lower()
+REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
+IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
+IMAGE_PUBLIC_BASE_URL = (os.getenv("IMAGE_PUBLIC_BASE_URL") or "").strip().rstrip("/")
+GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("GCS_SIGNED_URL_TTL_SEC", "0")))
+OTEL_ENABLED = os.getenv("OTEL_ENABLED", "0").lower() in ("1", "true", "yes")
+OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "my-chef-ai-agent")
+OTEL_EXPORTER_OTLP_ENDPOINT = (os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip()
+OTEL_SAMPLING_RATIO = max(0.0, min(1.0, float(os.getenv("OTEL_SAMPLING_RATIO", "1.0"))))
 # AI chat.completions 遇 429／逾時／連線錯誤時的額外重試次數（不含第一次請求）
 AI_TRANSPORT_MAX_RETRIES = max(0, int(os.getenv("AI_TRANSPORT_MAX_RETRIES", "3")))
 AI_TRANSPORT_BASE_DELAY_SEC = max(0.05, float(os.getenv("AI_TRANSPORT_BASE_DELAY_SEC", "0.5")))
 # 每 IP 每分鐘請求上限；0 關閉該類型限制
 RATE_LIMIT_CALLBACK_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_CALLBACK_PER_MINUTE", "120")))
 RATE_LIMIT_PUBLIC_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_PUBLIC_PER_MINUTE", "90")))
+RATE_LIMIT_USER_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_USER_PER_MINUTE", "30")))
+RATE_LIMIT_USER_BURST = max(0, int(os.getenv("RATE_LIMIT_USER_BURST", "5")))
+QUOTA_WARN_THRESHOLD = max(0, int(os.getenv("QUOTA_WARN_THRESHOLD", "3")))
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
@@ -92,6 +172,9 @@ QUEUE_WORKER_COUNT   = int(os.getenv("QUEUE_WORKER_COUNT", "2"))
 QUEUE_MAX_SIZE       = int(os.getenv("QUEUE_MAX_SIZE", "1000"))
 QUEUE_DEDUPE_TTL_SEC = int(os.getenv("QUEUE_DEDUPE_TTL_SEC", "900"))
 REQUIRE_ATOMIC_USAGE = os.getenv("REQUIRE_ATOMIC_USAGE", "0").lower() in ("1", "true", "yes")
+RECIPE_STEPS_PREVIEW_COUNT = max(1, int(os.getenv("RECIPE_STEPS_PREVIEW_COUNT", "3")))
+RECIPE_STEPS_MAX_COUNT = max(1, int(os.getenv("RECIPE_STEPS_MAX_COUNT", "6")))
+RECIPE_STEP_MAX_CHARS = max(10, int(os.getenv("RECIPE_STEP_MAX_CHARS", "24")))
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
 CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
@@ -150,3 +233,10 @@ PLAN_DAILY_LIMITS = {
     "pro": int(os.getenv("PLAN_PRO_DAILY_LIMIT", "200")),
     "enterprise": int(os.getenv("PLAN_ENTERPRISE_DAILY_LIMIT", "2000")),
 }
+
+LEGAL_DISCLAIMER_URL = (
+    f"{PUBLIC_APP_BASE_URL}/legal/disclaimer" if PUBLIC_APP_BASE_URL else None
+)
+LEGAL_PRIVACY_URL = (
+    f"{PUBLIC_APP_BASE_URL}/legal/privacy" if PUBLIC_APP_BASE_URL else None
+)

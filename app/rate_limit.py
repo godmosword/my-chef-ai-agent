@@ -7,7 +7,13 @@ from collections import defaultdict
 
 from fastapi import HTTPException, Request
 
-from app.config import RATE_LIMIT_CALLBACK_PER_MINUTE, RATE_LIMIT_PUBLIC_PER_MINUTE, logger
+from app.config import (
+    RATE_LIMIT_CALLBACK_PER_MINUTE,
+    RATE_LIMIT_PUBLIC_PER_MINUTE,
+    RATE_LIMIT_USER_BURST,
+    RATE_LIMIT_USER_PER_MINUTE,
+    logger,
+)
 from app.observability import incr
 
 _rl_lock = asyncio.Lock()
@@ -54,4 +60,16 @@ async def enforce_public_rate_limit(request: Request) -> None:
     if not await _allow(key, RATE_LIMIT_PUBLIC_PER_MINUTE):
         incr("http.rate_limit.blocked_total")
         logger.warning("Rate limit exceeded for public route ip=%s path=%s", ip, request.url.path)
+        raise HTTPException(status_code=429, detail="Too many requests")
+
+
+async def enforce_user_rate_limit(user_id: str, tenant_id: str = "default") -> None:
+    """Per-user(+tenant) webhook throttling to complement per-IP limits."""
+    if not user_id:
+        return
+    effective_limit = RATE_LIMIT_USER_PER_MINUTE + RATE_LIMIT_USER_BURST
+    key = f"callback-user:{tenant_id}:{user_id}"
+    if not await _allow(key, effective_limit):
+        incr("http.rate_limit.user_blocked_total")
+        logger.warning("Rate limit exceeded for callback tenant=%s user=%s", tenant_id, user_id)
         raise HTTPException(status_code=429, detail="Too many requests")

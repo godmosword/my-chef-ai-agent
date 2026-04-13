@@ -20,6 +20,7 @@ from main import (
     clear_user_memory,
 )
 from app.flex_messages import build_fallback_recipe_flex
+import app.flex_messages as flex_messages
 from app.helpers import _flex_safe_https_url
 
 
@@ -114,17 +115,17 @@ class TestExtractJson:
             _extract_json('{"recipe_name": 無效內容}')
 
 
-# ─── Memory (Stateless, 100% Supabase, Async) ────────────────────────────────────
+# ─── Memory (no DB configured fallback, Async) ─────────────────────────────────
 
 class TestMemoryManagement:
     @pytest.mark.asyncio
-    async def test_get_empty_memory_returns_empty_list_when_no_supabase(self):
-        """無 Supabase 時 get_user_memory 回傳空陣列。"""
+    async def test_get_empty_memory_returns_empty_list_when_no_database(self):
+        """無 DATABASE_URL 時 get_user_memory 回傳空陣列。"""
         assert await get_user_memory("new_user") == []
 
     @pytest.mark.asyncio
-    async def test_save_and_clear_do_not_raise_without_supabase(self):
-        """無 Supabase 時 save/clear 不拋錯。"""
+    async def test_save_and_clear_do_not_raise_without_database(self):
+        """無 DATABASE_URL 時 save/clear 不拋錯。"""
         await save_user_memory("user_x", [{"role": "user", "content": "test"}])
         await clear_user_memory("user_x")
 
@@ -207,6 +208,41 @@ class TestGenerateFlexMessage:
         result = generate_flex_message(**self.SAMPLE_ARGS)
         assert "hero" not in result
         assert result["body"]["contents"][0]["type"] == "box"
+
+    def test_long_steps_show_expand_postback_button(self):
+        result = generate_flex_message(
+            **{
+                **self.SAMPLE_ARGS,
+                "steps": ["步驟一", "步驟二", "步驟三", "步驟四"],
+                "recipe_name_for_postback": "番茄炒蛋",
+                "step_preview_count": 2,
+            }
+        )
+        footer = result["footer"]["contents"]
+        expand_btn = next(
+            (
+                c for c in footer
+                if c.get("type") == "button"
+                and c.get("action", {}).get("type") == "postback"
+                and "expand_steps" in c.get("action", {}).get("data", "")
+            ),
+            None,
+        )
+        assert expand_btn is not None
+
+    def test_footer_adds_legal_uri_buttons_when_configured(self, monkeypatch):
+        monkeypatch.setattr(flex_messages, "LEGAL_DISCLAIMER_URL", "https://app.example.com/legal/disclaimer")
+        monkeypatch.setattr(flex_messages, "LEGAL_PRIVACY_URL", "https://app.example.com/legal/privacy")
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "recipe_name_for_postback": "番茄炒蛋"}
+        )
+        uris = [
+            c.get("action", {}).get("uri")
+            for c in result["footer"]["contents"]
+            if c.get("type") == "button" and c.get("action", {}).get("type") == "uri"
+        ]
+        assert "https://app.example.com/legal/disclaimer" in uris
+        assert "https://app.example.com/legal/privacy" in uris
 
 
 class TestBuildFallbackRecipeFlex:

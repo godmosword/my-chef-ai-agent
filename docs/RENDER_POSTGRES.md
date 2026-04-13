@@ -1,4 +1,4 @@
-# Render Postgres 設定（取代 Supabase）
+# Render Postgres 設定
 
 在 Render 上新增 **PostgreSQL** 後，將 Web Service 與該資料庫綁定，並在環境變數中設定 `DATABASE_URL`。
 
@@ -12,8 +12,6 @@
 在 **Web Service**（本專案）→ **Environment**：
 
 - 新增或連結變數 **`DATABASE_URL`**：若使用 Render 的「Link Database」，通常會自動注入 `DATABASE_URL`。
-- 若已改用 Postgres，可**移除** `SUPABASE_URL` / `SUPABASE_KEY`（避免誤用舊 BaaS）。
-
 ## 3. 建立資料表
 
 **方式 A（建議）**：本機或 CI 已設定 `DATABASE_URL` 時，於專案根目錄執行：
@@ -22,36 +20,10 @@
 python3 init_db.py
 ```
 
-**方式 B**：在 Postgres 上直接執行下列 SQL（Render Postgres → **Shell** 或任何 `psql` 客戶端皆可）：
+**方式 B**：直接套用 migration（Render Postgres → **Shell** 或任何 `psql` 客戶端皆可）：
 
-```sql
--- 與 README 中 Supabase 節相同結構，供本專案 ORM 無關之直連使用
-
-CREATE TABLE IF NOT EXISTS user_memory (
-  user_id text PRIMARY KEY,
-  history jsonb NOT NULL,
-  updated_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS user_preferences (
-  user_id text PRIMARY KEY,
-  preferences text,
-  updated_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS favorite_recipes (
-  id bigserial PRIMARY KEY,
-  user_id text NOT NULL,
-  recipe_name text NOT NULL,
-  recipe_data jsonb NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS user_cuisine_context (
-  user_id text PRIMARY KEY,
-  active_cuisine text NOT NULL,
-  context_updated_at timestamptz NOT NULL
-);
+```bash
+psql "$DATABASE_URL" -f migrations/20260414_postgres_multitenant.sql
 ```
 
 ## 4. 重新部署
@@ -60,5 +32,4 @@ CREATE TABLE IF NOT EXISTS user_cuisine_context (
 
 ## 行為說明
 
-- 若設定了 **`DATABASE_URL`**：記憶、收藏、菜系情境一律走 **PostgreSQL**，不會再建立 Supabase 連線。
-- 若**未**設定 `DATABASE_URL` 但設定了 `SUPABASE_URL` + `SUPABASE_KEY`：行為與先前相同（Supabase REST）。
+- 若設定了 **`DATABASE_URL`**：記憶、收藏、菜系情境、配額與訂閱一律走 **PostgreSQL**。

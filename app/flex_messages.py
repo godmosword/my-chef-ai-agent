@@ -1,9 +1,17 @@
 """LINE Flex Message builders for recipe cards, menus, carousels, and favorites."""
 from __future__ import annotations
 
+import urllib.parse
+
 from linebot.v3.messaging import FlexContainer, FlexMessage
 
-from app.config import ROLE_COLORS, LINE_TEXT_MAX
+from app.config import (
+    LEGAL_DISCLAIMER_URL,
+    LEGAL_PRIVACY_URL,
+    LINE_TEXT_MAX,
+    RECIPE_STEPS_PREVIEW_COUNT,
+    ROLE_COLORS,
+)
 from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
 
 
@@ -167,6 +175,8 @@ def generate_flex_message(
     *,
     photo_url: str | None = None,
     video_url: str | None = None,
+    step_preview_count: int = RECIPE_STEPS_PREVIEW_COUNT,
+    recipe_lookup_ts: str | None = None,
 ) -> dict:
     """Build a recipe Flex Message bubble dict.
 
@@ -204,6 +214,11 @@ def generate_flex_message(
         for item in _parse_to_list(ingredients)
     ]
 
+    all_steps = _parse_to_list(steps)
+    safe_step_preview_count = max(1, int(step_preview_count))
+    visible_steps = all_steps[:safe_step_preview_count]
+    has_hidden_steps = len(all_steps) > len(visible_steps)
+
     step_rows = [
         {
             "type": "box", "layout": "baseline", "spacing": "md", "margin": "lg",
@@ -212,7 +227,7 @@ def generate_flex_message(
                 {"type": "text", "text": _safe_str(step, "進行中", LINE_TEXT_MAX).lstrip("0123456789. "), "color": "#431407", "size": "sm", "wrap": True, "flex": 1},
             ],
         }
-        for i, step in enumerate(_parse_to_list(steps))
+        for i, step in enumerate(visible_steps)
     ]
 
     shop_rows = [{"type": "text", "text": f"• {_safe_str(s, '生鮮')}", "size": "sm", "color": "#78350F", "margin": "sm"} for s in _parse_to_list(shopping_list)]
@@ -247,14 +262,25 @@ def generate_flex_message(
                     {"type": "text", "text": "INGREDIENTS & COST", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
                     {"type": "box", "layout": "vertical", "margin": "md", "contents": ingredient_rows or [{"type": "text", "text": "-"}]},
                     {"type": "separator", "margin": "xl", "color": "#FED7AA"},
-                    {"type": "box", "layout": "horizontal", "margin": "lg", "contents": [
-                        {"type": "text", "text": "TOTAL", "size": "xs", "weight": "bold", "color": "#9A3412", "flex": 0},
-                        {"type": "text", "text": f"NT$ {_safe_str(estimated_total_cost, '估算中')}", "size": "xl", "weight": "bold", "color": "#431407", "align": "end"},
+                    {"type": "box", "layout": "horizontal", "margin": "lg", "paddingAll": "md", "backgroundColor": "#FFEDD5", "cornerRadius": "md", "contents": [
+                        {"type": "text", "text": "TOTAL", "size": "sm", "weight": "bold", "color": "#9A3412", "flex": 0},
+                        {"type": "text", "text": f"NT$ {_safe_str(estimated_total_cost, '估算中')}", "size": "xxl", "weight": "bold", "color": "#431407", "align": "end"},
                     ]},
                 ]},
                 {"type": "box", "layout": "vertical", "paddingAll": "xxl", "paddingTop": "none", "contents": [
                     {"type": "text", "text": "PREPARATION STEPS", "size": "xxs", "weight": "bold", "color": "#B45309", "letterSpacing": "1px"},
                     {"type": "box", "layout": "vertical", "margin": "sm", "contents": step_rows or [{"type": "text", "text": "-"}]},
+                    *(
+                        [{
+                            "type": "text",
+                            "text": f"尚有 {len(all_steps) - len(visible_steps)} 步，點下方按鈕展開",
+                            "size": "xxs",
+                            "color": "#9A3412",
+                            "margin": "md",
+                            "wrap": True,
+                        }]
+                        if has_hidden_steps else []
+                    ),
                 ]},
             ],
         },
@@ -264,7 +290,7 @@ def generate_flex_message(
                 {
                     "type": "box", "layout": "horizontal", "spacing": "md",
                     "contents": [
-                        {"type": "button", "style": "secondary", "height": "sm", "color": "#E7E5E4", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "secondary", "height": "sm", "color": "#D6D3D1", "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
                         {"type": "button", "style": "primary", "height": "sm", "color": "#BE123C", "action": favorite_action},
                     ],
                 },
@@ -303,6 +329,55 @@ def generate_flex_message(
                     "uri": safe_video,
                 },
             },
+        )
+
+    if has_hidden_steps and recipe_name_for_postback:
+        expand_data = f"action=expand_steps&name={urllib.parse.quote(_safe_str(recipe_name_for_postback, '美味食譜'), safe='')}"
+        if recipe_lookup_ts:
+            expand_data += f"&ts={urllib.parse.quote(recipe_lookup_ts, safe='')}"
+        footer_contents.insert(
+            0,
+            {
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "color": "#E2E8F0",
+                "action": {
+                    "type": "postback",
+                    "label": "展開完整步驟",
+                    "data": expand_data[:300],
+                    "displayText": f"展開「{_safe_str(recipe_name_for_postback, '美味食譜', max_len=24)}」完整步驟",
+                },
+            },
+        )
+
+    safe_legal_disclaimer = _flex_safe_https_url(LEGAL_DISCLAIMER_URL)
+    safe_legal_privacy = _flex_safe_https_url(LEGAL_PRIVACY_URL)
+    if safe_legal_disclaimer:
+        footer_contents.append(
+            {
+                "type": "button",
+                "style": "link",
+                "height": "sm",
+                "action": {
+                    "type": "uri",
+                    "label": "完整免責聲明",
+                    "uri": safe_legal_disclaimer,
+                },
+            }
+        )
+    if safe_legal_privacy:
+        footer_contents.append(
+            {
+                "type": "button",
+                "style": "link",
+                "height": "sm",
+                "action": {
+                    "type": "uri",
+                    "label": "隱私政策",
+                    "uri": safe_legal_privacy,
+                },
+            }
         )
 
     return bubble

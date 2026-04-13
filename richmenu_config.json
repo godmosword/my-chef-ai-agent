@@ -5,7 +5,7 @@
   },
   "selected": true,
   "name": "米其林職人大腦主選單",
-  "chatBarText": "👨‍🍳 點我開啟菜單",
+  "chatBarText": "👨‍🍳 一鍵叫主廚",
   "areas": [
     {
       "bounds": {
@@ -16,8 +16,8 @@
       },
       "action": {
         "type": "message",
-        "label": "換菜單",
-        "text": "換菜單"
+        "label": "主選單",
+        "text": "選單"
       }
     },
     {
@@ -55,7 +55,7 @@
       },
       "action": {
         "type": "message",
-        "label": "清冰箱",
+        "label": "清冰箱模式",
         "text": "清冰箱模式"
       }
     },
@@ -81,7 +81,7 @@
       },
       "action": {
         "type": "message",
-        "label": "採買清單",
+        "label": "查看採買清單",
         "text": "🛒 檢視清單"
       }
     }

@@ -32,8 +32,8 @@ HEADERS_BINARY = {
 }
 
 BASE = "https://api.line.me/v2/bot/richmenu"
-IMAGE_PATH = os.path.join(os.path.dirname(__file__), "richmenu.png")
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "richmenu_config.json")
+IMAGE_PATH = os.getenv("RICHMENU_IMAGE_PATH", os.path.join(os.path.dirname(__file__), "richmenu.png"))
+CONFIG_PATH = os.getenv("RICHMENU_CONFIG_PATH", os.path.join(os.path.dirname(__file__), "richmenu_config.json"))
 
 
 def step(msg: str):

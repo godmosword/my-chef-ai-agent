@@ -49,8 +49,6 @@ jobs:
             LINE_CHANNEL_SECRET=${{ secrets.LINE_CHANNEL_SECRET }}
             MODEL_NAME=gemini-3.1-pro-preview
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-            SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
 
       - name: 5. Output Service URL
         run: echo "Deployed to ${{ steps.deploy.outputs.url }}"

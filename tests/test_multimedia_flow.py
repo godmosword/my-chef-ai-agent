@@ -13,6 +13,7 @@ os.environ.setdefault("GEMINI_API_KEY", "test_key")
 from app import ai_service, handlers  # noqa: E402
 from app.billing import QuotaDecision  # noqa: E402
 from app.models import WebhookMessageEvent  # noqa: E402
+from app.models import WebhookPostbackEvent  # noqa: E402
 
 
 @pytest.mark.asyncio
@@ -108,6 +109,14 @@ async def test_generate_recipe_image_with_vertex_returns_none_without_project(mo
 
 
 @pytest.mark.asyncio
+async def test_resolve_public_image_url_uses_cdn_base(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PUBLIC_BASE_URL", "https://cdn.example.com/images")
+    monkeypatch.setattr(ai_service, "GCS_SIGNED_URL_TTL_SEC", 0)
+    out = await ai_service._resolve_public_image_url("gs://bucket-a/folder/food image.png")
+    assert out == "https://cdn.example.com/images/bucket-a/folder/food%20image.png"
+
+
+@pytest.mark.asyncio
 async def test_search_youtube_video_returns_none_without_key(monkeypatch):
     monkeypatch.setattr(ai_service, "YOUTUBE_API_KEY", None)
     assert await ai_service.search_youtube_video("番茄炒蛋") is None
@@ -149,8 +158,7 @@ async def test_process_ai_reply_replies_loading_and_spawns_background(monkeypatc
     )
 
     monkeypatch.setattr(
-        handlers,
-        "consume_quota",
+        "app.handlers_commands.consume_quota",
         AsyncMock(return_value=QuotaDecision(True, "free", 20, 1, 19)),
     )
     reply_mock = AsyncMock()
@@ -168,7 +176,7 @@ async def test_process_ai_reply_replies_loading_and_spawns_background(monkeypatc
         created["task"] = task
         return task
 
-    monkeypatch.setattr(handlers.asyncio, "create_task", _track_task)
+    monkeypatch.setattr("app.handlers_commands.asyncio.create_task", _track_task)
 
     await handlers.process_ai_reply(event)
     await _asyncio.sleep(0)
@@ -181,6 +189,9 @@ async def test_process_ai_reply_replies_loading_and_spawns_background(monkeypatc
         user_id="U123",
         tenant_id="default",
         user_message="幫我做番茄炒蛋",
+        quota_remaining=19,
+        quota_limit=20,
+        quota_plan_key="free",
     )
     assert "task" in created
 
@@ -196,3 +207,73 @@ async def test_background_generate_recipe_skips_when_missing_user_id(monkeypatch
         user_message="test",
     )
     push_mock.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_background_generate_recipe_warns_when_quota_low(monkeypatch):
+    monkeypatch.setattr("app.handlers_recipe_flow.QUOTA_WARN_THRESHOLD", 3)
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow._fetch_ai_context",
+        AsyncMock(return_value=([], [], "不拘", None)),
+    )
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow.call_ai_with_retry",
+        AsyncMock(return_value=(
+            '{"recipe_name":"番茄炒蛋","kitchen_talk":[],"theme":"家常","ingredients":[],"steps":["a","b"],"shopping_list":[],"estimated_total_cost":"88"}',
+            {
+                "recipe_name": "番茄炒蛋",
+                "kitchen_talk": [],
+                "theme": "家常",
+                "ingredients": [],
+                "steps": ["a", "b"],
+                "shopping_list": [],
+                "estimated_total_cost": "88",
+            },
+        )),
+    )
+    monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
+    monkeypatch.setattr("app.handlers_recipe_flow.generate_recipe_image", AsyncMock(return_value=""))
+    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", AsyncMock(return_value=None))
+
+    pushed = []
+
+    async def _push(_user_id, msg):
+        pushed.append(msg)
+
+    monkeypatch.setattr(handlers, "_push_line_message", _push)
+
+    await handlers._background_generate_recipe(
+        user_id="U123",
+        tenant_id="default",
+        user_message="幫我做番茄炒蛋",
+        quota_remaining=2,
+        quota_limit=20,
+        quota_plan_key="free",
+    )
+    assert len(pushed) == 2
+    assert "剩餘額度約 2/20 次" in pushed[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_expand_steps_returns_full_steps_text(monkeypatch):
+    monkeypatch.setattr(
+        handlers,
+        "_get_last_recipe_json",
+        AsyncMock(return_value={"recipe_name": "番茄炒蛋", "steps": ["切番茄", "炒蛋", "拌炒"]}),
+    )
+    reply_mock = AsyncMock()
+    monkeypatch.setattr(handlers, "_reply_line", reply_mock)
+
+    event = WebhookPostbackEvent(
+        reply_token="r1",
+        user_id="U123",
+        data="action=expand_steps&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    assert reply_mock.await_count == 1
+    _token, message = reply_mock.await_args.args[:2]
+    assert _token == "r1"
+    assert "完整步驟" in message.text
+    assert "1. 切番茄" in message.text

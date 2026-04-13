@@ -73,10 +73,14 @@ def _build_system_prompt(
     *,
     base_prompt: str | None = None,
 ) -> str:
-    from app.config import SYSTEM_PROMPT
+    from app.config import RECIPE_STEP_MAX_CHARS, RECIPE_STEPS_MAX_COUNT, SYSTEM_PROMPT
     base = base_prompt or SYSTEM_PROMPT
     base += "\n若涉及「預算方案」，請在 kitchen_talk 中討論 CP 值與採買策略，並嚴格控制 estimated_total_cost。"
     base += "\n若涉及「心情點餐」，請副主廚針對該心情提供具情緒價值與儀式感的料理建議。"
+    base += (
+        f"\n步驟請保持精簡：steps 最多 {RECIPE_STEPS_MAX_COUNT} 步，"
+        f"每步儘量不超過 {RECIPE_STEP_MAX_CHARS} 字。"
+    )
     if prefs:
         base += f"\n飲食禁忌：{prefs}。"
     if current_cuisine and current_cuisine != "不拘":

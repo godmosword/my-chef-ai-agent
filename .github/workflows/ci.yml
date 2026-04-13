@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chef_agent
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d chef_agent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      LINE_CHANNEL_ACCESS_TOKEN: test_token
+      LINE_CHANNEL_SECRET: test_secret
+      GEMINI_API_KEY: test_key
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chef_agent
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Apply migrations
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import psycopg
+
+          db_url = os.environ["DATABASE_URL"]
+          sql = Path("migrations/20260414_postgres_multitenant.sql").read_text(encoding="utf-8")
+          with psycopg.connect(db_url, autocommit=True) as conn:
+              with conn.cursor() as cur:
+                  cur.execute(sql)
+          print("migrations applied")
+          PY
+
+      - name: Run test suite
+        run: python -m pytest tests/ -v

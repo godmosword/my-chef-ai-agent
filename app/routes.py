@@ -11,17 +11,26 @@ from app.config import (
     ADMIN_API_TOKEN,
     DATABASE_URL,
     DEFAULT_TENANT_ID,
+    LOG_USER_HASH_SALT,
     MAX_WEBHOOK_BODY,
     METRICS_TOKEN,
     logger,
 )
-from app.clients import AI_MODEL_FOR_CALL, app, supabase
+from app.clients import AI_MODEL_FOR_CALL, app
 from app.db import get_daily_usage, get_user_subscription, ping_database, set_user_subscription
 from app.models import WebhookMessageEvent, WebhookPostbackEvent, WebhookImageEvent
 from app.helpers import _validate_signature
 from app.job_queue import QueueJob, enqueue_job
-from app.observability import incr, new_request_id, reset_request_id, set_request_id, snapshot
-from app.rate_limit import enforce_callback_rate_limit, enforce_public_rate_limit
+from app.observability import (
+    get_request_id,
+    hash_user_id,
+    incr,
+    new_request_id,
+    reset_request_id,
+    set_request_id,
+    snapshot,
+)
+from app.rate_limit import enforce_callback_rate_limit, enforce_public_rate_limit, enforce_user_rate_limit
 from app.subscriptions import build_checkout_url
 
 from linebot.v3.exceptions import InvalidSignatureError
@@ -31,6 +40,17 @@ class SubscriptionUpdatePayload(BaseModel):
     plan_key: str = Field(default="free")
     status: str = Field(default="active")
     tenant_id: str = Field(default=DEFAULT_TENANT_ID)
+
+
+def _build_trace_carrier() -> dict[str, str]:
+    carrier: dict[str, str] = {}
+    try:
+        from opentelemetry.propagate import inject
+
+        inject(carrier)
+    except Exception:
+        return {}
+    return carrier
 
 
 def _require_admin_token(header_token: str | None) -> None:
@@ -72,7 +92,7 @@ async def readiness():
     Liveness remains GET / (no dependency checks). AI smoke is intentionally omitted.
     """
     ok_db = await ping_database()
-    if not DATABASE_URL and supabase is None:
+    if not DATABASE_URL:
         checks = {"database": "skipped_not_configured"}
         return {"ready": True, "checks": checks}
     checks = {"database": "ok" if ok_db else "error"}
@@ -125,6 +145,7 @@ async def callback(
         if not reply_token or not user_id:
             incr("webhook.events.skipped_missing_identity")
             continue
+        await enforce_user_rate_limit(user_id=user_id, tenant_id=tenant_id)
 
         if ev_type == "message":
             msg = ev.get("message") or {}
@@ -135,6 +156,9 @@ async def callback(
                     job_type="text",
                     event=WebhookMessageEvent(reply_token, user_id, msg.get("text", ""), tenant_id=tenant_id),
                     event_id=(ev.get("webhookEventId") or f"text:{reply_token}:{user_id}:{msg.get('id', '')}"),
+                    request_id=get_request_id(),
+                    user_hash=hash_user_id(user_id, LOG_USER_HASH_SALT),
+                    trace_carrier=_build_trace_carrier(),
                 ))
                 if enqueue_result == "queue_full":
                     raise HTTPException(status_code=503, detail="Queue overloaded")
@@ -146,6 +170,9 @@ async def callback(
                         job_type="image",
                         event=WebhookImageEvent(reply_token, user_id, message_id, tenant_id=tenant_id),
                         event_id=(ev.get("webhookEventId") or f"image:{reply_token}:{user_id}:{message_id}"),
+                        request_id=get_request_id(),
+                        user_hash=hash_user_id(user_id, LOG_USER_HASH_SALT),
+                        trace_carrier=_build_trace_carrier(),
                     ))
                     if enqueue_result == "queue_full":
                         raise HTTPException(status_code=503, detail="Queue overloaded")
@@ -160,6 +187,9 @@ async def callback(
                 job_type="postback",
                 event=WebhookPostbackEvent(reply_token, user_id, data, tenant_id=tenant_id),
                 event_id=(ev.get("webhookEventId") or f"postback:{reply_token}:{user_id}:{data}"),
+                request_id=get_request_id(),
+                user_hash=hash_user_id(user_id, LOG_USER_HASH_SALT),
+                trace_carrier=_build_trace_carrier(),
             ))
             if enqueue_result == "queue_full":
                 raise HTTPException(status_code=503, detail="Queue overloaded")
