@@ -95,7 +95,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 | `IMAGE_CACHE_BACKEND` |  | `auto` / `memory` / `redis` |
 | `REDIS_URL` |  | 跨實例圖片快取（Redis / Upstash） |
 | `IMAGE_CACHE_NAMESPACE` |  | Redis key 前綴（預設 `recipe_image`） |
-| `GCS_SIGNED_URL_TTL_SEC` |  | `gs://` 轉 signed URL 的有效秒數，0 關閉 |
+| `GCS_SIGNED_URL_TTL_SEC` |  | `gs://` 轉 signed URL 的有效秒數（預設 3600）；0 關閉 |
+| `RECIPE_FALLBACK_HERO_IMAGE_URL` |  | 無 AI 主圖時的公開 **https** hero；未設用內建圖；`none`／`-` 關閉 |
 | `RATE_LIMIT_CALLBACK_PER_MINUTE` |  | `POST /callback` 每 IP 分鐘上限，0 關閉 |
 | `RATE_LIMIT_PUBLIC_PER_MINUTE` |  | checkout／legal 等公開路由，0 關閉 |
 | `RATE_LIMIT_USER_PER_MINUTE` / `RATE_LIMIT_USER_BURST` |  | webhook 每 user+tenant 限流 |

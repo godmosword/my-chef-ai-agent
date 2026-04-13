@@ -99,8 +99,10 @@ _recipe_image_url_cache = _memory_cache
 
 
 def _recipe_placeholder_image_url(_recipe_name: str) -> str:
-    """無真實食譜圖時回傳空字串；Flex 改以文字區塊示意，避免隨機圖與菜名無關。"""
-    return ""
+    """無 AI 成品圖時回傳公開 https 備援 URL（見 config.RECIPE_FALLBACK_HERO_IMAGE_URL）。"""
+    from app import config
+
+    return config.RECIPE_FALLBACK_HERO_IMAGE_URL or ""
 
 
 def _gs_to_https_url(gs_uri: str) -> str | None:
@@ -164,6 +166,8 @@ async def _resolve_public_image_url(raw_url: str) -> str | None:
         return None
 
     if IMAGE_PUBLIC_BASE_URL:
+        if not IMAGE_PUBLIC_BASE_URL.startswith("https://"):
+            return None
         safe_obj = urllib.parse.quote(obj, safe="/")
         return f"{IMAGE_PUBLIC_BASE_URL}/{bucket}/{safe_obj}"
 

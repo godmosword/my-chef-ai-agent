@@ -11,6 +11,11 @@
 - **`CONTRIBUTING.md`**：貢獻方式、測試指令，以及 plan／里程碑收尾時必同步更新 **`TODOS.md`**、**`CHANGELOG.md`**、**`README.md`**（詳見 **`AGENTS.md`**）。
 - **`.cursor/rules/plan-ship-docs.mdc`**：Cursor 規則（`alwaysApply: true`），提醒 agent 收尾時一併更新上述三份文件。
 
+### LINE 介面
+
+- **食譜主圖**：`IMAGE_PROVIDER=placeholder` 或 Vertex／DALL·E 失敗時，改為預設使用公開 **https** 備援圖（可 `RECIPE_FALLBACK_HERO_IMAGE_URL` 覆寫，`none` 關閉）；`GCS_SIGNED_URL_TTL_SEC` 預設改為 **3600** 以利 `gs://` 私桶轉簽名 URL。
+- **Rich Menu**：更新 **`richmenu.png`**（2500×1686）為深藍／象牙白／酒紅系扁平版面；上線後請再執行 `python3 setup_richmenu.py` 同步到 LINE。
+
 ---
 
 ## 2026-04（GCP 憑證、穩定性、食譜品質與 Flex）

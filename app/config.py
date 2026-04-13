@@ -134,7 +134,28 @@ IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip
 REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
 IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
 IMAGE_PUBLIC_BASE_URL = (os.getenv("IMAGE_PUBLIC_BASE_URL") or "").strip().rstrip("/")
-GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("GCS_SIGNED_URL_TTL_SEC", "0")))
+if IMAGE_PUBLIC_BASE_URL and not IMAGE_PUBLIC_BASE_URL.startswith("https://"):
+    logger.warning("IMAGE_PUBLIC_BASE_URL 必須為 https，已忽略目前設定")
+    IMAGE_PUBLIC_BASE_URL = ""
+# Vertex 輸出 gs:// 且 bucket 非公開時需簽名 URL；0 關閉簽名（僅能依賴公開 URL 或 IMAGE_PUBLIC_BASE_URL）
+GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("GCS_SIGNED_URL_TTL_SEC", "3600")))
+# 無 AI 主圖時 Flex hero 使用的公開 https 圖；設為 none/- 可關閉（改回純文字區塊）
+_DEFAULT_RECIPE_HERO_FALLBACK = (
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/"
+    "Good_Food_Display_-_NCI_Visuals_Online.jpg/1200px-Good_Food_Display_-_NCI_Visuals_Online.jpg"
+)
+_raw_recipe_fb = (os.getenv("RECIPE_FALLBACK_HERO_IMAGE_URL") or "").strip()
+if not _raw_recipe_fb:
+    RECIPE_FALLBACK_HERO_IMAGE_URL = _DEFAULT_RECIPE_HERO_FALLBACK
+elif _raw_recipe_fb.lower() in ("-", "none", "0", "off", "false"):
+    RECIPE_FALLBACK_HERO_IMAGE_URL = ""
+elif _raw_recipe_fb.startswith("https://"):
+    RECIPE_FALLBACK_HERO_IMAGE_URL = _raw_recipe_fb
+else:
+    logger.warning(
+        "RECIPE_FALLBACK_HERO_IMAGE_URL 必為 https，或設 none 關閉；已改用內建預設圖"
+    )
+    RECIPE_FALLBACK_HERO_IMAGE_URL = _DEFAULT_RECIPE_HERO_FALLBACK
 OTEL_ENABLED = os.getenv("OTEL_ENABLED", "0").lower() in ("1", "true", "yes")
 OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "my-chef-ai-agent")
 OTEL_EXPORTER_OTLP_ENDPOINT = (os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip()

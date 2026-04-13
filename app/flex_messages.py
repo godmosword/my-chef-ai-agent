@@ -72,7 +72,7 @@ def _recipe_text_hero_block(recipe_name: str, theme: str) -> dict:
             {"type": "text", "text": "🍽 今日提案", "size": "xs", "color": "#FED7AA", "weight": "bold"},
             {"type": "text", "text": label, "size": "xxs", "color": "#FDBA74", "margin": "sm", "wrap": True, "align": "center"},
             {"type": "text", "text": name, "size": "xl", "weight": "bold", "color": "#FFFBEB", "wrap": True, "align": "center", "margin": "md"},
-            {"type": "text", "text": "（無成品照片時僅為示意區塊）", "size": "xxs", "color": "#FDBA74", "wrap": True, "align": "center"},
+            {"type": "text", "text": "（無主圖時：色塊標題為示意，非成品照）", "size": "xxs", "color": "#FDBA74", "wrap": True, "align": "center"},
         ],
     }
 

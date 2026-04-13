@@ -10,7 +10,7 @@ os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
 os.environ.setdefault("LINE_CHANNEL_SECRET", "test_secret")
 os.environ.setdefault("GEMINI_API_KEY", "test_key")
 
-from app import ai_service, handlers  # noqa: E402
+from app import ai_service, config, handlers  # noqa: E402
 from app.billing import QuotaDecision  # noqa: E402
 from app.models import WebhookMessageEvent  # noqa: E402
 from app.models import WebhookPostbackEvent  # noqa: E402
@@ -24,7 +24,8 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
-    assert url == ""
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert url.startswith("https://")
 
 
 @pytest.mark.asyncio
@@ -34,7 +35,8 @@ async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
-    assert url == ""
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert url.startswith("https://")
     mock_generate.assert_not_called()
 
 
@@ -58,7 +60,8 @@ async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch)
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("測試菜")
-    assert url == ""
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert url.startswith("https://")
     mock_generate.assert_not_called()
 
 
@@ -99,7 +102,8 @@ async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatc
     )
 
     url = await ai_service.generate_recipe_image("龍蝦燉飯")
-    assert url == ""
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert url.startswith("https://")
 
 
 @pytest.mark.asyncio
