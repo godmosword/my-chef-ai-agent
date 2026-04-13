@@ -28,7 +28,7 @@ Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header).
 python3 -m pytest tests/ -v
 ```
 
-目前：`python3 -m pytest tests/ -v` 通過 **47/47**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
+目前：`python3 -m pytest tests/ -v` 通過 **51/51**。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
@@ -41,6 +41,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 |---------|-------------------|-------|
 | LINE Messaging API | `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_CHANNEL_SECRET` | Dummy values work for server startup; real values needed for webhook replies |
 | Google Gemini AI | `GEMINI_API_KEY` | Required for AI recipe generation |
+| YouTube Data API | `YOUTUBE_API_KEY` | Optional; enables recipe tutorial video lookup |
+| Vertex AI Imagen | `IMAGE_PROVIDER=vertex_imagen`, `GCP_PROJECT_ID` (+ `VERTEX_LOCATION`, `VERTEX_IMAGEN_MODEL`) | Optional; enables real recipe hero image generation (falls back to placeholder on failure) |
 | Render Postgres | `DATABASE_URL` | Optional; when set, memory/favorites use Postgres (see `docs/RENDER_POSTGRES.md`) |
 | Supabase | `SUPABASE_URL`, `SUPABASE_KEY` | Optional if `DATABASE_URL` unset; app degrades gracefully without either |
 
@@ -73,5 +75,6 @@ The webhook will return `"OK"`. A **queue worker** will call Gemini AI and gener
 
 - Environment variables are validated at **module import time** (not at request time). If they're missing, the app crashes immediately on startup.
 - `python-dotenv`：`app/config.py` 會 `load_dotenv()`。可 `cp .env.example .env` 後填值，或直接在 shell 設定環境變數。
+- `IMAGE_PROVIDER=vertex_imagen` 時需可用 GCP 憑證（`VERTEX_SERVICE_ACCOUNT_JSON` 或 `GOOGLE_APPLICATION_CREDENTIALS` / ADC）；缺失時會回退佔位圖。
 - The `pytest` binary may not be on PATH; use `python3 -m pytest` instead.
 - When killing the dev server, also kill child processes (reloader + server worker). Use `lsof -ti:8000` to find all PIDs on the port.

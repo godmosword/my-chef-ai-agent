@@ -11,7 +11,7 @@
 ## 功能總覽
 
 - **廚房角色扮演**：行政主廚、副主廚、食材總管三方討論後給出菜單  
-- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost`，以及選填 **`photo_url`／`video_url`**（皆須 **https**；圖片顯示於食譜卡 hero，影片以外部連結按鈕「▶ 教學影片」開啟，因 LINE Flex 無內嵌播放器）全部以 JSON 回傳  
+- **結構化輸出**：`kitchen_talk`、`ingredients`、`steps`、`shopping_list`、`estimated_total_cost` 以 JSON 回傳；圖片與影片連結由後端多媒體流程補齊（不是 LLM 憑空產生）  
 - **多輪對話與情境**：
   - `🍳 隨機配菜`：隨機料理風格配菜
   - `🛒 檢視清單`：查看上一道菜的採買清單
@@ -93,6 +93,13 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | `DATABASE_URL` |  | **Render Postgres** Internal URL；若設定則對話記憶／收藏以 **`psycopg` 直連 Postgres**（詳見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)），此時不會用 Supabase REST 讀寫上述核心表。訂閱與每日用量等商業化功能仍建議搭配 Supabase 與專案內 migration。 |
 | `SUPABASE_URL` |  | 未設 `DATABASE_URL` 時用於記憶／收藏；有設 `DATABASE_URL` 時仍可用於用量／訂閱等 REST 表。不填則關閉對應 Supabase 功能。 |
 | `SUPABASE_KEY` |  | Supabase 金鑰；生產建議 **service role**（僅後端、勿進前端）。 |
+| `YOUTUBE_API_KEY` |  | YouTube Data API v3 key（補食譜教學影片） |
+| `IMAGE_PROVIDER` |  | 圖片來源策略（`placeholder`/`vertex_imagen`/`openai_compatible`） |
+| `GCP_PROJECT_ID` |  | `IMAGE_PROVIDER=vertex_imagen` 時必填 |
+| `VERTEX_LOCATION` |  | Vertex 區域（預設 `us-central1`） |
+| `VERTEX_IMAGEN_MODEL` |  | Imagen 模型（預設 `imagen-3.0-generate-002`） |
+| `VERTEX_SERVICE_ACCOUNT_JSON` |  | 可選；Service Account JSON 單行字串。未設則走 `GOOGLE_APPLICATION_CREDENTIALS` / ADC |
+| `VERTEX_IMAGEN_OUTPUT_GCS_URI` |  | 可選；如 `gs://bucket/prefix`，供 Imagen 輸出到 GCS |
 | `DEBUG` |  | 設為 `1` 時會輸出較詳細 log |
 | `DEFAULT_TENANT_ID` |  | 預設租戶識別（預設 `default`） |
 | `PLAN_FREE_DAILY_LIMIT` |  | 免費方案每日上限（預設 `20`） |
@@ -116,6 +123,11 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 > - **Render Postgres** → 設 `DATABASE_URL`（建表可執行根目錄 `python3 init_db.py`，或見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)）  
 > - **Supabase** → 設 `SUPABASE_URL` + `SUPABASE_KEY`（可單獨支撐記憶／收藏，也可與 Postgres 並用於用量／訂閱）  
 > - 兩者皆不設則無對話記憶與收藏持久化；商業化用量請見第 3 節 migration。
+>
+> 圖片生成（可選）：  
+> - `IMAGE_PROVIDER=vertex_imagen` + `GCP_PROJECT_ID` 可啟用 Vertex Imagen。  
+> - 憑證優先順序：`VERTEX_SERVICE_ACCOUNT_JSON` → `GOOGLE_APPLICATION_CREDENTIALS` / ADC。  
+> - 未設定或呼叫失敗時，系統自動 fallback 到 `placehold.co` 佔位圖，不影響食譜主流程。
 
 ### 2.2 Render 建立流程（概要）
 
@@ -289,7 +301,7 @@ pip install -r requirements-dev.txt
 python3 -m pytest tests/ -v
 ```
 
-目前 **47** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`、`tests/test_multimedia_flow.py`）。涵蓋範例：
+目前 **51** 則測試全數通過（`tests/test_main.py`、`tests/test_platform_features.py`、`tests/test_ai_errors.py`、`tests/test_multimedia_flow.py`）。涵蓋範例：
 
 - JSON 解析與錯誤處理、Flex Message 組裝、食譜卡 **hero／影片連結** 與 **`_flex_safe_https_url`** 安全過濾、無 Supabase 時記憶／偏好的降級行為
 - 配額扣量失敗拒絕、`/callback` 佇列滿回 503、管理訂閱 API 需正確 `X-Admin-Token`

@@ -17,6 +17,7 @@ from app.models import WebhookMessageEvent  # noqa: E402
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
     mock_images = SimpleNamespace(generate=AsyncMock(side_effect=RuntimeError("boom")))
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
@@ -27,7 +28,19 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "placeholder")
+    mock_generate = AsyncMock()
+    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+
+    url = await ai_service.generate_recipe_image("番茄炒蛋")
+    assert "placehold.co" in url
+    mock_generate.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_generate_recipe_image_returns_https_url(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
     response = SimpleNamespace(data=[SimpleNamespace(url="https://cdn.example.com/food.png")])
     mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
@@ -39,6 +52,7 @@ async def test_generate_recipe_image_returns_https_url(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", True)
     mock_generate = AsyncMock()
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
@@ -46,6 +60,38 @@ async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch)
     url = await ai_service.generate_recipe_image("測試菜")
     assert "placehold.co" in url
     mock_generate.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_uses_vertex_provider_when_configured(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
+    monkeypatch.setattr(
+        ai_service,
+        "_generate_recipe_image_with_vertex",
+        AsyncMock(return_value="https://storage.googleapis.com/demo-bucket/food.png"),
+    )
+
+    url = await ai_service.generate_recipe_image("龍蝦燉飯")
+    assert url == "https://storage.googleapis.com/demo-bucket/food.png"
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatch):
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
+    monkeypatch.setattr(
+        ai_service,
+        "_generate_recipe_image_with_vertex",
+        AsyncMock(return_value=None),
+    )
+
+    url = await ai_service.generate_recipe_image("龍蝦燉飯")
+    assert "placehold.co" in url
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_with_vertex_returns_none_without_project(monkeypatch):
+    monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", None)
+    assert await ai_service._generate_recipe_image_with_vertex("任意菜名") is None
 
 
 @pytest.mark.asyncio

@@ -11,9 +11,15 @@ from app.config import (
     AI_MAX_RETRIES,
     AI_RETRY_EXTRA_PROMPT,
     DEBUG_MODE,
+    GCP_PROJECT_ID,
+    IMAGE_PROVIDER,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
     USE_GEMINI_DIRECT,
+    VERTEX_IMAGEN_MODEL,
+    VERTEX_IMAGEN_OUTPUT_GCS_URI,
+    VERTEX_LOCATION,
+    VERTEX_SERVICE_ACCOUNT_JSON,
     YOUTUBE_API_KEY,
     logger,
 )
@@ -30,15 +36,167 @@ from app.helpers import (
 )
 from app.observability import incr
 
+_VERTEX_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
+_vertex_credentials = None
+_vertex_credentials_lock = asyncio.Lock()
+
 
 def _recipe_placeholder_image_url(recipe_name: str) -> str:
     quoted = urllib.parse.quote(recipe_name or "Michelin Dish")
     return f"https://placehold.co/600x400/EA580C/FFFFFF?text={quoted}"
 
 
+def _gs_to_https_url(gs_uri: str) -> str | None:
+    if not gs_uri.startswith("gs://"):
+        return None
+    path = gs_uri.removeprefix("gs://")
+    if "/" not in path:
+        return None
+    bucket, obj = path.split("/", 1)
+    if not bucket or not obj:
+        return None
+    return f"https://storage.googleapis.com/{bucket}/{obj}"
+
+
+async def _get_vertex_access_token() -> str | None:
+    """Load and refresh Vertex credentials via service account JSON or ADC."""
+    global _vertex_credentials
+
+    async with _vertex_credentials_lock:
+        if _vertex_credentials is None:
+            try:
+                from google.auth import default as google_auth_default
+                from google.oauth2 import service_account
+            except Exception as exc:
+                logger.warning("google-auth is unavailable for Vertex: %s", exc)
+                return None
+
+            if VERTEX_SERVICE_ACCOUNT_JSON:
+                try:
+                    info = json.loads(VERTEX_SERVICE_ACCOUNT_JSON)
+                    _vertex_credentials = service_account.Credentials.from_service_account_info(
+                        info, scopes=[_VERTEX_SCOPE]
+                    )
+                except Exception as exc:
+                    logger.warning("Failed to load Vertex credentials from VERTEX_SERVICE_ACCOUNT_JSON: %s", exc)
+
+            if _vertex_credentials is None:
+                try:
+                    creds, _ = google_auth_default(scopes=[_VERTEX_SCOPE])
+                    _vertex_credentials = creds
+                except Exception as exc:
+                    logger.warning("Failed to load Vertex credentials from ADC: %s", exc)
+                    return None
+
+        try:
+            from google.auth.transport.requests import Request
+        except Exception as exc:
+            logger.warning("google-auth transport is unavailable for Vertex: %s", exc)
+            return None
+
+        def _refresh_token() -> str | None:
+            if not _vertex_credentials:
+                return None
+            if not _vertex_credentials.valid or _vertex_credentials.expired or not _vertex_credentials.token:
+                _vertex_credentials.refresh(Request())
+            return _vertex_credentials.token
+
+        try:
+            token = await asyncio.to_thread(_refresh_token)
+            return token if isinstance(token, str) and token else None
+        except Exception as exc:
+            logger.warning("Failed to refresh Vertex access token: %s", exc)
+            return None
+
+
+async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
+    """Generate recipe image using Vertex Imagen and return public HTTPS URL if available."""
+    if not GCP_PROJECT_ID:
+        return None
+
+    token = await _get_vertex_access_token()
+    if not token:
+        return None
+
+    prompt = (
+        "Professional food photography, Michelin star plating, dark slate background, "
+        "dramatic top lighting, cinematic depth of field, dish: "
+        f"{recipe_name}"
+    )
+    endpoint = (
+        f"https://{VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/{GCP_PROJECT_ID}/"
+        f"locations/{VERTEX_LOCATION}/publishers/google/models/{VERTEX_IMAGEN_MODEL}:predict"
+    )
+
+    params: dict[str, object] = {
+        "sampleCount": 1,
+        "aspectRatio": "4:3",
+    }
+    if VERTEX_IMAGEN_OUTPUT_GCS_URI:
+        params["storageUri"] = VERTEX_IMAGEN_OUTPUT_GCS_URI
+
+    payload = {
+        "instances": [{"prompt": prompt}],
+        "parameters": params,
+    }
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    t0 = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(endpoint, json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+        elapsed = time.perf_counter() - t0
+        incr("ai.images.vertex.latency_seconds_total", elapsed)
+    except Exception as exc:
+        elapsed = time.perf_counter() - t0
+        incr("ai.images.vertex.latency_seconds_total", elapsed)
+        logger.warning("Vertex Imagen request failed for recipe %s: %s", recipe_name, exc)
+        return None
+
+    predictions = data.get("predictions") or []
+    if not predictions:
+        return None
+    first = predictions[0] or {}
+
+    for key in ("imageUrl", "url", "uri", "gcsUri"):
+        value = first.get(key)
+        if isinstance(value, str):
+            if value.startswith("https://"):
+                return value
+            if value.startswith("gs://"):
+                return _gs_to_https_url(value)
+    return None
+
+
 async def generate_recipe_image(recipe_name: str) -> str:
-    """Generate a recipe image URL, with placeholder fallback on any failure."""
-    # Gemini OpenAI-compatible 端點不支援 DALL·E images；避免每次等待逾時。
+    """Generate a recipe image URL via provider selector, with safe fallback."""
+    if IMAGE_PROVIDER == "placeholder":
+        incr("ai.images.provider.placeholder_total")
+        return _recipe_placeholder_image_url(recipe_name)
+
+    if IMAGE_PROVIDER == "vertex_imagen":
+        try:
+            url = await _generate_recipe_image_with_vertex(recipe_name)
+            if isinstance(url, str) and url.startswith("https://"):
+                incr("ai.images.vertex.success_total")
+                return url
+            incr("ai.images.vertex.errors_total")
+        except Exception as exc:
+            logger.warning("Vertex image generation failed for recipe %s: %s", recipe_name, exc)
+            incr("ai.images.vertex.errors_total")
+        return _recipe_placeholder_image_url(recipe_name)
+
+    if IMAGE_PROVIDER != "openai_compatible":
+        logger.warning("Unknown IMAGE_PROVIDER=%s; fallback to placeholder", IMAGE_PROVIDER)
+        incr("ai.images.provider.unknown_total")
+        return _recipe_placeholder_image_url(recipe_name)
+
+    # Gemini OpenAI-compatible chat endpoint does not support images API.
     if USE_GEMINI_DIRECT:
         incr("ai.images.skipped_gemini_direct_total")
         return _recipe_placeholder_image_url(recipe_name)

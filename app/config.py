@@ -54,6 +54,12 @@ BILLING_PROVIDER          = os.getenv("BILLING_PROVIDER", "manual").lower()
 CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")
 BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
 YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
+IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "placeholder").lower()
+GCP_PROJECT_ID            = os.getenv("GCP_PROJECT_ID")
+VERTEX_LOCATION           = os.getenv("VERTEX_LOCATION", "us-central1")
+VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generate-002")
+VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
+VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
 
 # Gemini direct vs OpenRouter routing
 _mn = MODEL_NAME.removeprefix("google/")
