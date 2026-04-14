@@ -118,7 +118,8 @@ MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite-previ
 DATABASE_URL              = (os.getenv("DATABASE_URL") or "").strip() or None
 DEFAULT_TENANT_ID         = os.getenv("DEFAULT_TENANT_ID", "default")
 ADMIN_API_TOKEN           = os.getenv("ADMIN_API_TOKEN")
-METRICS_TOKEN             = os.getenv("METRICS_TOKEN")
+# 非空時，GET /metrics 必須帶正確的 X-Metrics-Token；未設定時回 503（避免對外暴露營運指標）
+METRICS_TOKEN             = (os.getenv("METRICS_TOKEN") or "").strip() or None
 LOG_USER_HASH_SALT        = os.getenv("LOG_USER_HASH_SALT", "local-dev-salt")
 BILLING_PROVIDER          = os.getenv("BILLING_PROVIDER", "manual").lower()
 CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")

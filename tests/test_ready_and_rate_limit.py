@@ -39,6 +39,28 @@ def test_public_rate_limit_returns_429(monkeypatch):
     assert r.status_code == 429
 
 
+def test_metrics_returns_503_when_token_not_configured(monkeypatch):
+    monkeypatch.setattr("app.routes.METRICS_TOKEN", None)
+    client = TestClient(app)
+    r = client.get("/metrics")
+    assert r.status_code == 503
+
+
+def test_metrics_returns_403_when_token_wrong(monkeypatch):
+    monkeypatch.setattr("app.routes.METRICS_TOKEN", "expected-metrics-token")
+    client = TestClient(app)
+    r = client.get("/metrics", headers={"X-Metrics-Token": "wrong"})
+    assert r.status_code == 403
+
+
+def test_metrics_returns_200_when_token_matches(monkeypatch):
+    monkeypatch.setattr("app.routes.METRICS_TOKEN", "expected-metrics-token")
+    client = TestClient(app)
+    r = client.get("/metrics", headers={"X-Metrics-Token": "expected-metrics-token"})
+    assert r.status_code == 200
+    assert isinstance(r.json(), dict)
+
+
 def test_callback_user_rate_limit_returns_429(monkeypatch):
     from app import rate_limit, routes
 

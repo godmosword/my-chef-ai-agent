@@ -3,7 +3,16 @@
 ## 開發與測試
 
 - 本機啟動、環境變數、pytest 與 webhook 模擬：見根目錄 [`AGENTS.md`](AGENTS.md)。
-- 執行測試：`LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key python3 -m pytest tests/ -v`
+- 執行測試（CI 與本專案測試會讀取 `METRICS_TOKEN`；未設時 `/metrics` 相關測試會失敗）：
+
+```bash
+LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
+METRICS_TOKEN=test_metrics_token \
+python3 -m pytest tests/ -v
+```
+
+- 更新 `requirements*.txt` 後，可執行 `python3 scripts/generate_third_party_licenses.py` 並提交 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)。
+- 開源前自查：[`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)。
 
 ## Plan／里程碑收尾（必做）
 

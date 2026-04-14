@@ -215,7 +215,9 @@ async def callback(
 
 @app.get("/metrics")
 async def metrics(x_metrics_token: str | None = Header(None, alias="X-Metrics-Token")):
-    if METRICS_TOKEN and x_metrics_token != METRICS_TOKEN:
+    if not METRICS_TOKEN:
+        raise HTTPException(status_code=503, detail="Metrics disabled (set METRICS_TOKEN)")
+    if x_metrics_token != METRICS_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
     return snapshot()
 

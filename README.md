@@ -6,6 +6,15 @@
 
 ---
 
+## 開源、商標與第三方服務
+
+- **原始碼授權**：MIT，全文見根目錄 [`LICENSE`](LICENSE)。第三方 Python 套件授權摘要見 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（更新依賴後請執行 `python3 scripts/generate_third_party_licenses.py` 並一併提交）。
+- **商標聲明**：本專案展示名稱中的「米其林」為產品行銷用語，**與米其林指南（MICHELIN Guide）或其權利人無關**；若你 fork 或對外發布，請自行評估是否改用中性品牌名稱，並遵守各地商標法。
+- **外部 API**：部署者須自行申請並遵守 **LINE**、**Google／Gemini**、**OpenRouter**、**YouTube** 等供應商條款；本倉庫僅提供程式碼，**不包含**上述服務之使用權、額度或資料處理同意。
+- **開源前檢查**：見 [`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)。
+
+---
+
 ## 功能總覽
 
 | 類別 | 說明 |
@@ -54,10 +63,11 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 ```bash
 pip install -r requirements-dev.txt
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
+METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **65** 則測試（涵蓋 Flex、佇列、配額、`/ready`、IP／per-user rate limit、AI transport、多媒體等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；未設定時會 **skip**，其餘 63 則仍應全數通過。
+目前套件 **72** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；未設定時會 **skip**，其餘 **70** 則仍應全數通過。
 
 ---
 
@@ -110,7 +120,7 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 | `BILLING_PROVIDER` / `CHECKOUT_URL_TEMPLATE` / `BILLING_BASE_URL` |  | 升級連結與金流占位 |
 | `PUBLIC_APP_BASE_URL` |  | 產生 Flex 內 legal URI 按鈕網址（`/legal/*`） |
 | `ADMIN_API_TOKEN` |  | 管理訂閱 API |
-| `METRICS_TOKEN` |  | `GET /metrics` 的 `X-Metrics-Token` |
+| `METRICS_TOKEN` | **建議正式環境必填** | 未設定時 `GET /metrics` 回 **503**；已設定時須帶正確 `X-Metrics-Token` |
 | `LOG_USER_HASH_SALT` |  | 結構化 log 的 user hash salt |
 | `OTEL_ENABLED` / `OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SAMPLING_RATIO` |  | OpenTelemetry 設定 |
 | `DEBUG` |  | `1` 較詳 log |
@@ -155,7 +165,7 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 | GET | `/` | Liveness |
 | GET | `/ready` | Readiness（可選 DB ping） |
 | POST | `/callback` | LINE Webhook |
-| GET | `/metrics` | 可選 `X-Metrics-Token` |
+| GET | `/metrics` | 須設定 `METRICS_TOKEN`；請求帶 `X-Metrics-Token` |
 | GET | `/billing/checkout` | 升級導向 |
 | GET | `/legal/disclaimer`、`/legal/privacy` | 法務 |
 | GET/PUT | `/admin/subscriptions/{user_id}` | 需 `X-Admin-Token` |
@@ -208,8 +218,11 @@ my-chef-ai-agent/
 │   ├── integration/        # 需 DATABASE_URL：多租戶／用量隔離
 │   └── ...
 ├── docs/
+│   ├── THIRD_PARTY_LICENSES.md   # 相依套件授權（由 scripts 產生）
+│   └── OPEN_SOURCE_CHECKLIST.md  # 開源前檢查清單
 ├── migrations/             # Postgres schema 單一來源（例：多租戶）
 ├── .github/workflows/      # CI：migration + pytest；push main 通過後同次執行 Cloud Run 部署
+├── LICENSE                 # MIT 授權全文
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md         # 貢獻指南與 plan 收尾必做項目
 ├── TODOS.md                # 工程／產品 backlog（TODO.md 轉址至此）
@@ -237,4 +250,4 @@ my-chef-ai-agent/
 
 ## 授權
 
-MIT License
+本專案以 **MIT License** 授權，見 [`LICENSE`](LICENSE)。
