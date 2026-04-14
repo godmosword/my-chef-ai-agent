@@ -187,9 +187,10 @@ else:
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
 MAX_MESSAGE_LENGTH    = 500
-MAX_HISTORY_TURNS     = 3
-# 食譜 JSON 較長；2048 易在 Gemini 上被截斷成不合法 JSON。可用環境變數覆寫。
-MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "4096")))
+# 送入模型的對話輪數（不含 system）；預設 2 以降低 prompt token；必要時以 MAX_HISTORY_TURNS 提高。
+MAX_HISTORY_TURNS     = max(1, int(os.getenv("MAX_HISTORY_TURNS", "2")))
+# 食譜 JSON 長度上限；預設 2048 平衡成本與截斷風險，遇截斷會觸發修復提示（見 AI_TRUNCATION_RECOVERY_PROMPT）。
+MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "2048")))
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
@@ -246,9 +247,8 @@ AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "2")))  # JSON 解析失
 AI_RETRY_EXTRA_PROMPT = "請務必只回傳純JSON，不要加任何markdown或解釋文字。"
 # 當 API 回傳 finish_reason=length（輸出被截斷）時，追加此提示再請模型重出精簡完整 JSON
 AI_TRUNCATION_RECOVERY_PROMPT = (
-    "上一則回應可能因長度被截斷，導致 JSON 不完整。請**重新輸出一份完整且可解析**的 JSON（同一料理主題），並嚴格遵守："
-    "kitchen_talk 固定 3 筆、每則 content ≤12 字；ingredients ≤6 項；steps ≤6 步；shopping_list ≤8 字串。"
-    "字數盡量精簡。僅 JSON，勿 markdown、勿註解。"
+    "上一則可能被截斷。請重出**一份完整可解析 JSON**（同一料理），遵守："
+    "kitchen_talk 3 筆≤12字／ingredients≤6／steps≤6／shopping_list≤8。僅 JSON。"
 )
 
 PLAN_DAILY_LIMITS = {

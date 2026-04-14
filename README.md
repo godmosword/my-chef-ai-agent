@@ -88,7 +88,8 @@ METRICS_TOKEN=test_metrics_token \
 | `GEMINI_API_KEY` | ✅\* | Gemini 直連 |
 | `OPENROUTER_API_KEY` | ✅\* | 改走 OpenRouter 時 |
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
-| `MAX_COMPLETION_TOKENS` |  | 預設 4096，避免長 JSON 截斷 |
+| `MAX_COMPLETION_TOKENS` |  | 預設 **2048**（節省輸出 token）；遇截斷會觸發修復提示，必要時可拉高 |
+| `MAX_HISTORY_TURNS` |  | 送入模型的對話輪數（不含 system），預設 **2** |
 | `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數 |
 | `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試 |
 | `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
@@ -225,7 +226,7 @@ my-chef-ai-agent/
 ├── LICENSE                 # MIT 授權全文
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md         # 貢獻指南與 plan 收尾必做項目
-├── TODOS.md                # 工程／產品 backlog（TODO.md 轉址至此）
+├── TODOS.md                # 工程／產品 backlog
 ├── AGENTS.md
 ├── .cursor/rules/          # Cursor：plan 收尾同步文件提醒
 ├── scripts/
