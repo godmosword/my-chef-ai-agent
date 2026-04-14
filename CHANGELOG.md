@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-04-14（開源準備：授權、指標端點、第三方授權清單）
+
+- **授權**：新增根目錄 MIT 全文 [`LICENSE`](LICENSE)，與 README「授權」小節對齊。
+- **`GET /metrics`**：未設定 `METRICS_TOKEN` 時回 **503**（避免對外暴露營運指標）；已設定時仍須正確的 `X-Metrics-Token`。`METRICS_TOKEN` 於設定載入時會 trim，空字串視同未設定。
+- **文件**：README 新增「開源、商標與第三方服務」；新增 [`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)、[`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（由 `scripts/generate_third_party_licenses.py` 產生）；`CONTRIBUTING.md` 補測試用 `METRICS_TOKEN` 與授權表更新流程。
+- **開發依賴**：`requirements-dev.txt` 新增 `pip-licenses`。
+- **CI**：`test` job 注入 `METRICS_TOKEN` 占位值，與本機 pytest 一致。
+- **測試**：`tests/test_ready_and_rate_limit.py` 新增 `/metrics` 行為覆蓋；pytest 收集數更新為 **72**（無 Postgres 時 2 skip、70 pass）。
+
+---
+
 ## 2026-04-13（圖文選單資產與預覽）
 
 - **圖文選單底圖**：`richmenu.jpg` 更新為米其林風六格設計（金橫幅／米白格線條圖示、**2500×1686**、小於 **1 MB** 以符合 LINE 上限）。

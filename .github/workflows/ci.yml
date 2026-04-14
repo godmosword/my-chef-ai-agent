@@ -28,6 +28,7 @@ jobs:
       LINE_CHANNEL_ACCESS_TOKEN: test_token
       LINE_CHANNEL_SECRET: test_secret
       GEMINI_API_KEY: test_key
+      METRICS_TOKEN: test_metrics_token
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chef_agent
 
     steps:
