@@ -1,6 +1,6 @@
 # 待辦與後續方向
 
-本檔為倉庫內**唯一**工程／產品／UX backlog，僅保留尚未完成項目；[`TODO.md`](TODO.md) 僅轉址至此。
+本檔為倉庫內**唯一**工程／產品／UX backlog，僅保留尚未完成項目。
 
 **流程備忘**：每完成一項工程計畫或里程碑，請同步更新 **`CHANGELOG.md`**、**`README.md`**，並在此檔勾除或調整對應條目（完整清單見 [`AGENTS.md`](AGENTS.md)「Plan／里程碑收尾」）。
 
@@ -10,6 +10,7 @@
 
 | 日期 | 摘要 |
 |------|------|
+| 2026-04-14 | 開源前整理：`MAX_COMPLETION_TOKENS` 預設 2048、`MAX_HISTORY_TURNS` 預設 2 與截斷提示縮短；`.gitignore` 擴充；刪 `TODO.md`；README／CHANGELOG 同步。 |
 | 2026-04-14 | 開源準備：`LICENSE`、`docs/THIRD_PARTY_LICENSES.md`（腳本產生）、`docs/OPEN_SOURCE_CHECKLIST.md`；`/metrics` 未設 `METRICS_TOKEN` 回 503；README／AGENTS／CONTRIBUTING 測試數與環境變數說明已同步。 |
 | 2026-04-13 | 圖文選單：`richmenu.jpg` 換版、`docs/preview_richmenu.html` 熱區預覽、可選 `scripts/render_richmenu_michelin.py`；README／CHANGELOG 已同步。LINE 端仍須自行執行 `python3 setup_richmenu.py`。 |
 

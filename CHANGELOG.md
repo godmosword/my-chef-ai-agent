@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-04-14（開源前：預設 token 與倉庫整理）
+
+- **AI 成本**：`MAX_COMPLETION_TOKENS` 預設由 **4096 → 2048**（仍可用環境變數拉高）；`MAX_HISTORY_TURNS` 預設 **2**（可 `MAX_HISTORY_TURNS` 覆寫），減少送入模型的歷史 token。
+- **截斷修復**：`AI_TRUNCATION_RECOVERY_PROMPT` 縮短，降低重試輪的 prompt 開銷。
+- **`.gitignore`**：補上常見本機目錄（`.venv/`、`venv/`、coverage 等），避免誤提交。
+- **文件**：刪除冗餘 `TODO.md`（待辦以 `TODOS.md` 為準）；`.env.example`／`README` 環境變數表同步新預設。
+
+---
+
 ## 2026-04-14（開源準備：授權、指標端點、第三方授權清單）
 
 - **授權**：新增根目錄 MIT 全文 [`LICENSE`](LICENSE)，與 README「授權」小節對齊。
