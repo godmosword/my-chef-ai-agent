@@ -6,6 +6,13 @@
 
 ---
 
+## 2026-04-22（Deep Research 食譜 Grounding）
+
+- **Google Deep Research 預處理**：背景食譜生成在正式呼叫文字模型前，會先透過 Google Interactions API 的 **`deep-research-preview-04-2026`** agent 進行研究式 Grounding，整理權威比例、烹飪化學／食安要點與台灣近期市場時價。
+- **優雅回退**：Deep Research 路徑加入 timeout 與錯誤 fallback；若超時、SDK 錯誤或 research 失敗，會記錄 log 並自動回到原本無 Grounding 的食譜生成流程，不阻斷使用者出餐體驗。
+- **設定與依賴**：runtime 依賴新增 `google-genai>=1.55.0` 以支援 Interactions API；可選 `DEEP_RESEARCH_API_KEY` 與 `DEEP_RESEARCH_TIMEOUT_SEC` 供部署時調整。
+- **測試與文件**：新增 Deep Research prompt、fallback 與 system prompt 注入測試；README / TODOS 已同步。當前全量測試為 **92 passed**。
+
 ## 2026-04-22（食譜資訊圖海報）
 
 - **新增食譜海報**：使用者可從 recipe card 按下 **「🖼 生成食譜海報」**，依既有 recipe JSON 產出單張可分享的 **PNG 資訊圖**。

@@ -19,7 +19,7 @@
 
 | 類別 | 說明 |
 |------|------|
-| 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出，圖／影片由後端依 `IMAGE_PROVIDER`、`YOUTUBE_API_KEY` 補齊。 |
+| 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出，並可在生成前用 Google Deep Research 做研究式 Grounding，圖／影片由後端依 `IMAGE_PROVIDER`、`YOUTUBE_API_KEY` 補齊。 |
 | 卡片 | 僅在有效 **https** 成品圖時顯示 hero；否則文字色塊標頭，避免與菜名無關的隨機圖。 |
 | 海報 | 可從食譜卡按鈕按需生成單張 **PNG 食譜資訊圖**；沿用現有 recipe JSON，以 **Pillow** 模板排版輸出。 |
 | 情境 | 清冰箱、兒童餐、`🍳 隨機配菜`、`🛒 檢視清單`、菜系輪播等。 |
@@ -34,6 +34,7 @@
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenRouter）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
+- **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；超時或失敗時會自動回退到原本無 Grounding 的生成流程。  
 - **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
 - **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，並沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
@@ -70,7 +71,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **86** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **86 passed**；未設定時整合測試會 skip，其餘 **84** 則仍應全數通過。
+目前套件 **92** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報、Deep Research fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **92 passed**；未設定時整合測試會 skip，其餘 **90** 則仍應全數通過。
 
 ---
 
@@ -96,6 +97,8 @@ METRICS_TOKEN=test_metrics_token \
 | `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數，預設 **1** |
 | `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試 |
 | `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
+| `DEEP_RESEARCH_API_KEY` |  | 可選；若設置則 Deep Research 優先使用它，未設時會回退使用 `GEMINI_API_KEY` |
+| `DEEP_RESEARCH_TIMEOUT_SEC` |  | 可選；Deep Research timeout，程式會限制在 **45-60 秒** 間，預設 **55** 秒 |
 | `DATABASE_URL` |  | Render Postgres 等；記憶／收藏／配額與訂閱走 psycopg（多租戶 `tenant_id`） |
 | `YOUTUBE_API_KEY` |  | 教學影片連結 |
 | `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（recipe card 預設不自動生圖；點擊「🖼 生成主圖」時才會用對應 provider 生成） |
@@ -212,6 +215,7 @@ my-chef-ai-agent/
 │   ├── handlers_commands.py   # 配額與食譜派發等小塊邏輯
 │   ├── handlers_recipe_flow.py # 背景食譜生成編排
 │   ├── ai_service.py
+│   ├── deep_research.py    # Google Interactions API Deep Research 預處理
 │   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染
 │   ├── image_cache.py      # 圖片快取（memory / redis）
 │   ├── db.py

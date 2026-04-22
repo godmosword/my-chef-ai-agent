@@ -12,6 +12,7 @@ from openai import APITimeoutError, AuthenticationError, BadRequestError
 from app.ai_errors import format_ai_error_for_user
 from app.ai_service import _fetch_ai_context, call_ai_with_retry, search_youtube_video
 from app.config import MAX_HISTORY_TURNS, QUOTA_WARN_THRESHOLD, RECIPE_STEPS_PREVIEW_COUNT, logger
+from app.deep_research import perform_recipe_deep_research
 from app.db import save_user_memory
 from app.flex_messages import _flex_safe_https_url, build_fallback_recipe_flex, generate_flex_message
 from app.helpers import _build_system_prompt, _condense_assistant_message, _safe_str
@@ -79,6 +80,13 @@ async def background_generate_recipe(
             tenant_id=tenant_id,
         )
         effective_system = _build_system_prompt(prefs, active_cuisine or "不拘")
+        research_report = await perform_recipe_deep_research(user_message)
+        if research_report:
+            effective_system = (
+                f"{effective_system}\n"
+                "【研發主廚的深度研究報告】：請嚴格依據以下數據與比例來設計此份食譜：\n"
+                f"{research_report}"
+            )
 
         history = filtered_history
         if not history:

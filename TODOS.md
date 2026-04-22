@@ -10,6 +10,7 @@
 
 | 日期 | 摘要 |
 |------|------|
+| 2026-04-22 | Deep Research Grounding 完成：背景食譜生成可先透過 Google Interactions API 執行研究式預處理，再把濃縮報告注入 system prompt；timeout / 錯誤時自動 fallback，README／CHANGELOG／測試已同步。 |
 | 2026-04-22 | 食譜資訊圖海報 v1 完成：新增 recipe card「生成食譜海報」按鈕、Pillow 海報模板渲染、既有短期 PNG 媒體管線重用；README／CHANGELOG／測試已同步。 |
 | 2026-04-22 | 成本改善第一階段完成：recipe card 改為按需「生成主圖」、圖片快取預設拉高至 86400 秒、文字輸出與 JSON retry 預設下修；README／CHANGELOG／測試已同步。 |
 | 2026-04-14 | 開源前整理：`MAX_COMPLETION_TOKENS` 預設 2048、`MAX_HISTORY_TURNS` 預設 2 與截斷提示縮短；`.gitignore` 擴充；刪 `TODO.md`；README／CHANGELOG 同步。 |
@@ -40,6 +41,7 @@
 - [ ] **GPT-Image-2 prompt 微調**：若實際上線後繁中文字渲染仍偶發變形，針對菜名長度、字體風格與擺放位置做 A/B prompt 調整。
 - [ ] **圖片配額策略**：若按需出圖後成本仍偏高，再評估將「生成主圖」綁定付費方案或每日圖片額度，而非所有方案無上限開放。
 - [ ] **海報第二版**：若要更接近範例教學圖，可再評估加入單張成品圖、調味比例區塊、步驟縮圖或多模板版型。
+- [ ] **Deep Research 成本與快取策略**：若 research grounding 上線後延遲或成本偏高，評估只對高價值需求啟用、加入 memoization，或將市場時價研究獨立成較短 TTL 快取。
 
 ---
 

@@ -444,6 +444,52 @@ async def test_background_generate_recipe_does_not_auto_generate_image(monkeypat
 
 
 @pytest.mark.asyncio
+async def test_background_generate_recipe_injects_deep_research_report(monkeypatch):
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow._fetch_ai_context",
+        AsyncMock(return_value=([], [], "不拘", None)),
+    )
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow.perform_recipe_deep_research",
+        AsyncMock(return_value="重點結論：醬汁 90g、糖 12g、醋 18g。"),
+    )
+    call_mock = AsyncMock(return_value=(
+        '{"recipe_name":"糖醋雞丁","kitchen_talk":[],"theme":"家常","ingredients":[],"steps":["a"],"shopping_list":[],"estimated_total_cost":"188"}',
+        {
+            "recipe_name": "糖醋雞丁",
+            "kitchen_talk": [],
+            "theme": "家常",
+            "ingredients": [],
+            "steps": ["a"],
+            "shopping_list": [],
+            "estimated_total_cost": "188",
+        },
+    ))
+    monkeypatch.setattr("app.handlers_recipe_flow.call_ai_with_retry", call_mock)
+    monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
+    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", AsyncMock(return_value=None))
+
+    pushed = []
+
+    async def _push(_user_id, msg):
+        pushed.append(msg)
+
+    monkeypatch.setattr(handlers, "_push_line_message", _push)
+
+    await handlers._background_generate_recipe(
+        user_id="U123",
+        tenant_id="default",
+        user_message="幫我做糖醋雞丁",
+    )
+
+    assert len(pushed) == 1
+    api_messages = call_mock.await_args.args[0]
+    assert api_messages[0]["role"] == "system"
+    assert "【研發主廚的深度研究報告】" in api_messages[0]["content"]
+    assert "醬汁 90g、糖 12g、醋 18g" in api_messages[0]["content"]
+
+
+@pytest.mark.asyncio
 async def test_postback_generate_recipe_image_replies_loading_then_pushes(monkeypatch):
     recipe = {
         "recipe_name": "番茄炒蛋",
