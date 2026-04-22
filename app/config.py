@@ -174,14 +174,14 @@ RATE_LIMIT_USER_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_USER_PER_MINUTE", 
 RATE_LIMIT_USER_BURST = max(0, int(os.getenv("RATE_LIMIT_USER_BURST", "5")))
 QUOTA_WARN_THRESHOLD = max(0, int(os.getenv("QUOTA_WARN_THRESHOLD", "3")))
 
-# Gemini direct vs OpenRouter routing
+# Gemini direct vs OpenAI routing
 _mn = MODEL_NAME.removeprefix("google/")
 USE_GEMINI_DIRECT = _mn.startswith("gemini-")
 if USE_GEMINI_DIRECT:
     GEMINI_API_KEY = _require_env("GEMINI_API_KEY")
-    OPENROUTER_API_KEY = None
+    OPENAI_API_KEY = None
 else:
-    OPENROUTER_API_KEY = _require_env("OPENROUTER_API_KEY")
+    OPENAI_API_KEY = _require_env("OPENAI_API_KEY")
     GEMINI_API_KEY = None
 
 # ─── Constants ──────────────────────────────────────────────────────────────────

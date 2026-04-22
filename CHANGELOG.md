@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-22（OpenAI 路徑切換）
+
+- **非 Gemini 模型供應商**：專案的非 Gemini 路徑由 **OpenRouter** 改為直接呼叫 **OpenAI API**；`AsyncOpenAI` client 不再指向 `https://openrouter.ai/api/v1`，改用標準 OpenAI 連線方式。
+- **環境變數調整**：部署與本機設定中的 `OPENROUTER_API_KEY` 改為 `OPENAI_API_KEY`；`render.yaml`、`.env.example`、README 與 AGENTS 說明已同步。
+- **相容性**：`gemini-*` 模型仍走 Gemini OpenAI-compatible endpoint，不受影響；只有非 Gemini `MODEL_NAME` 的 API key / provider 路徑改變。
+
 ## 2026-04-22（Deep Research 食譜 Grounding）
 
 - **Google Deep Research 預處理**：背景食譜生成在正式呼叫文字模型前，會先透過 Google Interactions API 的 **`deep-research-preview-04-2026`** agent 進行研究式 Grounding，整理權威比例、烹飪化學／食安要點與台灣近期市場時價。

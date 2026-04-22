@@ -11,7 +11,7 @@ from app.config import (
     LINE_CHANNEL_ACCESS_TOKEN,
     USE_GEMINI_DIRECT,
     GEMINI_API_KEY,
-    OPENROUTER_API_KEY,
+    OPENAI_API_KEY,
     MODEL_NAME,
     logger,
     _mn,
@@ -37,18 +37,23 @@ line_configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 
 # ─── AI (OpenAI-compatible) ─────────────────────────────────────────────────────
 
-if USE_GEMINI_DIRECT:
-    ai_client = AsyncOpenAI(
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        api_key=GEMINI_API_KEY,
-        max_retries=1,
+def _build_ai_client() -> tuple[AsyncOpenAI, str]:
+    if USE_GEMINI_DIRECT:
+        return (
+            AsyncOpenAI(
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                api_key=GEMINI_API_KEY,
+                max_retries=1,
+            ),
+            _mn,
+        )
+    return (
+        AsyncOpenAI(
+            api_key=OPENAI_API_KEY,
+            max_retries=1,
+        ),
+        MODEL_NAME,
     )
-    AI_MODEL_FOR_CALL = _mn
-else:
-    ai_client = AsyncOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=OPENROUTER_API_KEY,
-        default_headers={"HTTP-Referer": "https://run.app", "X-Title": "My Chef AI Agent"},
-        max_retries=1,
-    )
-    AI_MODEL_FOR_CALL = MODEL_NAME
+
+
+ai_client, AI_MODEL_FOR_CALL = _build_ai_client()

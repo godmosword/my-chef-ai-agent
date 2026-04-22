@@ -1,6 +1,6 @@
 ## 米其林職人大腦（LINE Bot × FastAPI）
 
-以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，可改 OpenRouter）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
+以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，亦可改走 OpenAI）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
 
 更完整的維運說明見 [`AGENTS.md`](AGENTS.md)（Cursor Cloud／本機 pytest 環境變數）；貢獻與 plan 收尾流程見 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
@@ -10,7 +10,7 @@
 
 - **原始碼授權**：MIT，全文見根目錄 [`LICENSE`](LICENSE)。第三方 Python 套件授權摘要見 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（更新依賴後請執行 `python3 scripts/generate_third_party_licenses.py` 並一併提交）。
 - **商標聲明**：本專案展示名稱中的「米其林」為產品行銷用語，**與米其林指南（MICHELIN Guide）或其權利人無關**；若你 fork 或對外發布，請自行評估是否改用中性品牌名稱，並遵守各地商標法。
-- **外部 API**：部署者須自行申請並遵守 **LINE**、**Google／Gemini**、**OpenRouter**、**YouTube** 等供應商條款；本倉庫僅提供程式碼，**不包含**上述服務之使用權、額度或資料處理同意。
+- **外部 API**：部署者須自行申請並遵守 **LINE**、**Google／Gemini**、**OpenAI**、**YouTube** 等供應商條款；本倉庫僅提供程式碼，**不包含**上述服務之使用權、額度或資料處理同意。
 - **開源前檢查**：見 [`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)。
 
 ---
@@ -33,7 +33,7 @@
 
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
-- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenRouter）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
+- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
 - **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；超時或失敗時會自動回退到原本無 Grounding 的生成流程。  
 - **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
 - **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，並沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供。  
@@ -51,7 +51,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-模組匯入時會驗證 **`LINE_CHANNEL_ACCESS_TOKEN`**、**`LINE_CHANNEL_SECRET`**、**`GEMINI_API_KEY`**（或 OpenRouter 路徑所需變數）。本機無真金鑰可填占位值僅供啟動／測試：
+模組匯入時會驗證 **`LINE_CHANNEL_ACCESS_TOKEN`**、**`LINE_CHANNEL_SECRET`**、**`GEMINI_API_KEY`**（或 OpenAI 路徑所需變數）。本機無真金鑰可填占位值僅供啟動／測試：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
@@ -71,7 +71,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **92** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報、Deep Research fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **92 passed**；未設定時整合測試會 skip，其餘 **90** 則仍應全數通過。
+目前套件 **94** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報、Deep Research fallback、Gemini/OpenAI client 路徑與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **94 passed**；未設定時整合測試會 skip，其餘 **92** 則仍應全數通過。
 
 ---
 
@@ -90,7 +90,7 @@ METRICS_TOKEN=test_metrics_token \
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API token |
 | `LINE_CHANNEL_SECRET` | ✅ | Channel secret |
 | `GEMINI_API_KEY` | ✅\* | Gemini 直連 |
-| `OPENROUTER_API_KEY` | ✅\* | 改走 OpenRouter 時 |
+| `OPENAI_API_KEY` | ✅\* | 改走 OpenAI 時 |
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
 | `MAX_COMPLETION_TOKENS` |  | 預設 **1024**；控制文字食譜輸出成本，遇截斷會觸發修復提示，必要時可拉高 |
 | `MAX_HISTORY_TURNS` |  | 送入模型的對話輪數（不含 system），預設 **2** |
@@ -132,7 +132,7 @@ METRICS_TOKEN=test_metrics_token \
 | `OTEL_ENABLED` / `OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SAMPLING_RATIO` |  | OpenTelemetry 設定 |
 | `DEBUG` |  | `1` 較詳 log |
 
-\* `gemini-*` 用 `GEMINI_API_KEY`；其他模型經 OpenRouter 用 `OPENROUTER_API_KEY`。
+\* `gemini-*` 用 `GEMINI_API_KEY`；其他模型經 OpenAI 用 `OPENAI_API_KEY`。
 
 **Vertex 憑證優先序**：`VERTEX_SERVICE_ACCOUNT_JSON` → `GOOGLE_APPLICATION_CREDENTIALS_JSON`（寫暫存檔）→ 既有 **`GOOGLE_APPLICATION_CREDENTIALS`**／ADC。失敗時主圖回退佔位，不阻斷食譜流程。
 

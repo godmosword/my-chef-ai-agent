@@ -10,6 +10,7 @@
 
 | 日期 | 摘要 |
 |------|------|
+| 2026-04-22 | 非 Gemini API 路徑已由 OpenRouter 改為 OpenAI，`OPENROUTER_API_KEY` 改為 `OPENAI_API_KEY`，並同步更新 `render.yaml`、`.env.example`、README／CHANGELOG。 |
 | 2026-04-22 | Deep Research Grounding 完成：背景食譜生成可先透過 Google Interactions API 執行研究式預處理，再把濃縮報告注入 system prompt；timeout / 錯誤時自動 fallback，README／CHANGELOG／測試已同步。 |
 | 2026-04-22 | 食譜資訊圖海報 v1 完成：新增 recipe card「生成食譜海報」按鈕、Pillow 海報模板渲染、既有短期 PNG 媒體管線重用；README／CHANGELOG／測試已同步。 |
 | 2026-04-22 | 成本改善第一階段完成：recipe card 改為按需「生成主圖」、圖片快取預設拉高至 86400 秒、文字輸出與 JSON retry 預設下修；README／CHANGELOG／測試已同步。 |
