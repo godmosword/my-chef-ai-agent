@@ -374,7 +374,6 @@ async def test_background_generate_recipe_warns_when_quota_low(monkeypatch):
         )),
     )
     monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
-    monkeypatch.setattr("app.handlers_recipe_flow.generate_recipe_image", AsyncMock(return_value=""))
     monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", AsyncMock(return_value=None))
 
     pushed = []
@@ -394,6 +393,148 @@ async def test_background_generate_recipe_warns_when_quota_low(monkeypatch):
     )
     assert len(pushed) == 2
     assert "剩餘額度約 2/20 次" in pushed[1].text
+
+
+@pytest.mark.asyncio
+async def test_background_generate_recipe_does_not_auto_generate_image(monkeypatch):
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow._fetch_ai_context",
+        AsyncMock(return_value=([], [], "不拘", None)),
+    )
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow.call_ai_with_retry",
+        AsyncMock(return_value=(
+            '{"recipe_name":"番茄炒蛋","kitchen_talk":[],"theme":"家常","ingredients":[],"steps":["a"],"shopping_list":[],"estimated_total_cost":"88"}',
+            {
+                "recipe_name": "番茄炒蛋",
+                "kitchen_talk": [],
+                "theme": "家常",
+                "ingredients": [],
+                "steps": ["a"],
+                "shopping_list": [],
+                "estimated_total_cost": "88",
+            },
+        )),
+    )
+    monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
+    video_mock = AsyncMock(return_value=None)
+    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", video_mock)
+
+    pushed = []
+
+    async def _push(_user_id, msg):
+        pushed.append(msg)
+
+    generate_mock = AsyncMock(return_value="https://app.example.com/media/recipe-hero/abc")
+    monkeypatch.setattr(handlers, "_push_line_message", _push)
+    monkeypatch.setattr(handlers, "generate_recipe_image", generate_mock, raising=False)
+
+    await handlers._background_generate_recipe(
+        user_id="U123",
+        tenant_id="default",
+        user_message="幫我做番茄炒蛋",
+    )
+
+    assert len(pushed) == 1
+    video_mock.assert_awaited_once()
+    generate_mock.assert_not_awaited()
+    flex_dict = pushed[0].contents.dict()
+    hero = flex_dict.get("hero")
+    assert not hero or not hero.get("url")
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_image_replies_loading_then_pushes(monkeypatch):
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "kitchen_talk": [],
+        "ingredients": [],
+        "steps": ["切番茄", "炒蛋"],
+        "shopping_list": [],
+        "estimated_total_cost": "88",
+    }
+    monkeypatch.setattr(handlers, "_get_recipe_json_by_timestamp", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "get_cached_recipe_image", AsyncMock(return_value=None))
+    monkeypatch.setattr(handlers, "generate_recipe_image", AsyncMock(return_value="https://app.example.com/hero.png"))
+    monkeypatch.setattr(handlers, "search_youtube_video", AsyncMock(return_value=None))
+    reply_mock = AsyncMock()
+    push_mock = AsyncMock()
+    monkeypatch.setattr(handlers, "_reply_line", reply_mock)
+    monkeypatch.setattr(handlers, "_push_line_message", push_mock)
+
+    event = WebhookPostbackEvent(
+        reply_token="r2",
+        user_id="U123",
+        data="action=generate_recipe_image&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B&ts=2026-04-22T00%3A00%3A00%2B00%3A00",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    assert reply_mock.await_count == 1
+    assert "準備擺盤照" in reply_mock.await_args.args[1].text
+    handlers.generate_recipe_image.assert_awaited_once_with("番茄炒蛋")
+    push_mock.assert_awaited_once()
+    pushed_msg = push_mock.await_args.args[1]
+    assert pushed_msg.contents.dict()["hero"]["url"] == "https://app.example.com/hero.png"
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_image_uses_cache_without_loading(monkeypatch):
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "kitchen_talk": [],
+        "ingredients": [],
+        "steps": ["切番茄", "炒蛋"],
+        "shopping_list": [],
+        "estimated_total_cost": "88",
+    }
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "get_cached_recipe_image", AsyncMock(return_value="https://app.example.com/cached.png"))
+    monkeypatch.setattr(handlers, "search_youtube_video", AsyncMock(return_value=None))
+    reply_mock = AsyncMock()
+    push_mock = AsyncMock()
+    generate_mock = AsyncMock()
+    monkeypatch.setattr(handlers, "_reply_line", reply_mock)
+    monkeypatch.setattr(handlers, "_push_line_message", push_mock)
+    monkeypatch.setattr(handlers, "generate_recipe_image", generate_mock)
+
+    event = WebhookPostbackEvent(
+        reply_token="r3",
+        user_id="U123",
+        data="action=generate_recipe_image&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    assert reply_mock.await_count == 1
+    sent = reply_mock.await_args.args[1]
+    assert sent.contents.dict()["hero"]["url"] == "https://app.example.com/cached.png"
+    generate_mock.assert_not_awaited()
+    push_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_image_rejects_stale_recipe_name(monkeypatch):
+    monkeypatch.setattr(
+        handlers,
+        "_get_last_recipe_json",
+        AsyncMock(return_value={"recipe_name": "牛肉麵", "steps": ["a"]}),
+    )
+    reply_mock = AsyncMock()
+    monkeypatch.setattr(handlers, "_reply_line", reply_mock)
+
+    event = WebhookPostbackEvent(
+        reply_token="r4",
+        user_id="U123",
+        data="action=generate_recipe_image&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    assert reply_mock.await_count == 1
+    assert "卡片已過期" in reply_mock.await_args.args[1].text
 
 
 @pytest.mark.asyncio

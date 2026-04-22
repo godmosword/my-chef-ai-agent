@@ -46,6 +46,7 @@ from app.helpers import (
 )
 from app.handlers_commands import dispatch_recipe_generation
 from app.handlers_recipe_flow import background_generate_recipe
+from app.handlers_recipe_flow import build_recipe_flex_message
 from app.flex_messages import (
     CUISINE_SELECTOR_MSG,
     build_favorites_carousel,
@@ -54,7 +55,10 @@ from app.flex_messages import (
 from app.ai_service import (
     _get_last_recipe_json,
     download_line_image,
+    generate_recipe_image,
+    get_cached_recipe_image,
     identify_ingredients_from_image,
+    search_youtube_video,
 )
 from app.billing import consume_quota
 from app.observability import incr
@@ -421,6 +425,57 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             TextMessage(text="\n".join(lines)[:5000]),
             user_id=event.user_id,
         )
+        return
+
+    # ── Generate recipe hero image on demand ──
+    if action == "generate_recipe_image":
+        requested_ts = (parsed.get("ts") or [""])[0]
+        if requested_ts:
+            recipe = await _get_recipe_json_by_timestamp(
+                event.user_id,
+                requested_ts,
+                tenant_id=event.tenant_id,
+            )
+        else:
+            recipe = await _get_last_recipe_json(event.user_id, tenant_id=event.tenant_id)
+        if not recipe:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 找不到最近食譜，請先生成一道新料理。"),
+                user_id=event.user_id,
+            )
+            return
+        recipe_name = _safe_str(recipe.get("recipe_name"), "這道料理", max_len=48)
+        requested_name = _safe_str((parsed.get("name") or [""])[0], "")
+        if requested_name and recipe_name and requested_name != recipe_name:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 這張卡片已過期，請先重新開啟最新食譜再試一次。"),
+                user_id=event.user_id,
+            )
+            return
+        cached_photo = await get_cached_recipe_image(recipe_name)
+        if not cached_photo:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text=f"👨‍🍳 主廚正在為「{recipe_name}」準備擺盤照，請稍候片刻..."),
+                user_id=event.user_id,
+            )
+            photo_url = await generate_recipe_image(recipe_name)
+        else:
+            photo_url = cached_photo
+        video_url = await search_youtube_video(recipe_name)
+        recipe_lookup_ts = requested_ts or _safe_str(recipe.get("timestamp"), "")
+        flex_msg = build_recipe_flex_message(
+            recipe,
+            recipe_lookup_ts=recipe_lookup_ts,
+            photo_url=photo_url,
+            video_url=video_url,
+        )
+        if cached_photo:
+            await _reply_line(event.reply_token, flex_msg, user_id=event.user_id)
+        else:
+            await _push_line_message(event.user_id, flex_msg)
         return
 
     # ── Delete favorite ──

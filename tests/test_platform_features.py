@@ -10,6 +10,7 @@ os.environ.setdefault("GEMINI_API_KEY", "test_key")
 
 from app import billing, routes  # noqa: E402
 from app.clients import app  # noqa: E402
+from app import config  # noqa: E402
 
 
 @pytest.mark.asyncio
@@ -66,3 +67,10 @@ def test_admin_subscription_requires_token_and_updates(monkeypatch):
     fetched = client.get("/admin/subscriptions/U123", headers={"X-Admin-Token": "secret-token"})
     assert fetched.status_code == 200
     assert fetched.json()["plan_key"] == "pro"
+
+
+def test_cost_control_defaults_are_tightened():
+    assert config.IMAGE_CACHE_TTL_SEC == 86400
+    assert config.MAX_COMPLETION_TOKENS == 1024
+    assert config.MAX_HISTORY_TURNS == 2
+    assert config.AI_MAX_RETRIES == 1

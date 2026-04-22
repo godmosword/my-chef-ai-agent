@@ -10,7 +10,7 @@ from linebot.v3.messaging import FlexContainer, FlexMessage, TextMessage
 from openai import APITimeoutError, AuthenticationError, BadRequestError
 
 from app.ai_errors import format_ai_error_for_user
-from app.ai_service import _fetch_ai_context, call_ai_with_retry, generate_recipe_image, search_youtube_video
+from app.ai_service import _fetch_ai_context, call_ai_with_retry, search_youtube_video
 from app.config import MAX_HISTORY_TURNS, QUOTA_WARN_THRESHOLD, RECIPE_STEPS_PREVIEW_COUNT, logger
 from app.db import save_user_memory
 from app.flex_messages import _flex_safe_https_url, build_fallback_recipe_flex, generate_flex_message
@@ -18,6 +18,36 @@ from app.helpers import _build_system_prompt, _condense_assistant_message, _safe
 from app.observability import incr
 
 PushFn = Callable[[str, TextMessage | FlexMessage], Awaitable[None]]
+
+
+def build_recipe_flex_message(
+    recipe_data: dict,
+    *,
+    recipe_lookup_ts: str,
+    photo_url: str | None = None,
+    video_url: str | None = None,
+) -> FlexMessage:
+    """Build a recipe Flex message with optional hero image and video button."""
+    recipe_name = _safe_str(recipe_data.get("recipe_name"), "美味食譜", max_len=80)
+    g = recipe_data.get
+    flex_dict = generate_flex_message(
+        g("kitchen_talk", []),
+        g("theme", ""),
+        recipe_name,
+        g("ingredients", []),
+        g("steps", []),
+        g("shopping_list", []),
+        g("estimated_total_cost", ""),
+        recipe_name_for_postback=recipe_name,
+        photo_url=_flex_safe_https_url(photo_url),
+        video_url=_flex_safe_https_url(video_url),
+        step_preview_count=RECIPE_STEPS_PREVIEW_COUNT,
+        recipe_lookup_ts=recipe_lookup_ts,
+    )
+    return FlexMessage(
+        alt_text=f"職人提案：{recipe_name}",
+        contents=FlexContainer.from_dict(flex_dict),
+    )
 
 
 async def background_generate_recipe(
@@ -84,29 +114,12 @@ async def background_generate_recipe(
         asyncio.create_task(save_user_memory(user_id, to_save, tenant_id=tenant_id))
 
         recipe_name = _safe_str(ai_data.get("recipe_name"), "美味食譜", max_len=80)
-        photo_url, video_url = await asyncio.gather(
-            generate_recipe_image(recipe_name),
-            search_youtube_video(recipe_name),
-        )
-
-        g = ai_data.get
-        flex_dict = generate_flex_message(
-            g("kitchen_talk", []),
-            g("theme", ""),
-            recipe_name,
-            g("ingredients", []),
-            g("steps", []),
-            g("shopping_list", []),
-            g("estimated_total_cost", ""),
-            recipe_name_for_postback=recipe_name,
-            photo_url=_flex_safe_https_url(photo_url),
-            video_url=_flex_safe_https_url(video_url),
-            step_preview_count=RECIPE_STEPS_PREVIEW_COUNT,
+        video_url = await search_youtube_video(recipe_name)
+        return build_recipe_flex_message(
+            ai_data,
             recipe_lookup_ts=now_iso,
-        )
-        return FlexMessage(
-            alt_text=f"職人提案：{recipe_name}",
-            contents=FlexContainer.from_dict(flex_dict),
+            photo_url=None,
+            video_url=video_url,
         )
 
     try:

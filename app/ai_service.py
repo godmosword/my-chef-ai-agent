@@ -274,6 +274,11 @@ async def _recipe_image_cache_set(key: str, url: str) -> None:
     await set_cached_image_url(key, url)
 
 
+async def get_cached_recipe_image(recipe_name: str) -> str | None:
+    """Return a cached recipe image URL for the active provider if available."""
+    return await _recipe_image_cache_get(_recipe_image_cache_key(recipe_name))
+
+
 def _decode_generated_image_bytes(image_data: object) -> bytes | None:
     """Decode a GPT Image base64 payload into bytes."""
     encoded = str(image_data or "").strip()
@@ -343,9 +348,10 @@ async def generate_recipe_image(recipe_name: str) -> str:
             image_bytes = _decode_generated_image_bytes(getattr(response.data[0], "b64_json", None))
         if image_bytes:
             image_url = await register_recipe_hero_png(image_bytes)
-            incr("ai.images.generated_total")
-            await _recipe_image_cache_set(cache_key, image_url)
-            return image_url
+            if isinstance(image_url, str) and image_url.startswith("https://"):
+                incr("ai.images.generated_total")
+                await _recipe_image_cache_set(cache_key, image_url)
+                return image_url
     except Exception as exc:
         logger.warning("Image generation failed for recipe %s: %s", recipe_name, exc)
         incr("ai.images.errors_total")

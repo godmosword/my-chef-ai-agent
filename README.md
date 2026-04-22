@@ -33,7 +33,7 @@
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenRouter）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
-- **食譜主圖**：`IMAGE_PROVIDER=openai_compatible` 時使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`），採 **`quality="low"`** 控制成本並在 prompt 中要求將菜名以**繁體中文**清楚渲染於菜單卡／木牌／石板；API 回傳 `b64_json` 後會轉成本站短期公開 URL 供 Flex hero 使用。  
+- **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
@@ -68,7 +68,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **72** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體與 GPT-Image-2 生圖回應解析等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **72 passed**；未設定時整合測試會 skip，其餘 **70** 則仍應全數通過。
+目前套件 **81** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **81 passed**；未設定時整合測試會 skip，其餘 **79** 則仍應全數通過。
 
 ---
 
@@ -89,21 +89,21 @@ METRICS_TOKEN=test_metrics_token \
 | `GEMINI_API_KEY` | ✅\* | Gemini 直連 |
 | `OPENROUTER_API_KEY` | ✅\* | 改走 OpenRouter 時 |
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
-| `MAX_COMPLETION_TOKENS` |  | 預設 **2048**（節省輸出 token）；遇截斷會觸發修復提示，必要時可拉高 |
+| `MAX_COMPLETION_TOKENS` |  | 預設 **1024**；控制文字食譜輸出成本，遇截斷會觸發修復提示，必要時可拉高 |
 | `MAX_HISTORY_TURNS` |  | 送入模型的對話輪數（不含 system），預設 **2** |
-| `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數 |
+| `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數，預設 **1** |
 | `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試 |
 | `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
 | `DATABASE_URL` |  | Render Postgres 等；記憶／收藏／配額與訂閱走 psycopg（多租戶 `tenant_id`） |
 | `YOUTUBE_API_KEY` |  | 教學影片連結 |
-| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（`openai_compatible` 目前以 `gpt-image-2-2026-04-21` 生成 1024×1024 低品質圖，並將 `b64_json` 包裝成本站公開 hero URL） |
+| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（recipe card 預設不自動生圖；點擊「🖼 生成主圖」時才會用對應 provider 生成） |
 | `GCP_PROJECT_ID` | Vertex 時 | Vertex 專案 |
 | `VERTEX_LOCATION` / `VERTEX_IMAGEN_MODEL` |  | 區域與 Imagen 模型 |
 | `VERTEX_SERVICE_ACCOUNT_JSON` |  | 單行 SA JSON（擇一） |
 | `GOOGLE_APPLICATION_CREDENTIALS_JSON` |  | 單行 SA JSON；啟動寫暫存檔並設 `GOOGLE_APPLICATION_CREDENTIALS` |
 | `VERTEX_IMAGEN_OUTPUT_GCS_URI` |  | 可選 `gs://...` 輸出 |
 | `IMAGE_PUBLIC_BASE_URL` |  | 可選 CDN / 公網圖床前綴；有值時 `gs://` 會改寫成此網域 |
-| `IMAGE_CACHE_TTL_SEC` |  | 主圖 in-memory 快取秒數，0 關閉 |
+| `IMAGE_CACHE_TTL_SEC` |  | 主圖快取秒數，預設 **86400**；0 關閉 |
 | `IMAGE_CACHE_BACKEND` |  | `auto` / `memory` / `redis` |
 | `REDIS_URL` |  | 跨實例圖片快取（Redis / Upstash） |
 | `IMAGE_CACHE_NAMESPACE` |  | Redis key 前綴（預設 `recipe_image`） |

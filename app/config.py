@@ -133,7 +133,7 @@ VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generat
 VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
 # 食譜主圖 URL in-memory 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
-IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "300")))
+IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "86400")))
 IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip().lower()
 REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
 IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
@@ -190,7 +190,7 @@ MAX_MESSAGE_LENGTH    = 500
 # 送入模型的對話輪數（不含 system）；預設 2 以降低 prompt token；必要時以 MAX_HISTORY_TURNS 提高。
 MAX_HISTORY_TURNS     = max(1, int(os.getenv("MAX_HISTORY_TURNS", "2")))
 # 食譜 JSON 長度上限；預設 2048 平衡成本與截斷風險，遇截斷會觸發修復提示（見 AI_TRUNCATION_RECOVERY_PROMPT）。
-MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "2048")))
+MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "1024")))
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
@@ -243,7 +243,7 @@ CUISINE_LABELS: dict[str, str] = {
 
 # ─── AI retry configuration ────────────────────────────────────────────────────
 
-AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "2")))  # JSON 解析失敗時額外呼叫次數（不含首次）
+AI_MAX_RETRIES = max(0, int(os.getenv("AI_MAX_RETRIES", "1")))  # JSON 解析失敗時額外呼叫次數（不含首次）
 AI_RETRY_EXTRA_PROMPT = "請務必只回傳純JSON，不要加任何markdown或解釋文字。"
 # 當 API 回傳 finish_reason=length（輸出被截斷）時，追加此提示再請模型重出精簡完整 JSON
 AI_TRUNCATION_RECOVERY_PROMPT = (

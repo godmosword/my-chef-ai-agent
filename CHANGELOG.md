@@ -6,12 +6,20 @@
 
 ---
 
+## 2026-04-22（食譜生成成本改善）
+
+- **預設不自動生圖**：背景食譜生成流程不再每次都呼叫圖片模型；recipe card 改由使用者按下 **「🖼 生成主圖」** 後才按需出圖，大幅降低平均單次食譜成本。
+- **圖片快取**：`IMAGE_CACHE_TTL_SEC` 預設由 **300 → 86400** 秒，重複菜名更容易命中快取，減少重複圖片 API 成本。
+- **文字成本**：`MAX_COMPLETION_TOKENS` 預設由 **2048 → 1024**、`AI_MAX_RETRIES` 由 **2 → 1**；`MAX_HISTORY_TURNS` 維持 **2**，在壓低 token 成本與維持食譜品質之間取平衡。
+- **LINE 體驗**：recipe Flex footer 新增生成主圖 postback；快取命中時直接回帶圖卡片，未命中則先回 loading 文案再 push 成品卡。
+- **測試與文件**：補上按需出圖、快取命中/未命中、過期卡片與成本控制預設值測試；README / TODOS 已同步，當前全量測試為 **81 passed**。
+
 ## 2026-04-22（GPT-Image-2 食譜主圖）
 
 - **`IMAGE_PROVIDER=openai_compatible`**：食譜主圖生成由舊的 DALL·E 路徑改為 **`gpt-image-2-2026-04-21`**，維持 `1024x1024`，並將 `quality` 降為 **`low`**，優先符合 LINE 手機端顯示並降低 API 成本。
 - **繁體中文文字渲染**：生圖 prompt 強化，要求將菜名以**繁體中文**清楚渲染在菜單卡、小木牌或深色石板上，讓主圖更接近餐廳出餐情境。
 - **相容性調整**：OpenAI 圖片回應改由 **`b64_json` → PNG bytes → 本站公開 URL**，再交給 Flex hero 使用；外部仍維持回傳 https URL，不影響既有食譜卡流程。
-- **測試與文件**：補上 GPT-Image-2 參數、prompt 與 fallback 測試；README 同步更新圖片供應器說明與測試數量，當前全量測試為 **72 passed**。
+- **測試與文件**：補上 GPT-Image-2 參數、prompt 與 fallback 測試；README 同步更新圖片供應器說明與測試數量。
 
 ## 2026-04-14（開源前：預設 token 與倉庫整理）
 
@@ -73,7 +81,7 @@
 ### Vertex 與多媒體
 
 - **Vertex AI Imagen**：`IMAGE_PROVIDER=vertex_imagen` 時以 Vertex 產生食譜主圖；`GCP_PROJECT_ID`、`VERTEX_*`、服務帳號 JSON 或 ADC；失敗回退佔位策略。
-- **食譜主圖快取**：`IMAGE_CACHE_TTL_SEC`（預設 300，0 關閉）對同菜名 in-memory 去重。
+- **食譜主圖快取**：`IMAGE_CACHE_TTL_SEC`（現預設 86400，0 關閉）對同菜名 in-memory 去重。
 - **YouTube**：可選 `YOUTUBE_API_KEY` 補教學影片連結。
 
 ### 食譜 JSON、截斷與 Flex 體驗
@@ -86,7 +94,7 @@
 
 ### 測試
 
-- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件已成長至 **72** 則（以 `pytest` 收集結果為準）。
+- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件已成長至 **81** 則（以 `pytest` 收集結果為準）。
 
 ---
 
