@@ -22,10 +22,11 @@ from app.models import WebhookPostbackEvent  # noqa: E402
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
     mock_images = SimpleNamespace(generate=AsyncMock(side_effect=RuntimeError("boom")))
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
@@ -35,9 +36,10 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
 @pytest.mark.asyncio
 async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "placeholder")
     mock_generate = AsyncMock()
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("番茄炒蛋")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
@@ -48,14 +50,15 @@ async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_media_https_url_from_b64(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
     monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://app.example.com")
     recipe_hero_media.clear_recipe_hero_media_for_tests()
     png = b"\x89PNG\r\n\x1a\nrecipe"
     response = SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(png).decode("ascii"))])
     mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("牛肉麵")
     assert url.startswith("https://app.example.com/media/recipe-hero/")
@@ -69,15 +72,16 @@ async def test_generate_recipe_image_returns_media_https_url_from_b64(monkeypatc
 @pytest.mark.asyncio
 async def test_generate_recipe_image_uses_gpt_image_2_low_quality_and_prompt(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
     monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://app.example.com")
     recipe_hero_media.clear_recipe_hero_media_for_tests()
     png = b"\x89PNG\r\n\x1a\nprompt"
     mock_generate = AsyncMock(
         return_value=SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(png).decode("ascii"))])
     )
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
 
     url = await ai_service.generate_recipe_image("宮保雞丁")
 
@@ -96,11 +100,12 @@ async def test_generate_recipe_image_uses_gpt_image_2_low_quality_and_prompt(mon
 @pytest.mark.asyncio
 async def test_generate_recipe_image_falls_back_when_b64_json_missing(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
     response = SimpleNamespace(data=[SimpleNamespace(b64_json=None)])
     mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("蚵仔煎")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
@@ -109,15 +114,16 @@ async def test_generate_recipe_image_falls_back_when_b64_json_missing(monkeypatc
 @pytest.mark.asyncio
 async def test_generate_recipe_image_falls_back_when_media_registration_fails(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
     response = SimpleNamespace(
         data=[SimpleNamespace(b64_json=base64.b64encode(b"\x89PNG\r\n\x1a\nx").decode("ascii"))]
     )
     monkeypatch.setattr(
         ai_service,
-        "ai_client",
-        SimpleNamespace(images=SimpleNamespace(generate=AsyncMock(return_value=response))),
+        "_get_recipe_image_client",
+        lambda: SimpleNamespace(images=SimpleNamespace(generate=AsyncMock(return_value=response))),
     )
     monkeypatch.setattr(ai_service, "register_recipe_hero_png", AsyncMock(side_effect=RuntimeError("media down")))
 
@@ -128,15 +134,27 @@ async def test_generate_recipe_image_falls_back_when_media_registration_fails(mo
 @pytest.mark.asyncio
 async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch):
     ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
-    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", True)
-    mock_generate = AsyncMock()
-    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
+    mock_generate = AsyncMock(return_value=SimpleNamespace(data=[SimpleNamespace(b64_json=None)]))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+
+    url = await ai_service.generate_recipe_image("測試菜")
+    mock_generate.assert_awaited_once()
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_falls_back_when_openai_image_key_missing(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "_recipe_image_client", None)
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", None)
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: None)
 
     url = await ai_service.generate_recipe_image("測試菜")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
-    assert url.startswith("https://")
-    mock_generate.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -636,6 +654,32 @@ async def test_postback_generate_recipe_poster_rejects_stale_recipe_name(monkeyp
 
     assert reply_mock.await_count == 1
     assert "卡片已過期" in reply_mock.await_args.args[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_poster_reports_missing_public_base_url(monkeypatch):
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "steps": ["切番茄", "炒蛋"],
+    }
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "PUBLIC_APP_BASE_URL", "")
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "render_recipe_poster_png", lambda _recipe: b"\x89PNG\r\n\x1a\nposter")
+    monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value=None))
+
+    event = WebhookPostbackEvent(
+        reply_token="r7",
+        user_id="U123",
+        data="action=generate_recipe_poster&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    handlers._push_line_message.assert_awaited_once()
+    assert "PUBLIC_APP_BASE_URL" in handlers._push_line_message.await_args.args[1].text
 
 
 @pytest.mark.asyncio

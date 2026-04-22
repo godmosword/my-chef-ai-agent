@@ -32,6 +32,12 @@ for _path, _max in (
     ("/System/Library/Fonts/Supplemental/Songti.ttc", 16),
     ("/System/Library/Fonts/Supplemental/Songti SC.ttc", 16),
     ("/Library/Fonts/Songti.ttc", 8),
+    ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 16),
+    ("/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc", 16),
+    ("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", 16),
+    ("/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc", 16),
+    ("/usr/share/fonts/truetype/arphic/uming.ttc", 8),
+    ("/usr/share/fonts/truetype/arphic/ukai.ttc", 8),
 ):
     if os.path.isfile(_path):
         FONT_CANDIDATES.append((_path, _max))
@@ -39,22 +45,22 @@ for _path, _max in (
 
 @dataclass(frozen=True)
 class Fonts:
-    title: ImageFont.FreeTypeFont
-    subtitle: ImageFont.FreeTypeFont
-    section: ImageFont.FreeTypeFont
-    body: ImageFont.FreeTypeFont
-    body_small: ImageFont.FreeTypeFont
-    badge: ImageFont.FreeTypeFont
+    title: ImageFont.ImageFont
+    subtitle: ImageFont.ImageFont
+    section: ImageFont.ImageFont
+    body: ImageFont.ImageFont
+    body_small: ImageFont.ImageFont
+    badge: ImageFont.ImageFont
 
 
-def _measure_width(font: ImageFont.FreeTypeFont, text: str) -> int:
+def _measure_width(font: ImageFont.ImageFont, text: str) -> int:
     img = Image.new("RGB", (4, 4))
     draw = ImageDraw.Draw(img)
     box = draw.textbbox((0, 0), text, font=font)
     return box[2] - box[0]
 
 
-def _pick_font_face() -> tuple[str, int]:
+def _pick_font_face() -> tuple[str, int] | None:
     best: tuple[str, int] | None = None
     best_score = -1
     for path, max_idx in FONT_CANDIDATES:
@@ -69,8 +75,6 @@ def _pick_font_face() -> tuple[str, int]:
             if score > best_score:
                 best_score = score
                 best = (path, idx)
-    if best is None:
-        raise RuntimeError("No suitable CJK font found for recipe poster rendering")
     return best
 
 
@@ -79,7 +83,18 @@ def _truetype(path: str, idx: int, size: int) -> ImageFont.FreeTypeFont:
 
 
 def _load_fonts() -> Fonts:
-    path, idx = _pick_font_face()
+    best = _pick_font_face()
+    if best is None:
+        fallback = ImageFont.load_default()
+        return Fonts(
+            title=fallback,
+            subtitle=fallback,
+            section=fallback,
+            body=fallback,
+            body_small=fallback,
+            badge=fallback,
+        )
+    path, idx = best
     return Fonts(
         title=_truetype(path, idx, 66),
         subtitle=_truetype(path, idx, 30),
@@ -94,7 +109,7 @@ def _draw_round_box(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], *
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=2)
 
 
-def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
+def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, max_width: int) -> list[str]:
     words = text.splitlines() or [text]
     lines: list[str] = []
     for raw in words:
@@ -121,7 +136,7 @@ def _draw_wrapped_text(
     *,
     text: str,
     xy: tuple[int, int],
-    font: ImageFont.FreeTypeFont,
+    font: ImageFont.ImageFont,
     fill,
     max_width: int,
     line_gap: int = 10,

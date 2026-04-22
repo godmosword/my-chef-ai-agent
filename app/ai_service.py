@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import os
 import random
 import time
 import urllib.parse
@@ -11,6 +12,7 @@ from datetime import timedelta
 
 import httpx
 from openai import APIConnectionError, APITimeoutError, RateLimitError
+from openai import AsyncOpenAI
 
 from app.config import (
     AI_MAX_RETRIES,
@@ -22,11 +24,11 @@ from app.config import (
     GCP_PROJECT_ID,
     GCS_SIGNED_URL_TTL_SEC,
     IMAGE_CACHE_TTL_SEC,
+    IMAGE_OPENAI_API_KEY,
     IMAGE_PUBLIC_BASE_URL,
     IMAGE_PROVIDER,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
-    USE_GEMINI_DIRECT,
     VERTEX_IMAGEN_MODEL,
     VERTEX_IMAGEN_OUTPUT_GCS_URI,
     VERTEX_LOCATION,
@@ -94,6 +96,7 @@ async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
 
 # Backward-compatible alias for tests that clear in-memory cache directly.
 _recipe_image_url_cache = _memory_cache
+_recipe_image_client: AsyncOpenAI | None = None
 
 
 def _recipe_placeholder_image_url(_recipe_name: str) -> str:
@@ -101,6 +104,16 @@ def _recipe_placeholder_image_url(_recipe_name: str) -> str:
     from app import config
 
     return config.RECIPE_FALLBACK_HERO_IMAGE_URL or ""
+
+
+def _get_recipe_image_client() -> AsyncOpenAI | None:
+    global _recipe_image_client
+    api_key = IMAGE_OPENAI_API_KEY or (os.getenv("OPENAI_API_KEY") or "").strip() or None
+    if not api_key:
+        return None
+    if _recipe_image_client is None:
+        _recipe_image_client = AsyncOpenAI(api_key=api_key, max_retries=1)
+    return _recipe_image_client
 
 
 def _gs_to_https_url(gs_uri: str) -> str | None:
@@ -321,9 +334,10 @@ async def generate_recipe_image(recipe_name: str) -> str:
         incr("ai.images.provider.unknown_total")
         return _recipe_placeholder_image_url(recipe_name)
 
-    # Gemini OpenAI-compatible chat endpoint does not support images API.
-    if USE_GEMINI_DIRECT:
-        incr("ai.images.skipped_gemini_direct_total")
+    image_client = _get_recipe_image_client()
+    if image_client is None:
+        logger.warning("OpenAI image generation unavailable: OPENAI_API_KEY / IMAGE_OPENAI_API_KEY not configured")
+        incr("ai.images.misconfigured_total")
         out = _recipe_placeholder_image_url(recipe_name)
         await _recipe_image_cache_set(cache_key, out)
         return out
@@ -336,7 +350,7 @@ async def generate_recipe_image(recipe_name: str) -> str:
         "in Traditional Chinese on an elegant menu card, small wooden sign, or dark slate next to the dish."
     )
     try:
-        response = await ai_client.images.generate(
+        response = await image_client.images.generate(
             model="gpt-image-2-2026-04-21",
             prompt=prompt,
             size="1024x1024",
@@ -352,6 +366,11 @@ async def generate_recipe_image(recipe_name: str) -> str:
                 incr("ai.images.generated_total")
                 await _recipe_image_cache_set(cache_key, image_url)
                 return image_url
+            logger.warning(
+                "Image generation succeeded for recipe %s but PUBLIC_APP_BASE_URL is missing or not https",
+                recipe_name,
+            )
+            incr("ai.images.media_url_unavailable_total")
     except Exception as exc:
         logger.warning("Image generation failed for recipe %s: %s", recipe_name, exc)
         incr("ai.images.errors_total")

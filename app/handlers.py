@@ -21,6 +21,7 @@ from app.config import (
     CUISINE_SELECTOR_KEYWORDS,
     FAVORITES_KEYWORDS,
     MAX_MESSAGE_LENGTH,
+    PUBLIC_APP_BASE_URL,
     RANDOM_SIDEDISH_CMD,
     RANDOM_STYLES,
     RESET_KEYWORDS,
@@ -530,7 +531,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             poster_png = await asyncio.to_thread(render_recipe_poster_png, recipe)
             poster_url = await register_recipe_hero_png(poster_png)
             if not poster_url or not poster_url.startswith("https://"):
-                raise RuntimeError("poster URL unavailable")
+                raise RuntimeError("PUBLIC_APP_BASE_URL missing")
             await _push_line_message(
                 event.user_id,
                 [
@@ -540,6 +541,12 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             )
         except Exception as exc:
             logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)
+            if not PUBLIC_APP_BASE_URL.startswith("https://"):
+                await _push_line_message(
+                    event.user_id,
+                    TextMessage(text="👨‍🍳 食譜海報需要公開網址才能回傳圖片，請管理員設定 PUBLIC_APP_BASE_URL 為 https 網址。"),
+                )
+                return
             await _push_line_message(
                 event.user_id,
                 TextMessage(text="👨‍🍳 食譜海報生成失敗，請稍後再試。"),

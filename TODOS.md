@@ -10,6 +10,8 @@
 
 | 日期 | 摘要 |
 |------|------|
+| 2026-04-22 | 修正主圖與海報回傳：GPT-Image-2 改走獨立 OpenAI image client，不再受 Gemini 文字 client 牽制；缺少 `PUBLIC_APP_BASE_URL` 時改為明確提示管理員設定。 |
+| 2026-04-22 | 食譜海報字型 fallback 已補強：新增 Linux 常見 CJK 字型候選，找不到字型時回退 Pillow 內建字型，避免 CI／容器環境因缺字型而失敗。 |
 | 2026-04-22 | 非 Gemini API 路徑已由 OpenRouter 改為 OpenAI，`OPENROUTER_API_KEY` 改為 `OPENAI_API_KEY`，並同步更新 `render.yaml`、`.env.example`、README／CHANGELOG。 |
 | 2026-04-22 | Deep Research Grounding 完成：背景食譜生成可先透過 Google Interactions API 執行研究式預處理，再把濃縮報告注入 system prompt；timeout / 錯誤時自動 fallback，README／CHANGELOG／測試已同步。 |
 | 2026-04-22 | 食譜資訊圖海報 v1 完成：新增 recipe card「生成食譜海報」按鈕、Pillow 海報模板渲染、既有短期 PNG 媒體管線重用；README／CHANGELOG／測試已同步。 |

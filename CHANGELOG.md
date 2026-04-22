@@ -6,6 +6,17 @@
 
 ---
 
+## 2026-04-22（主圖與海報回傳修正）
+
+- **GPT-Image-2 與 Gemini 可並存**：`generate_recipe_image()` 不再共用文字生成的 `ai_client`，改為獨立建立 OpenAI image client。現在即使文字食譜仍走 Gemini，`IMAGE_PROVIDER=openai_compatible` 也能正常呼叫 GPT-Image-2。
+- **設定需求更明確**：主圖生成可用 `IMAGE_OPENAI_API_KEY`（未設時回退 `OPENAI_API_KEY`）；食譜海報與 OpenAI 主圖回傳都需 `PUBLIC_APP_BASE_URL` 為有效 `https`，否則會明確提示管理員設定，而不是只顯示泛用失敗訊息。
+- **測試**：新增 Gemini + OpenAI 圖片共存、缺少 image key fallback、缺少 `PUBLIC_APP_BASE_URL` 的海報錯誤提示測試。
+
+## 2026-04-22（食譜海報字型 fallback）
+
+- **CI / Linux 穩定性**：`app/recipe_poster.py` 新增 Linux 常見 CJK 字型候選，並在完全找不到中日韓字型時回退到 Pillow 內建字型，避免海報渲染在 GitHub Actions 或精簡容器內直接拋出 `RuntimeError`。
+- **測試**：新增「無 CJK font 仍可輸出 PNG」覆蓋，確保海報功能至少能優雅退化，不阻斷整體測試與部署流程。
+
 ## 2026-04-22（OpenAI 路徑切換）
 
 - **非 Gemini 模型供應商**：專案的非 Gemini 路徑由 **OpenRouter** 改為直接呼叫 **OpenAI API**；`AsyncOpenAI` client 不再指向 `https://openrouter.ai/api/v1`，改用標準 OpenAI 連線方式。

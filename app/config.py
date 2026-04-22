@@ -127,6 +127,7 @@ BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
 PUBLIC_APP_BASE_URL       = (os.getenv("PUBLIC_APP_BASE_URL") or "").strip().rstrip("/")
 YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
 IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "placeholder").lower()
+IMAGE_OPENAI_API_KEY      = (os.getenv("IMAGE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip() or None
 GCP_PROJECT_ID            = os.getenv("GCP_PROJECT_ID")
 VERTEX_LOCATION           = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generate-002")

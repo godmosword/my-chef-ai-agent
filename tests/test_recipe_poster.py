@@ -36,3 +36,13 @@ def test_render_recipe_poster_png_handles_missing_optional_fields():
     }
     png = recipe_poster.render_recipe_poster_png(recipe)
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_render_recipe_poster_png_falls_back_when_no_cjk_font(monkeypatch):
+    monkeypatch.setattr(recipe_poster, "FONT_CANDIDATES", [])
+    recipe = {
+        "recipe_name": "CI 字型 fallback 測試",
+        "steps": ["先備料", "再下鍋"],
+    }
+    png = recipe_poster.render_recipe_poster_png(recipe)
+    assert png.startswith(b"\x89PNG\r\n\x1a\n")
