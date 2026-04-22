@@ -248,6 +248,23 @@ class TestGenerateFlexMessage:
         assert image_btn is not None
         assert "ts=" in image_btn["action"]["data"]
 
+    def test_footer_adds_generate_poster_postback_button(self):
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "recipe_name_for_postback": "番茄炒蛋", "recipe_lookup_ts": "2026-04-22T00:00:00+00:00"}
+        )
+        footer = result["footer"]["contents"]
+        poster_btn = next(
+            (
+                c for c in footer
+                if c.get("type") == "button"
+                and c.get("action", {}).get("type") == "postback"
+                and "generate_recipe_poster" in c.get("action", {}).get("data", "")
+            ),
+            None,
+        )
+        assert poster_btn is not None
+        assert "ts=" in poster_btn["action"]["data"]
+
     def test_footer_adds_legal_uri_buttons_when_configured(self, monkeypatch):
         monkeypatch.setattr(flex_messages, "LEGAL_DISCLAIMER_URL", "https://app.example.com/legal/disclaimer")
         monkeypatch.setattr(flex_messages, "LEGAL_PRIVACY_URL", "https://app.example.com/legal/privacy")

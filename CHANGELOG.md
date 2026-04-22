@@ -6,13 +6,20 @@
 
 ---
 
+## 2026-04-22（食譜資訊圖海報）
+
+- **新增食譜海報**：使用者可從 recipe card 按下 **「🖼 生成食譜海報」**，依既有 recipe JSON 產出單張可分享的 **PNG 資訊圖**。
+- **渲染方式**：海報由 **Pillow** 走固定模板排版，不額外擴充 AI schema，也不生成每一步驟照片；重點是手機可讀與繁中文字穩定呈現。
+- **媒體管線重用**：生成後沿用既有 `register_recipe_hero_png(...)` 與 `/media/recipe-hero/{token}` 對外提供短期公開 URL，再以 LINE push 回圖與 URL。
+- **依賴與測試**：`Pillow` 納入 runtime 依賴；新增海報 renderer、recipe card 按鈕與 postback 流程測試。當前全量測試為 **86 passed**。
+
 ## 2026-04-22（食譜生成成本改善）
 
 - **預設不自動生圖**：背景食譜生成流程不再每次都呼叫圖片模型；recipe card 改由使用者按下 **「🖼 生成主圖」** 後才按需出圖，大幅降低平均單次食譜成本。
 - **圖片快取**：`IMAGE_CACHE_TTL_SEC` 預設由 **300 → 86400** 秒，重複菜名更容易命中快取，減少重複圖片 API 成本。
 - **文字成本**：`MAX_COMPLETION_TOKENS` 預設由 **2048 → 1024**、`AI_MAX_RETRIES` 由 **2 → 1**；`MAX_HISTORY_TURNS` 維持 **2**，在壓低 token 成本與維持食譜品質之間取平衡。
 - **LINE 體驗**：recipe Flex footer 新增生成主圖 postback；快取命中時直接回帶圖卡片，未命中則先回 loading 文案再 push 成品卡。
-- **測試與文件**：補上按需出圖、快取命中/未命中、過期卡片與成本控制預設值測試；README / TODOS 已同步，當前全量測試為 **81 passed**。
+- **測試與文件**：補上按需出圖、快取命中/未命中、過期卡片與成本控制預設值測試；README / TODOS 已同步。
 
 ## 2026-04-22（GPT-Image-2 食譜主圖）
 
@@ -94,7 +101,7 @@
 
 ### 測試
 
-- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件已成長至 **81** 則（以 `pytest` 收集結果為準）。
+- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件已成長至 **86** 則（以 `pytest` 收集結果為準）。
 
 ---
 

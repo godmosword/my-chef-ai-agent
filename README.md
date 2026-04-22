@@ -21,6 +21,7 @@
 |------|------|
 | 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出，圖／影片由後端依 `IMAGE_PROVIDER`、`YOUTUBE_API_KEY` 補齊。 |
 | 卡片 | 僅在有效 **https** 成品圖時顯示 hero；否則文字色塊標頭，避免與菜名無關的隨機圖。 |
+| 海報 | 可從食譜卡按鈕按需生成單張 **PNG 食譜資訊圖**；沿用現有 recipe JSON，以 **Pillow** 模板排版輸出。 |
 | 情境 | 清冰箱、兒童餐、`🍳 隨機配菜`、`🛒 檢視清單`、菜系輪播等。 |
 | 媒體 | 傳圖辨識食材後產食譜；收藏輪播與刪除。 |
 | 營運 | Webhook **記憶體佇列**、event **去重**、每日**配額**（`app/billing.py`）、`GET /metrics`、`GET /ready`、可選 **IP 與 per-user webhook 限流**、多租戶 `X-Tenant-ID`。 |
@@ -34,6 +35,7 @@
 - **訊息**：LINE Messaging API（非同步 SDK）  
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenRouter）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
 - **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
+- **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，並沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
@@ -68,7 +70,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **81** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **81 passed**；未設定時整合測試會 skip，其餘 **79** 則仍應全數通過。
+目前套件 **86** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **86 passed**；未設定時整合測試會 skip，其餘 **84** 則仍應全數通過。
 
 ---
 
@@ -157,6 +159,7 @@ METRICS_TOKEN=test_metrics_token \
 | 清冰箱／小孩餐等關鍵字 | 情境模式 |
 | 傳圖 | 食材辨識 → 食譜 |
 | 我的最愛／收藏 | 收藏輪播 |
+| `🖼 生成主圖` / `🖼 生成食譜海報` | 對最近一份食譜按需生成圖片或海報 |
 
 ---
 
@@ -209,6 +212,7 @@ my-chef-ai-agent/
 │   ├── handlers_commands.py   # 配額與食譜派發等小塊邏輯
 │   ├── handlers_recipe_flow.py # 背景食譜生成編排
 │   ├── ai_service.py
+│   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染
 │   ├── image_cache.py      # 圖片快取（memory / redis）
 │   ├── db.py
 │   ├── billing.py

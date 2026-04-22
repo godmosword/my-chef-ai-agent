@@ -538,6 +538,61 @@ async def test_postback_generate_recipe_image_rejects_stale_recipe_name(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch):
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "kitchen_talk": [],
+        "ingredients": [{"name": "番茄", "price": "NT$30"}],
+        "steps": ["切番茄", "炒蛋"],
+        "shopping_list": ["蔬果：番茄"],
+        "estimated_total_cost": "88",
+    }
+    monkeypatch.setattr(handlers, "_get_recipe_json_by_timestamp", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "render_recipe_poster_png", lambda _recipe: b"\x89PNG\r\n\x1a\nposter")
+    monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value="https://app.example.com/poster.png"))
+
+    event = WebhookPostbackEvent(
+        reply_token="r5",
+        user_id="U123",
+        data="action=generate_recipe_poster&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B&ts=2026-04-22T00%3A00%3A00%2B00%3A00",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    handlers._reply_line.assert_awaited_once()
+    handlers._push_line_message.assert_awaited_once()
+    pushed_messages = handlers._push_line_message.await_args.args[1]
+    assert len(pushed_messages) == 2
+    assert pushed_messages[0].original_content_url == "https://app.example.com/poster.png"
+    assert "https://app.example.com/poster.png" in pushed_messages[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_poster_rejects_stale_recipe_name(monkeypatch):
+    monkeypatch.setattr(
+        handlers,
+        "_get_last_recipe_json",
+        AsyncMock(return_value={"recipe_name": "牛肉麵", "steps": ["a"]}),
+    )
+    reply_mock = AsyncMock()
+    monkeypatch.setattr(handlers, "_reply_line", reply_mock)
+
+    event = WebhookPostbackEvent(
+        reply_token="r6",
+        user_id="U123",
+        data="action=generate_recipe_poster&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    assert reply_mock.await_count == 1
+    assert "卡片已過期" in reply_mock.await_args.args[1].text
+
+
+@pytest.mark.asyncio
 async def test_postback_expand_steps_returns_full_steps_text(monkeypatch):
     monkeypatch.setattr(
         handlers,

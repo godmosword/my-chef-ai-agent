@@ -352,6 +352,28 @@ def generate_flex_message(
         )
 
     if recipe_name_for_postback:
+        generate_poster_data = (
+            f"action=generate_recipe_poster&name="
+            f"{urllib.parse.quote(_safe_str(recipe_name_for_postback, '美味食譜'), safe='')}"
+        )
+        if recipe_lookup_ts:
+            generate_poster_data += f"&ts={urllib.parse.quote(recipe_lookup_ts, safe='')}"
+        footer_contents.insert(
+            0,
+            {
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "color": fx.EXPAND_BTN_BG,
+                "action": {
+                    "type": "postback",
+                    "label": "🖼 生成食譜海報",
+                    "data": generate_poster_data[:300],
+                    "displayText": f"幫「{_safe_str(recipe_name_for_postback, '美味食譜', max_len=24)}」生成食譜海報",
+                },
+            },
+        )
+
         generate_image_data = (
             f"action=generate_recipe_image&name="
             f"{urllib.parse.quote(_safe_str(recipe_name_for_postback, '美味食譜'), safe='')}"

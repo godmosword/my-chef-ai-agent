@@ -10,6 +10,7 @@ from linebot.v3.messaging import (
     AsyncApiClient,
     AsyncMessagingApi,
     FlexMessage,
+    ImageMessage,
     PushMessageRequest,
     ReplyMessageRequest,
     TextMessage,
@@ -62,35 +63,50 @@ from app.ai_service import (
 )
 from app.billing import consume_quota
 from app.observability import incr
+from app.recipe_hero_media import register_recipe_hero_png
+from app.recipe_poster import render_recipe_poster_png
 from app.subscriptions import build_checkout_url
 
 
 # ─── LINE Reply helper ──────────────────────────────────────────────────────────
 
-async def _reply_line(reply_token: str, msg: TextMessage | FlexMessage, user_id: str | None = None) -> None:
+def _normalize_line_messages(msg: TextMessage | FlexMessage | ImageMessage | list[TextMessage | FlexMessage | ImageMessage]):
+    return msg if isinstance(msg, list) else [msg]
+
+
+async def _reply_line(
+    reply_token: str,
+    msg: TextMessage | FlexMessage | ImageMessage | list[TextMessage | FlexMessage | ImageMessage],
+    user_id: str | None = None,
+) -> None:
     async with AsyncApiClient(line_configuration) as api_client:
         api = AsyncMessagingApi(api_client)
+        messages = _normalize_line_messages(msg)
         try:
-            await api.reply_message(ReplyMessageRequest(reply_token=reply_token, messages=[msg]))
+            await api.reply_message(ReplyMessageRequest(reply_token=reply_token, messages=messages))
             incr("line.reply.success_total")
             return
         except Exception as exc:
             logger.warning("Reply API failed; trying push fallback: %s", exc)
             incr("line.reply.errors_total")
             if user_id:
-                await api.push_message(PushMessageRequest(to=user_id, messages=[msg]))
+                await api.push_message(PushMessageRequest(to=user_id, messages=messages))
                 incr("line.push_fallback.success_total")
                 return
             raise
 
 
-async def _push_line_message(user_id: str, msg: TextMessage | FlexMessage) -> None:
+async def _push_line_message(
+    user_id: str,
+    msg: TextMessage | FlexMessage | ImageMessage | list[TextMessage | FlexMessage | ImageMessage],
+) -> None:
     """Send a push message to LINE user with a lightweight retry."""
+    messages = _normalize_line_messages(msg)
     for attempt in range(2):
         try:
             async with AsyncApiClient(line_configuration) as api_client:
                 api = AsyncMessagingApi(api_client)
-                await api.push_message(PushMessageRequest(to=user_id, messages=[msg]))
+                await api.push_message(PushMessageRequest(to=user_id, messages=messages))
             incr("line.push.success_total")
             return
         except Exception as exc:
@@ -476,6 +492,58 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             await _reply_line(event.reply_token, flex_msg, user_id=event.user_id)
         else:
             await _push_line_message(event.user_id, flex_msg)
+        return
+
+    # ── Generate recipe poster on demand ──
+    if action == "generate_recipe_poster":
+        requested_ts = (parsed.get("ts") or [""])[0]
+        if requested_ts:
+            recipe = await _get_recipe_json_by_timestamp(
+                event.user_id,
+                requested_ts,
+                tenant_id=event.tenant_id,
+            )
+        else:
+            recipe = await _get_last_recipe_json(event.user_id, tenant_id=event.tenant_id)
+        if not recipe:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 找不到最近食譜，請先生成一道新料理。"),
+                user_id=event.user_id,
+            )
+            return
+        recipe_name = _safe_str(recipe.get("recipe_name"), "這道料理", max_len=48)
+        requested_name = _safe_str((parsed.get("name") or [""])[0], "")
+        if requested_name and recipe_name and requested_name != recipe_name:
+            await _reply_line(
+                event.reply_token,
+                TextMessage(text="👨‍🍳 這張卡片已過期，請先重新開啟最新食譜再試一次。"),
+                user_id=event.user_id,
+            )
+            return
+        await _reply_line(
+            event.reply_token,
+            TextMessage(text=f"👨‍🍳 正在為「{recipe_name}」排版食譜海報，請稍候片刻..."),
+            user_id=event.user_id,
+        )
+        try:
+            poster_png = await asyncio.to_thread(render_recipe_poster_png, recipe)
+            poster_url = await register_recipe_hero_png(poster_png)
+            if not poster_url or not poster_url.startswith("https://"):
+                raise RuntimeError("poster URL unavailable")
+            await _push_line_message(
+                event.user_id,
+                [
+                    ImageMessage(original_content_url=poster_url, preview_image_url=poster_url),
+                    TextMessage(text=f"🖼 食譜海報已完成：{poster_url}"),
+                ],
+            )
+        except Exception as exc:
+            logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)
+            await _push_line_message(
+                event.user_id,
+                TextMessage(text="👨‍🍳 食譜海報生成失敗，請稍後再試。"),
+            )
         return
 
     # ── Delete favorite ──
