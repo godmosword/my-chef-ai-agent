@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import os
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -20,6 +21,7 @@ from app.models import WebhookPostbackEvent  # noqa: E402
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
     mock_images = SimpleNamespace(generate=AsyncMock(side_effect=RuntimeError("boom")))
@@ -32,6 +34,7 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "placeholder")
     mock_generate = AsyncMock()
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
@@ -43,19 +46,88 @@ async def test_generate_recipe_image_uses_placeholder_provider_without_api_calls
 
 
 @pytest.mark.asyncio
-async def test_generate_recipe_image_returns_https_url(monkeypatch):
+async def test_generate_recipe_image_returns_media_https_url_from_b64(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
-    response = SimpleNamespace(data=[SimpleNamespace(url="https://cdn.example.com/food.png")])
+    monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://app.example.com")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+    png = b"\x89PNG\r\n\x1a\nrecipe"
+    response = SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(png).decode("ascii"))])
     mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
     monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
 
     url = await ai_service.generate_recipe_image("牛肉麵")
-    assert url == "https://cdn.example.com/food.png"
+    assert url.startswith("https://app.example.com/media/recipe-hero/")
+    token = url.rsplit("/", 1)[-1]
+    data, status = await recipe_hero_media.get_recipe_hero_png(token)
+    assert status == 200
+    assert data == png
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_uses_gpt_image_2_low_quality_and_prompt(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    monkeypatch.setattr(recipe_hero_media, "PUBLIC_APP_BASE_URL", "https://app.example.com")
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+    png = b"\x89PNG\r\n\x1a\nprompt"
+    mock_generate = AsyncMock(
+        return_value=SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(png).decode("ascii"))])
+    )
+    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=SimpleNamespace(generate=mock_generate)))
+
+    url = await ai_service.generate_recipe_image("宮保雞丁")
+
+    assert url.startswith("https://app.example.com/media/recipe-hero/")
+    mock_generate.assert_awaited_once()
+    kwargs = mock_generate.await_args.kwargs
+    assert kwargs["model"] == "gpt-image-2-2026-04-21"
+    assert kwargs["quality"] == "low"
+    assert kwargs["size"] == "1024x1024"
+    assert kwargs["timeout"] == 45.0
+    assert "宮保雞丁" in kwargs["prompt"]
+    assert "Traditional Chinese" in kwargs["prompt"]
+    recipe_hero_media.clear_recipe_hero_media_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_falls_back_when_b64_json_missing(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    response = SimpleNamespace(data=[SimpleNamespace(b64_json=None)])
+    mock_images = SimpleNamespace(generate=AsyncMock(return_value=response))
+    monkeypatch.setattr(ai_service, "ai_client", SimpleNamespace(images=mock_images))
+
+    url = await ai_service.generate_recipe_image("蚵仔煎")
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_falls_back_when_media_registration_fails(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", False)
+    response = SimpleNamespace(
+        data=[SimpleNamespace(b64_json=base64.b64encode(b"\x89PNG\r\n\x1a\nx").decode("ascii"))]
+    )
+    monkeypatch.setattr(
+        ai_service,
+        "ai_client",
+        SimpleNamespace(images=SimpleNamespace(generate=AsyncMock(return_value=response))),
+    )
+    monkeypatch.setattr(ai_service, "register_recipe_hero_png", AsyncMock(side_effect=RuntimeError("media down")))
+
+    url = await ai_service.generate_recipe_image("蔥爆牛肉")
+    assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
 
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
     monkeypatch.setattr(ai_service, "USE_GEMINI_DIRECT", True)
     mock_generate = AsyncMock()
@@ -69,6 +141,7 @@ async def test_generate_recipe_image_skips_dalle_when_gemini_direct(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_uses_vertex_provider_when_configured(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     monkeypatch.setattr(
         ai_service,
@@ -82,6 +155,7 @@ async def test_generate_recipe_image_uses_vertex_provider_when_configured(monkey
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_vertex_second_call_uses_cache(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     vertex_mock = AsyncMock(return_value="https://storage.googleapis.com/demo-bucket/food.png")
@@ -96,6 +170,7 @@ async def test_generate_recipe_image_vertex_second_call_uses_cache(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_vertex_falls_back_to_placeholder(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     monkeypatch.setattr(
         ai_service,
@@ -135,6 +210,7 @@ def test_media_recipe_hero_http_404():
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_vertex_inline_bytes_uses_media_url(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", "demo-proj")
@@ -148,16 +224,16 @@ async def test_generate_recipe_image_vertex_inline_bytes_uses_media_url(monkeypa
 
     url = await ai_service.generate_recipe_image("測試圖")
     assert url.startswith("https://app.example.com/media/recipe-hero/")
-    client = TestClient(app)
     token = url.rsplit("/", 1)[-1]
-    r = client.get(f"/media/recipe-hero/{token}")
-    assert r.status_code == 200
-    assert r.content.startswith(b"\x89PNG")
+    data, status = await recipe_hero_media.get_recipe_hero_png(token)
+    assert status == 200
+    assert data.startswith(b"\x89PNG")
     recipe_hero_media.clear_recipe_hero_media_for_tests()
 
 
 @pytest.mark.asyncio
 async def test_generate_recipe_image_vertex_bytes_falls_back_without_public_base(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
     monkeypatch.setattr(ai_service, "IMAGE_CACHE_TTL_SEC", 300)
     monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "vertex_imagen")
     monkeypatch.setattr(ai_service, "GCP_PROJECT_ID", "demo-proj")

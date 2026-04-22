@@ -33,6 +33,7 @@
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenRouter）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
+- **食譜主圖**：`IMAGE_PROVIDER=openai_compatible` 時使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`），採 **`quality="low"`** 控制成本並在 prompt 中要求將菜名以**繁體中文**清楚渲染於菜單卡／木牌／石板；API 回傳 `b64_json` 後會轉成本站短期公開 URL 供 Flex hero 使用。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
@@ -67,7 +68,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **72** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；未設定時會 **skip**，其餘 **70** 則仍應全數通過。
+目前套件 **72** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體與 GPT-Image-2 生圖回應解析等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **72 passed**；未設定時整合測試會 skip，其餘 **70** 則仍應全數通過。
 
 ---
 
@@ -95,7 +96,7 @@ METRICS_TOKEN=test_metrics_token \
 | `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
 | `DATABASE_URL` |  | Render Postgres 等；記憶／收藏／配額與訂閱走 psycopg（多租戶 `tenant_id`） |
 | `YOUTUBE_API_KEY` |  | 教學影片連結 |
-| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible` |
+| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（`openai_compatible` 目前以 `gpt-image-2-2026-04-21` 生成 1024×1024 低品質圖，並將 `b64_json` 包裝成本站公開 hero URL） |
 | `GCP_PROJECT_ID` | Vertex 時 | Vertex 專案 |
 | `VERTEX_LOCATION` / `VERTEX_IMAGEN_MODEL` |  | 區域與 Imagen 模型 |
 | `VERTEX_SERVICE_ACCOUNT_JSON` |  | 單行 SA JSON（擇一） |

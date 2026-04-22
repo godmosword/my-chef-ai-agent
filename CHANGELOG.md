@@ -6,6 +6,13 @@
 
 ---
 
+## 2026-04-22（GPT-Image-2 食譜主圖）
+
+- **`IMAGE_PROVIDER=openai_compatible`**：食譜主圖生成由舊的 DALL·E 路徑改為 **`gpt-image-2-2026-04-21`**，維持 `1024x1024`，並將 `quality` 降為 **`low`**，優先符合 LINE 手機端顯示並降低 API 成本。
+- **繁體中文文字渲染**：生圖 prompt 強化，要求將菜名以**繁體中文**清楚渲染在菜單卡、小木牌或深色石板上，讓主圖更接近餐廳出餐情境。
+- **相容性調整**：OpenAI 圖片回應改由 **`b64_json` → PNG bytes → 本站公開 URL**，再交給 Flex hero 使用；外部仍維持回傳 https URL，不影響既有食譜卡流程。
+- **測試與文件**：補上 GPT-Image-2 參數、prompt 與 fallback 測試；README 同步更新圖片供應器說明與測試數量，當前全量測試為 **72 passed**。
+
 ## 2026-04-14（開源前：預設 token 與倉庫整理）
 
 - **AI 成本**：`MAX_COMPLETION_TOKENS` 預設由 **4096 → 2048**（仍可用環境變數拉高）；`MAX_HISTORY_TURNS` 預設 **2**（可 `MAX_HISTORY_TURNS` 覆寫），減少送入模型的歷史 token。
@@ -44,7 +51,7 @@
 
 ### LINE 介面
 
-- **食譜主圖**：`IMAGE_PROVIDER=placeholder` 或 Vertex／DALL·E 失敗時，改為預設使用公開 **https** 備援圖（可 `RECIPE_FALLBACK_HERO_IMAGE_URL` 覆寫，`none` 關閉）；`GCS_SIGNED_URL_TTL_SEC` 預設改為 **3600** 以利 `gs://` 私桶轉簽名 URL。
+- **食譜主圖**：`IMAGE_PROVIDER=placeholder` 或 Vertex／OpenAI 生圖失敗時，改為預設使用公開 **https** 備援圖（可 `RECIPE_FALLBACK_HERO_IMAGE_URL` 覆寫，`none` 關閉）；`GCS_SIGNED_URL_TTL_SEC` 預設改為 **3600** 以利 `gs://` 私桶轉簽名 URL。
 - **Rich Menu**：改為 **`richmenu.jpg`**（2500×1686、小於 1 MB，避免 LINE **413 Request Entity Too Large**）；`setup_richmenu.py` 依副檔名送 `image/jpeg`／`image/png`，超過 1 MB 的 PNG 可選安裝 Pillow 自動轉 JPEG。
 
 ---
@@ -79,7 +86,7 @@
 
 ### 測試
 
-- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件約 **57** 則（以 `pytest` 收集結果為準）。
+- 單元測試涵蓋 Flex、配額、佇列、AI 錯誤文案、多媒體、`/ready`、rate limit、AI transport retry 等；目前套件已成長至 **72** 則（以 `pytest` 收集結果為準）。
 
 ---
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import random
 import time
@@ -273,6 +274,17 @@ async def _recipe_image_cache_set(key: str, url: str) -> None:
     await set_cached_image_url(key, url)
 
 
+def _decode_generated_image_bytes(image_data: object) -> bytes | None:
+    """Decode a GPT Image base64 payload into bytes."""
+    encoded = str(image_data or "").strip()
+    if not encoded:
+        return None
+    try:
+        return base64.b64decode(encoded, validate=True)
+    except Exception:
+        return None
+
+
 async def generate_recipe_image(recipe_name: str) -> str:
     """Generate a recipe image URL via provider selector, with safe fallback."""
     if IMAGE_PROVIDER == "placeholder":
@@ -314,18 +326,23 @@ async def generate_recipe_image(recipe_name: str) -> str:
     prompt = (
         "Professional food photography, Michelin star plating, dark slate background, "
         "dramatic top lighting, cinematic depth of field, dish: "
-        f"{recipe_name}"
+        f"{recipe_name}. "
+        f"Please beautifully and clearly render the exact text '{recipe_name}' "
+        "in Traditional Chinese on an elegant menu card, small wooden sign, or dark slate next to the dish."
     )
     try:
         response = await ai_client.images.generate(
-            model="dall-e-3",
+            model="gpt-image-2-2026-04-21",
             prompt=prompt,
             size="1024x1024",
-            quality="hd",
+            quality="low",
             timeout=45.0,
         )
-        image_url = (response.data[0].url if getattr(response, "data", None) else None) or ""
-        if isinstance(image_url, str) and image_url.startswith("https://"):
+        image_bytes = None
+        if getattr(response, "data", None):
+            image_bytes = _decode_generated_image_bytes(getattr(response.data[0], "b64_json", None))
+        if image_bytes:
+            image_url = await register_recipe_hero_png(image_bytes)
             incr("ai.images.generated_total")
             await _recipe_image_cache_set(cache_key, image_url)
             return image_url
