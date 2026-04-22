@@ -3,24 +3,26 @@ from __future__ import annotations
 
 import io
 import os
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
-from app.helpers import _parse_to_list, _safe_str
+from app.helpers import _flex_safe_https_url, _parse_to_list, _safe_str
 
 W = 1200
 H = 1800
-BG = (247, 243, 235)
-CARD = (255, 252, 246)
-CARD_BORDER = (203, 191, 170)
-TITLE = (68, 44, 24)
-SUBTITLE = (66, 102, 62)
-BODY = (53, 51, 47)
+BG = (26, 28, 30)
+CARD = (42, 45, 48)
+CARD_BORDER = (112, 106, 95)
+TITLE = (247, 243, 235)
+SUBTITLE = (112, 106, 95)
+BODY = (247, 243, 235)
 MUTED = (112, 106, 95)
-ACCENT = (46, 102, 58)
-ACCENT_LIGHT = (236, 245, 234)
-STEP_BADGE = (242, 132, 31)
+ACCENT = (234, 88, 12)
+ACCENT_LIGHT = (42, 45, 48)
+STEP_BADGE = (234, 88, 12)
 STEP_BADGE_TEXT = (255, 255, 255)
 
 FONT_PROBE = "米其林職人大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
@@ -157,6 +159,55 @@ def _draw_wrapped_text(
     return y
 
 
+def _fetch_recipe_photo(photo_url: str) -> Image.Image | None:
+    safe_url = _flex_safe_https_url(photo_url)
+    if not safe_url:
+        return None
+    req = urllib.request.Request(
+        safe_url,
+        headers={
+            "User-Agent": "my-chef-ai-agent/recipe-poster",
+            "Accept": "image/*",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            payload = resp.read(8 * 1024 * 1024 + 1)
+    except (OSError, urllib.error.URLError, urllib.error.HTTPError, ValueError):
+        return None
+    if not payload or len(payload) > 8 * 1024 * 1024:
+        return None
+    try:
+        image = Image.open(io.BytesIO(payload))
+        image.load()
+    except Exception:
+        return None
+    return image.convert("RGB")
+
+
+def _cover_crop(image: Image.Image, size: tuple[int, int]) -> Image.Image:
+    target_w, target_h = size
+    src_w, src_h = image.size
+    if src_w <= 0 or src_h <= 0:
+        return image.resize(size)
+    scale = max(target_w / src_w, target_h / src_h)
+    resized = image.resize((max(1, int(src_w * scale)), max(1, int(src_h * scale))), Image.Resampling.LANCZOS)
+    left = max(0, (resized.width - target_w) // 2)
+    top = max(0, (resized.height - target_h) // 2)
+    return resized.crop((left, top, left + target_w, top + target_h))
+
+
+def _paste_recipe_photo(base: Image.Image, photo_url: str, box: tuple[int, int, int, int], radius: int = 28) -> bool:
+    photo = _fetch_recipe_photo(photo_url)
+    if photo is None:
+        return False
+    target = _cover_crop(photo, (box[2] - box[0], box[3] - box[1]))
+    mask = Image.new("L", target.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, target.width, target.height), radius=radius, fill=255)
+    base.paste(target, box[:2], mask)
+    return True
+
+
 def _derive_quick_tips(recipe_data: dict) -> list[str]:
     steps = [str(s).strip() for s in _parse_to_list(recipe_data.get("steps", [])) if str(s).strip()]
     ingredients = _parse_to_list(recipe_data.get("ingredients", []))
@@ -192,27 +243,46 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
     draw = ImageDraw.Draw(image)
 
     margin = 36
-    title_box = (margin, margin, W - margin, 220)
-    ing_box = (margin, 250, W - margin, 620)
-    steps_box = (margin, 650, W - margin, 1360)
-    tips_box = (margin, 1390, 760, H - margin)
-    summary_box = (790, 1390, W - margin, H - margin)
+    title_box = (margin, margin, W - margin, 340)
+    ing_box = (margin, 370, W - margin, 720)
+    steps_box = (margin, 750, W - margin, 1380)
+    tips_box = (margin, 1410, 760, H - margin)
+    summary_box = (790, 1410, W - margin, H - margin)
 
     for box in (title_box, ing_box, steps_box, tips_box, summary_box):
         _draw_round_box(draw, box, fill=CARD, outline=CARD_BORDER)
 
     recipe_name = _safe_str(recipe_data.get("recipe_name"), "本日料理", max_len=48)
     theme = _safe_str(recipe_data.get("theme"), "家常上桌", max_len=32)
-    subtitle = f"{theme}・結構清楚、適合手機閱讀的食譜海報"
-    draw.text((72, 62), recipe_name, font=fonts.title, fill=TITLE)
-    draw.text((72, 142), subtitle, font=fonts.subtitle, fill=SUBTITLE)
+    subtitle = f"{theme}・附成品主圖、適合手機閱讀的食譜海報"
+    photo_url = _safe_str(recipe_data.get("photo_url"), "", max_len=2000)
+    has_photo = False
+    photo_box = (748, 62, W - 72, 314)
+    if photo_url:
+        has_photo = _paste_recipe_photo(image, photo_url, photo_box)
+        if has_photo:
+            draw.rounded_rectangle(photo_box, radius=28, outline=CARD_BORDER, width=2)
+    text_right = 700 if has_photo else W - 72
+    title_y = _draw_wrapped_text(
+        draw,
+        text=recipe_name,
+        xy=(72, 62),
+        font=fonts.title,
+        fill=TITLE,
+        max_width=text_right - 72,
+        line_gap=8,
+        max_lines=2,
+    )
+    draw.text((72, title_y + 10), subtitle, font=fonts.subtitle, fill=SUBTITLE)
+    if has_photo:
+        draw.text((760, 74), "成品主圖", font=fonts.body_small, fill=TITLE)
 
-    draw.text((72, 274), "食材清單", font=fonts.section, fill=ACCENT)
+    draw.text((72, 394), "食材清單", font=fonts.section, fill=ACCENT)
     ingredients = _parse_to_list(recipe_data.get("ingredients", []))
     left_x = 78
     right_x = 620
-    y_left = 332
-    y_right = 332
+    y_left = 452
+    y_right = 452
     for idx, item in enumerate(ingredients[:8]):
         if isinstance(item, dict):
             name = _safe_str(item.get("name", item.get("食材", "食材")), "食材")
@@ -238,11 +308,11 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             y_right = y_next + 12
     shopping = [str(s).strip() for s in _parse_to_list(recipe_data.get("shopping_list", [])) if str(s).strip()]
     if shopping:
-        draw.text((72, 530), "採買提示", font=fonts.body_small, fill=MUTED)
+        draw.text((72, 630), "採買提示", font=fonts.body_small, fill=MUTED)
         _draw_wrapped_text(
             draw,
             text=" / ".join(shopping[:3]),
-            xy=(72, 564),
+            xy=(72, 664),
             font=fonts.body_small,
             fill=BODY,
             max_width=1020,
@@ -250,12 +320,12 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=2,
         )
 
-    draw.text((72, 674), "料理步驟", font=fonts.section, fill=ACCENT)
+    draw.text((72, 774), "料理步驟", font=fonts.section, fill=ACCENT)
     steps = [str(s).strip() for s in _parse_to_list(recipe_data.get("steps", [])) if str(s).strip()]
     step_positions = [
-        (72, 736), (620, 736),
-        (72, 956), (620, 956),
-        (72, 1176), (620, 1176),
+        (72, 836), (620, 836),
+        (72, 1036), (620, 1036),
+        (72, 1236), (620, 1236),
     ]
     for idx, step in enumerate(steps[:6]):
         x, y = step_positions[idx]
@@ -274,9 +344,9 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=4,
         )
 
-    draw.text((72, 1414), "小撇步", font=fonts.section, fill=ACCENT)
+    draw.text((72, 1434), "小撇步", font=fonts.section, fill=ACCENT)
     tips = _derive_quick_tips(recipe_data)
-    tip_y = 1472
+    tip_y = 1492
     for tip in tips:
         draw.text((74, tip_y), "★", font=fonts.body, fill=STEP_BADGE)
         tip_y = _draw_wrapped_text(
@@ -290,12 +360,12 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=2,
         ) + 10
 
-    draw.text((818, 1414), "摘要", font=fonts.section, fill=ACCENT)
+    draw.text((818, 1434), "摘要", font=fonts.section, fill=ACCENT)
     time_text, cost_text = _derive_summary(recipe_data)
-    draw.text((826, 1492), "料理時間", font=fonts.body_small, fill=MUTED)
-    draw.text((826, 1536), time_text, font=fonts.section, fill=TITLE)
-    draw.text((826, 1612), "預估成本", font=fonts.body_small, fill=MUTED)
-    draw.text((826, 1656), cost_text, font=fonts.section, fill=TITLE)
+    draw.text((826, 1512), "料理時間", font=fonts.body_small, fill=MUTED)
+    draw.text((826, 1556), time_text, font=fonts.section, fill=TITLE)
+    draw.text((826, 1632), "預估成本", font=fonts.body_small, fill=MUTED)
+    draw.text((826, 1676), cost_text, font=fonts.section, fill=TITLE)
     footer = "米其林職人大腦・Recipe Poster"
     box = draw.textbbox((0, 0), footer, font=fonts.body_small)
     draw.text((W - margin - (box[2] - box[0]), H - margin - 36), footer, font=fonts.body_small, fill=MUTED)

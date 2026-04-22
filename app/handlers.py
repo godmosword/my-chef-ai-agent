@@ -528,7 +528,13 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             user_id=event.user_id,
         )
         try:
-            poster_png = await asyncio.to_thread(render_recipe_poster_png, recipe)
+            photo_url = await get_cached_recipe_image(recipe_name)
+            if not photo_url:
+                photo_url = await generate_recipe_image(recipe_name)
+            poster_recipe = dict(recipe)
+            if photo_url:
+                poster_recipe["photo_url"] = photo_url
+            poster_png = await asyncio.to_thread(render_recipe_poster_png, poster_recipe)
             poster_url = await register_recipe_hero_png(poster_png)
             if not poster_url or not poster_url.startswith("https://"):
                 raise RuntimeError("PUBLIC_APP_BASE_URL missing")

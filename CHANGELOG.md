@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-04-23（食譜海報補上主圖）
+
+- **海報會優先帶成品照**：`generate_recipe_poster` 現在會先取既有主圖快取；若尚未有圖，會沿用目前 `IMAGE_PROVIDER` 現場補一張，再把 `photo_url` 傳進 `app/recipe_poster.py`。
+- **下載失敗不再留白**：海報 renderer 新增安全的 https 圖片抓取、cover crop 與圓角貼圖；主圖失效、超大、非圖片或下載失敗時，會自動退回原本的純文字海報，不阻斷回傳。
+- **測試與文件**：新增海報嵌圖與 postback 帶圖測試；全量測試更新為 **102 passed**，README / TODOS 已同步。
+
+## 2026-04-22（Dark Michelin 視覺重構）
+
+- **Flex / 海報主題統一**：`app/flex_theme.py` 改為 Dark Michelin token，LINE Flex 的主選單、菜系輪播、食譜卡、收藏卡與 fallback 卡片全部改為深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA。
+- **食譜海報改版**：`app/recipe_poster.py` 由亮底改為深色石板底，標題、內文與步驟 badge 全面套用暗黑奢華配色，不變更既有版面與輸出介面。
+- **測試**：補上 Flex dark surface / CTA 色票斷言，以及海報 dark palette 像素 smoke test；文件同步更新。
+
 ## 2026-04-22（主圖與海報回傳修正）
 
 - **GPT-Image-2 與 Gemini 可並存**：`generate_recipe_image()` 不再共用文字生成的 `ai_client`，改為獨立建立 OpenAI image client。現在即使文字食譜仍走 Gemini，`IMAGE_PROVIDER=openai_compatible` 也能正常呼叫 GPT-Image-2。

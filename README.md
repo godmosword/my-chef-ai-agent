@@ -35,8 +35,9 @@
 - **訊息**：LINE Messaging API（非同步 SDK）  
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
 - **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；超時或失敗時會自動回退到原本無 Grounding 的生成流程。  
+- **Flex 介面**：LINE Flex 主選單、菜系輪播、食譜卡與 fallback 卡片統一採 **Dark Michelin Theme**，以深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA 建立一致視覺。  
 - **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
-- **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，並沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供；在 CI / Linux 環境找不到 CJK 字型時會自動退回內建字型，避免渲染直接失敗。  
+- **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，海報會優先嵌入既有主圖（快取命中時直接使用，否則按目前 provider 補圖）；若主圖下載失敗則自動退回純文字版，不阻斷海報生成。沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供；目前預設為 Dark Michelin 深色石板版型，在 CI / Linux 環境找不到 CJK 字型時會自動退回內建字型，避免渲染直接失敗。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
@@ -71,7 +72,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **97** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報、Deep Research fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **97 passed**；未設定時整合測試會 skip，其餘 **95** 則仍應全數通過。
+目前套件 **102** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報主圖嵌入、Deep Research fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **102 passed**。
 
 ---
 
@@ -217,7 +218,7 @@ my-chef-ai-agent/
 │   ├── handlers_recipe_flow.py # 背景食譜生成編排
 │   ├── ai_service.py
 │   ├── deep_research.py    # Google Interactions API Deep Research 預處理
-│   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染
+│   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染（含主圖嵌入與純文字 fallback）
 │   ├── image_cache.py      # 圖片快取（memory / redis）
 │   ├── db.py
 │   ├── billing.py

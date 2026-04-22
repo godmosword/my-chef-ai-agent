@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import os
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -615,7 +615,10 @@ async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch)
     monkeypatch.setattr(handlers, "_get_recipe_json_by_timestamp", AsyncMock(return_value=recipe))
     monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
     monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
-    monkeypatch.setattr(handlers, "render_recipe_poster_png", lambda _recipe: b"\x89PNG\r\n\x1a\nposter")
+    monkeypatch.setattr(handlers, "get_cached_recipe_image", AsyncMock(return_value="https://app.example.com/cached-hero.png"))
+    monkeypatch.setattr(handlers, "generate_recipe_image", AsyncMock())
+    render_mock = Mock(return_value=b"\x89PNG\r\n\x1a\nposter")
+    monkeypatch.setattr(handlers, "render_recipe_poster_png", render_mock)
     monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value="https://app.example.com/poster.png"))
 
     event = WebhookPostbackEvent(
@@ -628,6 +631,9 @@ async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch)
 
     handlers._reply_line.assert_awaited_once()
     handlers._push_line_message.assert_awaited_once()
+    handlers.generate_recipe_image.assert_not_awaited()
+    render_recipe = render_mock.call_args.args[0]
+    assert render_recipe["photo_url"] == "https://app.example.com/cached-hero.png"
     pushed_messages = handlers._push_line_message.await_args.args[1]
     assert len(pushed_messages) == 2
     assert pushed_messages[0].original_content_url == "https://app.example.com/poster.png"
