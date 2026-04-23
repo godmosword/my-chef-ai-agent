@@ -636,10 +636,9 @@ async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch)
     handlers.generate_recipe_image.assert_not_awaited()
     render_recipe = render_mock.call_args.args[0]
     assert render_recipe["photo_url"] == "https://app.example.com/cached-hero.png"
-    pushed_messages = handlers._push_line_message.await_args.args[1]
-    assert len(pushed_messages) == 2
-    assert pushed_messages[0].original_content_url == "https://app.example.com/poster.png"
-    assert "https://app.example.com/poster.png" in pushed_messages[1].text
+    # 只推送圖片，不附帶 URL 文字訊息
+    pushed_msg = handlers._push_line_message.await_args.args[1]
+    assert pushed_msg.original_content_url == "https://app.example.com/poster.png"
 
 
 @pytest.mark.asyncio
