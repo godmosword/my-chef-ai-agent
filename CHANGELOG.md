@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-23（兩段式食譜圖卡產生器）
+
+- **新增兩段式產圖模組**：`app/recipe_card_generator.py` 新增 `RecipeCardData` schema、`build_base_image_prompt(...)`、`generate_base_image(...)` 與 `compose_recipe_card(...)`，採「先生底圖、後疊繁中」策略，降低大量繁中文字直接交給模型渲染造成的亂碼與版面漂移。
+- **可直接跑的範例**：新增 `examples/sample-recipe.json` 與 `scripts/generate_recipe_card_example.py`，支援 `--skip-api`（本機佔位底圖）與 OpenAI Stage A 正式生圖兩種路徑，最終輸出 `1200x1500` PNG。
+- **測試覆蓋**：新增 `tests/test_recipe_card_generator.py`，覆蓋 prompt 關鍵詞與最終 PNG 輸出尺寸，確保模組可在無外部 API 的 CI/本機環境先驗證 Stage B 渲染穩定性。
+
 ## 2026-04-23（食譜海報補上主圖）
 
 - **海報會優先帶成品照**：`generate_recipe_poster` 現在會先取既有主圖快取；若尚未有圖，會沿用目前 `IMAGE_PROVIDER` 現場補一張，再把 `photo_url` 傳進 `app/recipe_poster.py`。
