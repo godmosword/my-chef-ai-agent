@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-23（文件：重寫 TODOS／README）
+
+- **TODOS.md**：重寫為目前 backlog 結構；里程碑摘要對齊溫暖明亮主題、Render（Playwright + `fonts-noto-cjk`）、程式碼清理等；**零章**改為可重複的部署／LINE 手動驗收清單；移除與現況不符的舊敘述（如 Dark Michelin、舊海報色敘事）。
+- **README.md**：全篇對齊現有產品與技術（溫暖明亮 Flex、海報雙管線、Render 建置要點）；精簡重複段、更新專案結構與指令表。
+- **AGENTS.md**：測試數量更新為 **122** 則（與 CI／本機一致）。
+
 ## 2026-04-23（程式碼清理與 Token 精簡）
 
 - **殭屍代碼**：刪除未使用的 `render_recipe_poster_png_html_async` 與多餘 `asyncio` import；移除未引用常數 `VIEW_FAVORITES_CMD`；`handlers.py` 不再 import 未使用的 `save_user_memory`。

@@ -1,17 +1,17 @@
 ## 米其林職人大腦（LINE Bot × FastAPI）
 
-以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，亦可改走 OpenAI）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
+以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，可改走 OpenAI）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
 
-更完整的維運說明見 [`AGENTS.md`](AGENTS.md)（Cursor Cloud／本機 pytest 環境變數）；貢獻與 plan 收尾流程見 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+更完整的維運與測試環境變數見 [`AGENTS.md`](AGENTS.md)；貢獻與里程碑收尾流程見 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ---
 
 ## 開源、商標與第三方服務
 
-- **原始碼授權**：MIT，全文見根目錄 [`LICENSE`](LICENSE)。第三方 Python 套件授權摘要見 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（更新依賴後請執行 `python3 scripts/generate_third_party_licenses.py` 並一併提交）。
-- **商標聲明**：本專案展示名稱中的「米其林」為產品行銷用語，**與米其林指南（MICHELIN Guide）或其權利人無關**；若你 fork 或對外發布，請自行評估是否改用中性品牌名稱，並遵守各地商標法。
-- **外部 API**：部署者須自行申請並遵守 **LINE**、**Google／Gemini**、**OpenAI**、**YouTube** 等供應商條款；本倉庫僅提供程式碼，**不包含**上述服務之使用權、額度或資料處理同意。
-- **開源前檢查**：見 [`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)。
+- **授權**：MIT，全文見根目錄 [`LICENSE`](LICENSE)。第三方 Python 套件摘要見 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（更新依賴後請執行 `python3 scripts/generate_third_party_licenses.py` 並一併提交）。
+- **商標**：專案展示名稱中的「米其林」為產品行銷用語，**與米其林指南（MICHELIN Guide）或其權利人無關**；若你 fork 或對外發布，請自行評估中性品牌名稱與當地商標法。
+- **外部 API**：部署者須自備並遵守 **LINE**、**Google／Gemini**、**OpenAI**、**YouTube** 等條款；本倉庫僅提供程式碼。
+- **開源前檢查**：[`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)
 
 ---
 
@@ -19,14 +19,14 @@
 
 | 類別 | 說明 |
 |------|------|
-| 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出。預設走低延遲路徑；若顯式開啟 `ENABLE_DEEP_RESEARCH=1`，才會在生成前加上 Google Deep Research Grounding。 |
-| 卡片 | 僅在有效 **https** 成品圖時顯示 hero；否則文字色塊標頭，避免與菜名無關的隨機圖。 |
-| 海報 | 可從食譜卡按鈕按需生成雜誌級 **PNG 食譜資訊圖**；以 **Playwright headless Chromium 渲染 HTML+CSS**，具備橙紅漸層標題、食材兩欄、步驟卡片、廚師對話、調味比例表；Playwright 不可用時自動退回 Pillow 版。 |
-| 食譜圖卡（兩段式） | 新增可重用「先生底圖、後疊繁中」流程：Stage A 以 `gpt-image-2` 產生高質感版面底圖，Stage B 由程式穩定疊上繁中標題／食材／步驟／小撇步／調味與時間，降低模型中文字亂碼風險。 |
-| 情境 | 清冰箱、兒童餐、`🍳 隨機配菜`、`🛒 檢視清單`、菜系輪播等。 |
-| 媒體 | 傳圖辨識食材後產食譜；收藏輪播與刪除。 |
-| 營運 | Webhook **記憶體佇列**、event **去重**、每日**配額**（`app/billing.py`）、`GET /metrics`、`GET /ready`、可選 **IP 與 per-user webhook 限流**、多租戶 `X-Tenant-ID`。 |
-| 法務 | `GET /legal/disclaimer`、`GET /legal/privacy`（見 [`docs/LEGAL_POLICY.md`](docs/LEGAL_POLICY.md)）。 |
+| 食譜 | 主題、菜名、步驟、採買、估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等由模型輸出。預設**低延遲**；僅在 `ENABLE_DEEP_RESEARCH=1` 時於生成前做 Deep Research Grounding。 |
+| 卡片 | 有效 **https** 成品圖才顯示 hero；否則文字色塊標頭。Flex 採**溫暖明亮**主題（米白底、琥珀金重點、深棕主文、深森綠標籤，見 `app/flex_theme.py`）。 |
+| 海報 | 從食譜卡按需生成**雜誌風 PNG**：以 **Playwright + Chromium** 渲染 `app/recipe_poster_html.py` 的 HTML/CSS；失敗則回退 `app/recipe_poster.py` 的 **Pillow** 渲染（同系列暖色）。 |
+| 兩段式圖卡 | `recipe_card_generator.py`：Stage A 視覺底圖、Stage B 程式疊繁中，降低模型中文字亂碼。 |
+| 情境 | 清冰箱、兒童餐、`🍳 隨機配菜`、`🛒 檢視清單`、換菜單／菜系等。 |
+| 媒體 | 上傳圖片辨識食材；收藏與刪除。 |
+| 營運 | Webhook **記憶體佇列**、event **去重**、**配額**、`GET /metrics`、`GET /ready`、**IP 與 per-user 限流**、可選多租戶 `X-Tenant-ID`。 |
+| 法務 | `GET /legal/disclaimer`、`GET /legal/privacy`（[`docs/LEGAL_POLICY.md`](docs/LEGAL_POLICY.md)） |
 
 ---
 
@@ -34,35 +34,35 @@
 
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
-- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）。目前預設偏低延遲：`AI_TRANSPORT_MAX_RETRIES=1`、`AI_CHAT_TIMEOUT_SEC=18`。  
-- **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；預設 **關閉**，需設 `ENABLE_DEEP_RESEARCH=1` 才啟用。啟用後 timeout 會限制在 **5-20 秒**，預設 **10** 秒，失敗時自動回退。  
-- **Flex 介面**：LINE Flex 主選單、菜系輪播、食譜卡與 fallback 卡片統一採 **Dark Michelin Theme**，以深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA 建立一致視覺。  
-- **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。YouTube 教學影片查詢改為背景預抓與快取，不阻塞首包食譜。  
-- **食譜海報**：以 **Playwright headless Chromium** 將 HTML+CSS 模板截圖成雜誌級 PNG 資訊圖（橙紅漸層標題、食材兩欄、步驟 badge 卡片、廚師對話、調味比例表、小撇步）；若尚未有主圖快取，海報會直接走純文字版而不額外等待生圖。Playwright 不可用時自動退回舊版 Pillow 渲染，不阻斷部署。沿用既有 `/media/recipe-hero/{token}` 短期媒體管線對外提供 URL。  
-- **兩段式食譜圖卡**：`app/recipe_card_generator.py` 提供可重用管線：先由 `build_base_image_prompt(...)` + `generate_base_image(...)` 產出「少文字」視覺底圖，再以 `compose_recipe_card(...)` 在固定格線上疊繁中資訊，輸出 `1200x1500` PNG（適合 LINE 分享）。  
+- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；**429／逾時／連線**退避；JSON 截斷修復。預設偏快：`AI_TRANSPORT_MAX_RETRIES=1`、`AI_CHAT_TIMEOUT_SEC=18` 等。  
+- **Deep Research**（可選）：Google Interactions API；預設**關閉**（`ENABLE_DEEP_RESEARCH=1` 才啟用）；timeout 限於 5–20 秒、預設 10 秒。  
+- **Flex UI**：`flex_theme.py` 集中 tokens；**溫暖明亮**風，與海報色調一致。  
+- **食譜主圖**：卡片預設**不自動**生圖；點「🖼 生成主圖」且 `IMAGE_PROVIDER=openai_compatible` 時以 **GPT-Image-2** 等產生，結果經本機 `/media/...` 短網址供 Flex 使用。YouTube 教學影片為**背景**查詢與快取。  
+- **食譜海報**：`recipe_poster_html.py` 產生 HTML，Playwright 截圖；部署環境需安裝 **Chromium** 與 **CJK 字型**（`render.yaml` 已含 `playwright install --with-deps chromium` 與 `fonts-noto-cjk`）。海報內文以**系／本機字型**為主，避免純遠端 webfont 在 headless 下載失敗。  
+- **兩段式圖卡**：`build_base_image_prompt` + `generate_base_image` + `compose_recipe_card`（例：`1200×1500` PNG）。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
-- **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
+- **部署**：`render.yaml`；可選 GCP（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
 ---
 
 ## 本機開發
 
-### 依賴與環境
+### 依賴與啟動
 
 ```bash
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-模組匯入時會驗證 **`LINE_CHANNEL_ACCESS_TOKEN`**、**`LINE_CHANNEL_SECRET`**、**`GEMINI_API_KEY`**（或 OpenAI 路徑所需變數）。本機無真金鑰可填占位值僅供啟動／測試：
+匯入時需 **`LINE_CHANNEL_ACCESS_TOKEN`**、**`LINE_CHANNEL_SECRET`**、**`GEMINI_API_KEY`**（或 OpenAI 路徑變數）。本機可填占位僅供啟動／測試：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
   python3 -m uvicorn main:app --reload --port 8000
 ```
 
-- 健康檢查：`GET /` → `{"status":"ok",...}`  
-- **Readiness**（可選 DB）：`GET /ready` → Postgres 可連時 200，否則 503  
+- Liveness：`GET /`  
+- Readiness（可選 DB）：`GET /ready`  
 - Webhook：`POST /callback`（需有效 `X-Line-Signature`）
 
 ### 測試
@@ -74,9 +74,9 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **122** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報主圖嵌入、Deep Research 開關與 fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback、YouTube 快取與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **122 passed**。
+全倉目前 **122** 則測試；`tests/integration/` 內依 Postgres 的測試在設好 `DATABASE_URL` 時應一併通過（**122 passed**）。
 
-可用以下指令快速驗證兩段式食譜圖卡（`--skip-api` 代表先用本機佔位底圖，不呼叫 OpenAI）：
+兩段式圖卡快速試跑（`--skip-api` 不呼叫 OpenAI 生底圖）：
 
 ```bash
 python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.json --skip-api
@@ -86,9 +86,10 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 
 ## Render 部署
 
-1. 建立 Web Service，連線本 repo；Render 會讀取 `render.yaml`。  
-2. 在 Environment 填入 LINE、AI、可選 `DATABASE_URL`、Vertex 等（下表）。  
-3. Webhook URL：`https://<你的服務>.onrender.com/callback`。
+1. 建立 Web Service，綁定本 repo；讀取 **`render.yaml`**。  
+2. 環境變數填入 LINE、AI、可選 `DATABASE_URL`、Vertex 等（下表）。  
+3. Webhook：`https://<你的服務>.onrender.com/callback`。  
+4. **建置**須能執行 **`python -m playwright install --with-deps chromium`** 並安裝 **Noto CJK**（`render.yaml` 的 `buildCommand` 已兩者皆含），否則海報易退回 Pillow 或中文字在截圖中異常。
 
 ---
 
@@ -98,87 +99,83 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 |------|:----:|------|
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API token |
 | `LINE_CHANNEL_SECRET` | ✅ | Channel secret |
-| `GEMINI_API_KEY` | ✅\* | Gemini 直連 |
-| `OPENAI_API_KEY` | ✅\* | 改走 OpenAI 時 |
-| `IMAGE_OPENAI_API_KEY` |  | 可選；`IMAGE_PROVIDER=openai_compatible` 時主圖生成優先使用它，未設則回退 `OPENAI_API_KEY` |
+| `GEMINI_API_KEY` | ✅\* | 走 Gemini 直連 |
+| `OPENAI_API_KEY` | ✅\* | 改走非 gemini 模型時 |
+| `IMAGE_OPENAI_API_KEY` |  | 可選；`IMAGE_PROVIDER=openai_compatible` 時主圖優先使用，否則回退 `OPENAI_API_KEY` |
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
-| `MAX_COMPLETION_TOKENS` |  | 預設 **1024**；控制文字食譜輸出成本，遇截斷會觸發修復提示，必要時可拉高 |
-| `MAX_HISTORY_TURNS` |  | 送入模型的對話輪數（不含 system），預設 **2** |
-| `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數，預設 **1** |
-| `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試，預設 **1** |
-| `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
-| `AI_CHAT_TIMEOUT_SEC` |  | 文字食譜 timeout，預設 **18** 秒 |
-| `AI_IMAGE_TIMEOUT_SEC` |  | 主圖生成 timeout，預設 **25** 秒 |
-| `AI_VISION_TIMEOUT_SEC` |  | 圖片辨識 timeout，預設 **20** 秒 |
-| `ENABLE_DEEP_RESEARCH` |  | 預設 **0**；設 **1** 才會在食譜生成前啟用 Deep Research |
-| `DEEP_RESEARCH_API_KEY` |  | 可選；若設置則 Deep Research 優先使用它，未設時會回退使用 `GEMINI_API_KEY` |
-| `DEEP_RESEARCH_TIMEOUT_SEC` |  | 可選；Deep Research timeout，程式會限制在 **5-20 秒** 間，預設 **10** 秒 |
-| `DATABASE_URL` |  | Render Postgres 等；記憶／收藏／配額與訂閱走 psycopg（多租戶 `tenant_id`） |
-| `YOUTUBE_API_KEY` |  | 教學影片連結；查詢走短 timeout 與快取，不阻塞首包食譜 |
-| `YOUTUBE_SEARCH_TIMEOUT_SEC` |  | YouTube 搜尋 timeout，預設 **3** 秒 |
-| `YOUTUBE_CACHE_TTL_SEC` |  | YouTube 搜尋快取秒數，預設 **86400** |
-| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（recipe card 預設不自動生圖；點擊「🖼 生成主圖」時才會用對應 provider 生成） |
-| `GCP_PROJECT_ID` | Vertex 時 | Vertex 專案 |
-| `VERTEX_LOCATION` / `VERTEX_IMAGEN_MODEL` |  | 區域與 Imagen 模型 |
-| `VERTEX_SERVICE_ACCOUNT_JSON` |  | 單行 SA JSON（擇一） |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` |  | 單行 SA JSON；啟動寫暫存檔並設 `GOOGLE_APPLICATION_CREDENTIALS` |
-| `VERTEX_IMAGEN_OUTPUT_GCS_URI` |  | 可選 `gs://...` 輸出 |
-| `IMAGE_PUBLIC_BASE_URL` |  | 可選 CDN / 公網圖床前綴；有值時 `gs://` 會改寫成此網域 |
-| `IMAGE_CACHE_TTL_SEC` |  | 主圖快取秒數，預設 **86400**；0 關閉 |
-| `IMAGE_CACHE_BACKEND` |  | `auto` / `memory` / `redis` |
-| `REDIS_URL` |  | 跨實例圖片快取（Redis / Upstash） |
-| `IMAGE_CACHE_NAMESPACE` |  | Redis key 前綴（預設 `recipe_image`） |
-| `GCS_SIGNED_URL_TTL_SEC` |  | `gs://` 轉 signed URL 的有效秒數（預設 3600）；0 關閉 |
-| `RECIPE_FALLBACK_HERO_IMAGE_URL` |  | 無 AI 主圖時的公開 **https** hero；未設用內建圖；`none`／`-` 關閉 |
-| `RATE_LIMIT_CALLBACK_PER_MINUTE` |  | `POST /callback` 每 IP 分鐘上限，0 關閉 |
-| `RATE_LIMIT_PUBLIC_PER_MINUTE` |  | checkout／legal 等公開路由，0 關閉 |
-| `RATE_LIMIT_USER_PER_MINUTE` / `RATE_LIMIT_USER_BURST` |  | webhook 每 user+tenant 限流 |
-| `QUOTA_WARN_THRESHOLD` |  | 接近每日額度時的提醒門檻（預設 3） |
-| `RECIPE_STEPS_PREVIEW_COUNT` |  | Flex 預設顯示前幾步（其餘可 postback 展開） |
-| `RECIPE_STEPS_MAX_COUNT` / `RECIPE_STEP_MAX_CHARS` |  | 提示模型輸出步驟數與每步長度上限 |
-| `DEFAULT_TENANT_ID` |  | 預設租戶 |
-| `PLAN_*_DAILY_LIMIT` |  | 各方案每日上限 |
-| `QUEUE_WORKER_COUNT` / `QUEUE_MAX_SIZE` / `QUEUE_DEDUPE_TTL_SEC` |  | 佇列與去重；`QUEUE_WORKER_COUNT` 預設 **4** |
-| `REQUIRE_ATOMIC_USAGE` |  | `1` 時強制 DB 原子扣量 |
-| `BILLING_PROVIDER` / `CHECKOUT_URL_TEMPLATE` / `BILLING_BASE_URL` |  | 升級連結與金流占位 |
-| `PUBLIC_APP_BASE_URL` |  | 產生 Flex 內 legal URI 按鈕網址（`/legal/*`），也用於主圖與食譜海報回傳 `/media/recipe-hero/{token}` 公開網址；需為 **https** |
+| `MAX_COMPLETION_TOKENS` |  | 預設 **1024** |
+| `MAX_HISTORY_TURNS` |  | 預設 **2** |
+| `AI_MAX_RETRIES` |  | JSON 修復輪數，預設 **1** |
+| `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層重試，預設 **1** |
+| `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起點 |
+| `AI_CHAT_TIMEOUT_SEC` |  | 文字食譜，預設 **18** 秒 |
+| `AI_IMAGE_TIMEOUT_SEC` |  | 主圖，預設 **25** 秒 |
+| `AI_VISION_TIMEOUT_SEC` |  | 圖片辨識，預設 **20** 秒 |
+| `ENABLE_DEEP_RESEARCH` |  | 預設 **0**；**1** 啟用 Deep Research |
+| `DEEP_RESEARCH_API_KEY` |  | 可選；未設則回退 `GEMINI_API_KEY` |
+| `DEEP_RESEARCH_TIMEOUT_SEC` |  | 限 **5–20** 秒，預設 **10** |
+| `DATABASE_URL` |  | Postgres；記憶／收藏／配額 |
+| `YOUTUBE_API_KEY` / `YOUTUBE_SEARCH_TIMEOUT_SEC` / `YOUTUBE_CACHE_TTL_SEC` |  | 教學影片，短 timeout 與快取 |
+| `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible` |
+| `GCP_PROJECT_ID`、Vertex 相關 | Vertex 時 | 見下表與專文 |
+| `IMAGE_CACHE_TTL_SEC` / `IMAGE_CACHE_BACKEND` / `REDIS_URL` |  | 主圖快取 |
+| `GCS_SIGNED_URL_TTL_SEC` |  | `gs://` 轉 signed URL 秒數 |
+| `RECIPE_FALLBACK_HERO_IMAGE_URL` |  | 無 AI 主圖時的 **https** hero |
+| `RATE_LIMIT_CALLBACK_PER_MINUTE` 等 |  | IP／公開路由限流，0 關閉 |
+| `RATE_LIMIT_USER_PER_MINUTE` / `RATE_LIMIT_USER_BURST` |  | 每 user+tenant |
+| `QUOTA_WARN_THRESHOLD` |  | 額度提醒門檻 |
+| `RECIPE_STEPS_PREVIEW_COUNT` / `RECIPE_STEPS_MAX_COUNT` / `RECIPE_STEP_MAX_CHARS` |  | Flex 與提示詞約束步驟顯示與長度（動態行在 `helpers._build_system_prompt`） |
+| `DEFAULT_TENANT_ID` / `PLAN_*_DAILY_LIMIT` |  | 租戶與配額 |
+| `QUEUE_WORKER_COUNT` / `QUEUE_MAX_SIZE` / `QUEUE_DEDUPE_TTL_SEC` |  | 佇列；`QUEUE_WORKER_COUNT` 預設 **4** |
+| `REQUIRE_ATOMIC_USAGE` |  | `1` 強制 DB 原子扣量 |
+| `BILLING_*`、checkout |  | 升級連結与占位金流 |
+| `PUBLIC_APP_BASE_URL` |  | **https**；Flex 內法律連結、主圖與海報之 `/media/...` 公開 URL |
 | `ADMIN_API_TOKEN` |  | 管理訂閱 API |
-| `METRICS_TOKEN` | **建議正式環境必填** | 未設定時 `GET /metrics` 回 **503**；已設定時須帶正確 `X-Metrics-Token` |
-| `LOG_USER_HASH_SALT` |  | 結構化 log 的 user hash salt |
-| `OTEL_ENABLED` / `OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_ENDPOINT` / `OTEL_SAMPLING_RATIO` |  | OpenTelemetry 設定 |
+| `METRICS_TOKEN` | **建議正式必填** | 未設時 `GET /metrics` **503**；請求帶 `X-Metrics-Token` |
+| `LOG_USER_HASH_SALT` |  | user hash |
+| `OTEL_*` |  | OpenTelemetry |
 | `DEBUG` |  | `1` 較詳 log |
 
-\* `gemini-*` 用 `GEMINI_API_KEY`；其他模型經 OpenAI 用 `OPENAI_API_KEY`。若文字仍走 Gemini，但主圖要用 GPT-Image-2，請至少設定 `IMAGE_OPENAI_API_KEY` 或 `OPENAI_API_KEY`。
+\* `gemini-*` 用 `GEMINI_API_KEY`；其他經 OpenAI 相容端點用 `OPENAI_API_KEY`。主圖若用 GPT-Image-2 請設 `IMAGE_OPENAI_API_KEY` 或 `OPENAI_API_KEY`。
 
-**Vertex 憑證優先序**：`VERTEX_SERVICE_ACCOUNT_JSON` → `GOOGLE_APPLICATION_CREDENTIALS_JSON`（寫暫存檔）→ 既有 **`GOOGLE_APPLICATION_CREDENTIALS`**／ADC。失敗時主圖回退佔位，不阻斷食譜流程。
+**Vertex 憑證優先序**：`VERTEX_SERVICE_ACCOUNT_JSON` → `GOOGLE_APPLICATION_CREDENTIALS_JSON`（寫暫存檔）→ 既有 `GOOGLE_APPLICATION_CREDENTIALS`／ADC。失敗回退佔位圖，不中斷食譜。
 
 ---
 
 ## 資料庫與 migration
 
-- **核心 migration**：`migrations/20260414_postgres_multitenant.sql`  
-- **Render Postgres 建表**：`python3 init_db.py` 或依 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)  
-- **Schema 演進策略**：[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
+- 範例／遷移：`migrations/*.sql`（以倉內實際檔案為準）  
+- 建表：`python3 init_db.py` 或 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)  
+- 策略：[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 
-完整 DDL 範例仍可在舊版 README 或 migration 中取得；維運建議以 **migration 檔為單一來源**，避免 README 與 SQL 雙份漂移（見 [`TODOS.md`](TODOS.md)）。
+**單一來源**：以 migration 與 `init_db` 為準；避免 README 與手抄 SQL 雙份（見 [`TODOS.md`](TODOS.md)）。
 
 ---
 
-## LINE 指令摘要
+## LINE 指令與圖文選單
 
-| 輸入 | 行為 |
-|------|------|
-| 料理需求（例：番茄牛腩） | 產出食譜 Flex |
+| 輸入／動作 | 行為 |
+|------------|------|
+| 自然語言需求 | 產生食譜 Flex |
 | `你好`／`清除記憶`／`洗腦`／`重新開始` | 重置對話 |
 | `🍳 隨機配菜` | 隨機風格配菜 |
 | `🛒 檢視清單` | 上一道採買清單 |
-| `升級方案`／`訂閱方案` | 升級連結 |
-| `隱私聲明`／`資料政策` | 法務說明 |
-| `刪除我的資料`／`忘記我` | 清除使用者資料 |
-| 清冰箱／小孩餐等關鍵字 | 情境模式 |
-| 傳圖 | 食材辨識 → 食譜 |
+| 換菜單／相關關鍵字 | 菜系選擇等（Flex 內用色須符合 LINE 規範，勿用不支援的 `rgba` 於需 HEX 的欄位） |
+| `升級方案` 等 | 升級導向 |
+| 法務關鍵字 | 隱私／免責說明 |
+| `刪除我的資料` 等 | 刪除使用者資料 |
+| 清冰箱、小孩餐 等關鍵字 | 情境模式 |
+| 上傳圖片 | 辨識食材 → 食譜 |
 | 我的最愛／收藏 | 收藏輪播 |
-| `🖼 生成主圖` / `🖼 生成食譜海報` | 對最近一份食譜按需生成圖片或海報 |
+| `🖼 生成主圖` / `🖼 生成食譜海報` | 對最近食譜按需生圖 |
+
+**Rich Menu**：規格、熱區、上傳流程見 [`docs/RICH_MENU.md`](docs/RICH_MENU.md)：
+
+```bash
+python3 setup_richmenu.py
+```
+
+僅 `git push` **不會**更新 LINE 上選單；圖或 `richmenu_config.json` 變更須重跑腳本。
 
 ---
 
@@ -187,32 +184,12 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | 方法 | 路徑 | 說明 |
 |------|------|------|
 | GET | `/` | Liveness |
-| GET | `/ready` | Readiness（可選 DB ping） |
-| POST | `/callback` | LINE Webhook |
-| GET | `/metrics` | 須設定 `METRICS_TOKEN`；請求帶 `X-Metrics-Token` |
-| GET | `/billing/checkout` | 升級導向 |
-| GET | `/legal/disclaimer`、`/legal/privacy` | 法務 |
-| GET/PUT | `/admin/subscriptions/{user_id}` | 需 `X-Admin-Token` |
-
----
-
-## Rich Menu 更新流程
-
-完整規格、bounds 對照、參考連結與 413 排查請見 **[`docs/RICH_MENU.md`](docs/RICH_MENU.md)**。
-
-- Rich Menu 資產：[`richmenu.jpg`](richmenu.jpg)（或 `richmenu.png`，須 **≤1 MB** 以符合 LINE 上限）+ [`richmenu_config.json`](richmenu_config.json)  
-- **本機預覽熱區**：開啟 [`docs/preview_richmenu.html`](docs/preview_richmenu.html)（疊上 `richmenu_config.json` 的 bounds，確認與底圖對齊）。  
-- **可選程式出圖**：[`scripts/render_richmenu_michelin.py`](scripts/render_richmenu_michelin.py) 可產出 2500×1686 的亮色米其林風底圖（需 `Pillow`，見 `requirements-dev.txt`）；設計稿亦可直接匯出／覆蓋 `richmenu.jpg`。  
-- 重新部署到 LINE：
-
-```bash
-python3 setup_richmenu.py
-```
-
-- 若你使用不同路徑或多環境檔名，可設：
-  - `RICHMENU_IMAGE_PATH`
-  - `RICHMENU_CONFIG_PATH`
-- 圖或 config 只要有改，都要重新執行一次上傳腳本才會生效。**僅 `git push` 不會更新 LINE 上的圖文選單。**
+| GET | `/ready` | Readiness（可選 DB） |
+| POST | `/callback` | Webhook |
+| GET | `/metrics` | 需 `METRICS_TOKEN` + `X-Metrics-Token` |
+| GET | `/billing/checkout` | 升級 |
+| GET | `/legal/*` | 法務 |
+| GET/PUT | `/admin/subscriptions/{user_id}` | 需管理 token |
 
 ---
 
@@ -220,50 +197,43 @@ python3 setup_richmenu.py
 
 ```text
 my-chef-ai-agent/
-├── main.py                 # 薄入口
+├── main.py
 ├── app/
-│   ├── config.py           # 環境變數、JSON logging、GCP JSON 暫存檔、OTEL 開關
-│   ├── clients.py          # FastAPI、LINE、AI、lifespan（佇列 worker）
-│   ├── telemetry.py        # OpenTelemetry 初始化（可選）
-│   ├── routes.py           # /、/callback、/ready、metrics、billing、legal、admin
-│   ├── rate_limit.py       # IP 與 per-user webhook 限流
-│   ├── handlers.py         # 文字／postback／圖片（LINE 事件入口）
-│   ├── handlers_commands.py   # 配額與食譜派發等小塊邏輯
-│   ├── handlers_recipe_flow.py # 背景食譜生成編排
+│   ├── config.py
+│   ├── clients.py
+│   ├── routes.py
+│   ├── rate_limit.py
+│   ├── handlers.py
+│   ├── handlers_commands.py
+│   ├── handlers_recipe_flow.py
+│   ├── job_queue.py
 │   ├── ai_service.py
-│   ├── deep_research.py    # Google Interactions API Deep Research 預處理
-│   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染（含主圖嵌入與純文字 fallback）
-│   ├── recipe_card_generator.py # 兩段式食譜圖卡：gpt-image-2 底圖 + 繁中文字疊字
-│   ├── image_cache.py      # 圖片快取（memory / redis）
+│   ├── deep_research.py
+│   ├── flex_theme.py         # Flex 顏色／字型 tokens（溫暖明亮）
+│   ├── flex_messages.py
+│   ├── recipe_poster.py      # Pillow 海報（fallback、暖色）
+│   ├── recipe_poster_html.py # HTML/CSS → Playwright 截圖
+│   ├── recipe_card_generator.py
+│   ├── image_cache.py
 │   ├── db.py
 │   ├── billing.py
-│   ├── job_queue.py        # 佇列、trace carrier、request/user hash 傳遞
-│   ├── observability.py    # request id、metrics、user hash context
-│   ├── flex_messages.py
-│   └── ...
+│   ├── helpers.py
+│   ├── observability.py
+│   └── …
 ├── tests/
-│   ├── integration/        # 需 DATABASE_URL：多租戶／用量隔離
-│   └── ...
 ├── docs/
-│   ├── THIRD_PARTY_LICENSES.md   # 相依套件授權（由 scripts 產生）
-│   └── OPEN_SOURCE_CHECKLIST.md  # 開源前檢查清單
-├── migrations/             # Postgres schema 單一來源（例：多租戶）
-├── .github/workflows/      # CI：migration + pytest；push main 通過後同次執行 Cloud Run 部署
-├── LICENSE                 # MIT 授權全文
-├── CHANGELOG.md
-├── CONTRIBUTING.md         # 貢獻指南與 plan 收尾必做項目
-├── TODOS.md                # 工程／產品 backlog
-├── AGENTS.md
-├── .cursor/rules/          # Cursor：plan 收尾同步文件提醒
+├── migrations/
 ├── scripts/
-│   └── render_richmenu_michelin.py  # 可選：程式產出 richmenu.jpg（Pillow）
+├── examples/
+├── render.yaml
+├── init_db.py
 ├── setup_richmenu.py
 ├── richmenu_config.json
-├── richmenu.jpg            # 圖文選單圖（預設；須 ≤1 MB）
-├── examples/sample-recipe.json  # 兩段式食譜圖卡範例輸入
-├── scripts/generate_recipe_card_example.py # 範例 runner（可 --skip-api）
-├── render.yaml
-└── init_db.py
+├── richmenu.jpg
+├── CHANGELOG.md
+├── TODOS.md
+├── AGENTS.md
+└── CONTRIBUTING.md
 ```
 
 ---
@@ -273,10 +243,10 @@ my-chef-ai-agent/
 - [`CHANGELOG.md`](CHANGELOG.md)  
 - [`TODOS.md`](TODOS.md)  
 
-每完成一項較大工程計畫或里程碑，請**一併**更新 **`CHANGELOG.md`**、**`TODOS.md`** 與本檔 **`README.md`**（避免文件落後）；細項清單見 [`AGENTS.md`](AGENTS.md) 的「Plan／里程碑收尾」。
+每完成一輪**可上線的變更**，建議一併更新上列兩檔與本 README；細項見 [`AGENTS.md`](AGENTS.md)。
 
 ---
 
 ## 授權
 
-本專案以 **MIT License** 授權，見 [`LICENSE`](LICENSE)。
+**MIT** — 見 [`LICENSE`](LICENSE)。

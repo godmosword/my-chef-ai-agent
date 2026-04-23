@@ -1,87 +1,75 @@
 # 待辦與後續方向
 
-本檔為倉庫內**唯一**工程／產品／UX backlog，僅保留尚未完成項目。
+本檔為倉庫內**工程／產品／UX** 的單一 backlog 來源；**已完成事項**只保留於下方「里程碑摘要」與 `CHANGELOG.md`，避免與未來工作混寫在一起。
 
-**流程備忘**：每完成一項工程計畫或里程碑，請同步更新 **`CHANGELOG.md`**、**`README.md`**，並在此檔勾除或調整對應條目（完整清單見 [`AGENTS.md`](AGENTS.md)「Plan／里程碑收尾」）。
+**里程碑收尾**（每完成一輪可交付的計畫）：同步更新 **`CHANGELOG.md`**、**`README.md`**、本檔，細項見 [`AGENTS.md`](AGENTS.md)「Plan／里程碑收尾」。
 
 ---
 
-## 紀錄（非 backlog，供對齊進度）
+## 里程碑摘要（近期已交付，供對齊／查帳）
 
-| 日期 | 摘要 |
+| 時間 | 內容 |
 |------|------|
-| 2026-04-23 | **食譜海報升級至 HTML+CSS 版本**：新增 `app/recipe_poster_html.py`，以 Playwright headless Chromium 將 HTML 模板截圖為 PNG，達到雜誌級食譜資訊圖效果（漸層標題、步驟卡片、食材清單、調味比例、廚師對話），原 Pillow 版自動作為 fallback；tests 由 99 → 115 passed。 |
-| 2026-04-23 | **低延遲優化完成**：Deep Research 改為預設關閉且短 timeout、YouTube 改背景預抓與快取、AI timeout/retry 下修、海報不再同步等主圖、佇列 worker 預設由 2 → 4；全量測試為 **122 passed**。 |
-| 2026-04-23 | 新增兩段式食譜圖卡產生器（Stage A: gpt-image-2 視覺底圖；Stage B: 程式疊繁中），並補上 sample recipe、範例 runner 與單元測試。 |
-| 2026-04-22 | Dark Michelin UI 重構完成：集中更新 `flex_theme` token，LINE Flex 與食譜海報統一為深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA，並補上代表性視覺測試。 |
-| 2026-04-22 | 修正主圖與海報回傳：GPT-Image-2 改走獨立 OpenAI image client，不再受 Gemini 文字 client 牽制；缺少 `PUBLIC_APP_BASE_URL` 時改為明確提示管理員設定。 |
-| 2026-04-22 | 食譜海報字型 fallback 已補強：新增 Linux 常見 CJK 字型候選，找不到字型時回退 Pillow 內建字型，避免 CI／容器環境因缺字型而失敗。 |
-| 2026-04-23 | 食譜海報已補上主圖：postback 會優先取快取或補生成品照，再嵌入海報；若主圖下載失敗則自動退回純文字版，README／CHANGELOG／測試已同步。 |
-| 2026-04-22 | 非 Gemini API 路徑已由 OpenRouter 改為 OpenAI，`OPENROUTER_API_KEY` 改為 `OPENAI_API_KEY`，並同步更新 `render.yaml`、`.env.example`、README／CHANGELOG。 |
-| 2026-04-22 | Deep Research Grounding 完成：背景食譜生成可先透過 Google Interactions API 執行研究式預處理，再把濃縮報告注入 system prompt；timeout / 錯誤時自動 fallback，README／CHANGELOG／測試已同步。 |
-| 2026-04-22 | 食譜資訊圖海報 v1 完成：新增 recipe card「生成食譜海報」按鈕、Pillow 海報模板渲染、既有短期 PNG 媒體管線重用；README／CHANGELOG／測試已同步。 |
-| 2026-04-22 | 成本改善第一階段完成：recipe card 改為按需「生成主圖」、圖片快取預設拉高至 86400 秒、文字輸出與 JSON retry 預設下修；README／CHANGELOG／測試已同步。 |
-| 2026-04-14 | 開源前整理：`MAX_COMPLETION_TOKENS` 預設 2048、`MAX_HISTORY_TURNS` 預設 2 與截斷提示縮短；`.gitignore` 擴充；刪 `TODO.md`；README／CHANGELOG 同步。 |
-| 2026-04-14 | 開源準備：`LICENSE`、`docs/THIRD_PARTY_LICENSES.md`（腳本產生）、`docs/OPEN_SOURCE_CHECKLIST.md`；`/metrics` 未設 `METRICS_TOKEN` 回 503；README／AGENTS／CONTRIBUTING 測試數與環境變數說明已同步。 |
-| 2026-04-22 | `openai_compatible` 食譜主圖已升級至 GPT-Image-2，並改為解析 `b64_json` 後掛本站公開 hero URL；README／CHANGELOG／測試已同步。 |
-| 2026-04-13 | 圖文選單：`richmenu.jpg` 換版、`docs/preview_richmenu.html` 熱區預覽、可選 `scripts/render_richmenu_michelin.py`；README／CHANGELOG 已同步。LINE 端仍須自行執行 `python3 setup_richmenu.py`。 |
+| 2026-04-23 | **程式碼清理與 token 精簡**：移除殭屍函式與重複邏輯；`job_queue` 合併 dispatch；`SYSTEM_PROMPT` 與 Deep Research／vision prompt 去冗餘。 |
+| 2026-04-23 | **溫暖明亮主題全線**：`flex_theme`、Pillow 海報、HTML 海報統一溫暖米白／琥珀金／深森綠；換菜單等 Flex 需符合 LINE 之 HEX 色（曾修正 `rgba` 導致無回應）。 |
+| 2026-04-23 | **Render 產圖可部署**：`render.yaml` 的 `buildCommand` 含 `pip`、**`playwright install --with-deps chromium`** 與 **`apt-get install fonts-noto-cjk`**；與本機 `Dockerfile` 路徑分離問題已釐清。 |
+| 2026-04-23 | **食譜海報**：`recipe_poster_html.py` 以 Playwright 截圖；本機 CJK 以 `@font-face` + 系統字型，避免純依賴 Google Fonts 於 headless 環境失敗。 |
+| 2026-04-23 | **低延遲與佇列**：Deep Research 預設關、短 timeout；YouTube 背景快取；佇列 worker 預設 4；全量測試 **122 passed**。 |
+| 更早 | 兩段式圖卡、Deep Research Grounding、OpenAI 主圖、多租戶 Postgres、配額與限流等——詳見 `CHANGELOG.md` 舊條。 |
 
 ---
 
-## 零、本機接續測試（回去繼續）
+## 零、部署後建議手動驗收（可重複執行）
 
-> 2026-04-23 Cloud Agent 完成程式碼，推上 `main` 觸發 Render 部署。以下是回到本機後需要驗收的清單。
+> 以下無法單靠 CI 覆蓋，需在 **Render（或等價環境）+ 真實 LINE** 各驗一次。
 
-- [ ] **Render 部署確認**：確認 Render 已成功 build + deploy，`GET /` 回 `{"status":"ok"}`，`GET /ready` 無 503。
-- [ ] **Playwright Chromium 安裝**：Render build command 或 Dockerfile 中加入 `python3 -m playwright install chromium`，確保正式環境使用 HTML 版海報（目前 fallback 到 Pillow 仍可用）。
-- [ ] **LINE Bot 端對端測試（海報）**：在真實 LINE 對話中輸入任一食譜，按「🖼 生成食譜海報」，確認收到的圖片為新版 HTML 排版（橙紅漸層標題、步驟 badge 卡片），而非舊版 Pillow 深色版。
-- [ ] **LINE Bot 端對端測試（含成品主圖）**：先「🖼 生成主圖」，再「🖼 生成食譜海報」，確認海報右上角成功嵌入成品照。
-- [ ] **字型確認**：若 Render 容器無 Noto Sans TC，Google Fonts `@import` 在 Playwright 有沒有被沙盒擋住（可用 `--disable-web-security` 或改為內嵌字型 base64）。
+- [ ] **健康檢查**：`GET /` 回 `{"status":"ok"}`；有設 `DATABASE_URL` 時 `GET /ready` 應 200（否則依設計可能 503）。
+- [ ] **海報圖**（LINE）：產生任一食譜 →「🖼 生成食譜海報」→ 圖中**中文可讀、無豆腐塊**；版面為溫暖雜誌風（非舊版深色大塊）。
+- [ ] **換菜單**（LINE）：觸發菜系輪播／換菜單關鍵字，確認 Bot **有回應**（歷史問題曾為 Flex 顏色格式錯誤遭 API 拒絕）。
+- [ ] **主圖 + 海報**（可選）：先「🖼 生成主圖」再海報，確認主圖可嵌入海報（若服務有設定公開 URL 與快取）。
+
+若正式環境仍出現海報亂字：確認該次 build 日誌是否成功執行 `fonts-noto-cjk` 與 `playwright install`（見 `render.yaml`）。
 
 ---
 
-## 一、平台與後端
+## 一、平台與後端（backlog）
 
 ### 建議優先
 
-- [ ] **Webhook per-user 節流**：在佇列前依 LINE `userId`（可加 `tenant_id`）限流，補強僅 per-IP 未涵蓋的濫用情境（與 `app/rate_limit.py` 並存）。
-- [ ] **可觀測性**：結構化 log（已具 request id）、user id 雜湊欄位；可選 OpenTelemetry 匯出。
+- [ ] **Webhook 每使用者節流**：佇列前依 LINE `userId`（＋`tenant_id`）限流，補齊僅 per-IP 未涵蓋的濫用情境（與 `app/rate_limit.py` 並存）。
 
-### 可排期中優先
+### 可排期
 
-- [ ] **核心表多租戶**：`user_memory` 等若需與 HTTP `tenant_id` 嚴格對齊，補 migration、`tenant_id` 欄位與 RLS／查詢條件（刪除使用者資料已依 tenant 清用量相關表）。
-- [ ] **整合測試**：testcontainers 或 CI 內嵌 Postgres，覆寫 `DATABASE_URL` 路徑（現以 mock／無 DB 為主）。
-- [ ] **`handlers` 拆分**：`process_ai_reply` 依「指令路由／AI 流程」拆模組，降低合併衝突。
-- [ ] **設定載入策略**：評估延遲初始化 AI／DB client；目前「import 即讀 env」見 [`AGENTS.md`](AGENTS.md)。
+- [ ] **可觀測性加強**：結構化 log 已有 request id；可補匯出或儀表板化。
+- [ ] **多租戶嚴格化**：`user_memory` 等與 HTTP `tenant_id` 需 migration、欄位與查詢一致時再補。
+- [ ] **整合測試**：testcontainers 或 CI 內嵌 Postgres 覆寫 `DATABASE_URL` 路徑（現以 mock／無 DB 為主）。
+- [ ] **handlers 模組化**：`process_*` 依指令／食譜流程拆檔，降低合併衝突。
+- [ ] **延遲初始化**：評估 AI／DB client 非 import 即連線（見 [`AGENTS.md`](AGENTS.md) 說明現狀）。
 
 ### 低優先
 
-- [ ] **README 內大段手動 SQL**：與 `supabase/migrations` 已一致時，改為連結 migration／`init_db.py`，避免雙份維護。
-- [ ] **Supabase CLI**：團隊若固定用 CLI，補 `config.toml` 範本與 CI migration 驗證。
-- [ ] **GPT-Image-2 prompt 微調**：若實際上線後繁中文字渲染仍偶發變形，針對菜名長度、字體風格與擺放位置做 A/B prompt 調整。
-- [ ] **圖片配額策略**：若按需出圖後成本仍偏高，再評估將「生成主圖」綁定付費方案或每日圖片額度，而非所有方案無上限開放。
-- [x] **海報第二版**：HTML+CSS 版本已完成，具備漸層標題、步驟卡片、食材兩欄、調味比例表、廚師對話、小撇步與烹調時間等雜誌級元素。
-- [ ] **兩段式食譜圖卡主題模板**：在 `app/recipe_card_generator.py` 增加 warm/minimal/premium/night-market 等可切換視覺 preset，並讓不同模板共用同一份 recipe schema。
-- [ ] **Deep Research 精準啟用策略**：目前已改為預設關閉；若後續要上線，建議再細分成「高價值需求才啟用」或加入查詢結果 memoization，避免重新拉高延遲與成本。
+- [ ] **README 內大段手動 SQL**：以 migration／`init_db.py` 為單一來源，避免雙份敘述。
+- [ ] **兩段式圖卡主題模板**：`recipe_card_generator.py` 增加 warm / minimal / premium 等 preset 共用同一 recipe schema。
+- [ ] **Deep Research 啟用策略**：若再上線，建議只對高價值查詢啟用或加 memoization，避免延遲與成本回彈。
 
 ---
 
 ## 二、商業化（可緩）
 
-- [ ] **金流**：`BILLING_PROVIDER` 與 checkout 連結模板以外，實際 **PSP webhook** 回寫訂閱與對帳。
+- [ ] **金流接 webhook**：`BILLING_PROVIDER` 與 checkout 以外，實作 PSP 回寫訂閱與對帳。
 
 ---
 
 ## 三、產品與文件
 
-- [ ] **偏好編輯**：若需使用者改寫 `user_preferences`，補指令或管理介面。
-- [ ] **CHANGELOG 版本策略**：是否採 semver + git tag，release 時如何對應條目日期。
-- [ ] **README 英文化**：若開源對象以英文為主，另增 `README.en.md` 或雙語區塊。
+- [ ] **偏好編輯**：讓使用者在聊天中改寫 `user_preferences`（指令或小流程）。
+- [ ] **版本策略**：是否 semver + git tag、release 與 `CHANGELOG` 日期的對應方式。
+- [ ] **README 雙語**：若對象以英文讀者為主，可另增 `README.en.md` 或分區塊英譯。
 
 ---
 
-## 四、已知限制（知情即可）
+## 四、已知限制
 
-- Webhook **reply_token** 僅短期有效；長任務已改 **push** 為主（背景食譜生成）。
-- 未設定 **任何資料庫** 時，對話記憶與收藏不持久；上線前請設定 `DATABASE_URL` 或 Supabase。
-- **in-memory** 圖片快取、rate limit、佇列皆**單進程**語意；多副本部署時各實例獨立（跨機一致需 Redis 等，見 backlog）。
+- **reply_token** 短期有效；長任務以 **push** 為主（背景食譜）。
+- 未設 **資料庫** 時，記憶與收藏不持久；上線前請設 `DATABASE_URL`（或相容 Postgres）。
+- **記憶體** 圖快取、rate limit、佇列皆**單進程**語意；多副本時各實例獨立，跨機一致需 Redis 等外掛（見 backlog 與 `IMAGE_CACHE_BACKEND`）。
