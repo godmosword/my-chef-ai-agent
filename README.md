@@ -22,6 +22,7 @@
 | 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出，並可在生成前用 Google Deep Research 做研究式 Grounding，圖／影片由後端依 `IMAGE_PROVIDER`、`YOUTUBE_API_KEY` 補齊。 |
 | 卡片 | 僅在有效 **https** 成品圖時顯示 hero；否則文字色塊標頭，避免與菜名無關的隨機圖。 |
 | 海報 | 可從食譜卡按鈕按需生成單張 **PNG 食譜資訊圖**；沿用現有 recipe JSON，以 **Pillow** 模板排版輸出。 |
+| 食譜圖卡（兩段式） | 新增可重用「先生底圖、後疊繁中」流程：Stage A 以 `gpt-image-2` 產生高質感版面底圖，Stage B 由程式穩定疊上繁中標題／食材／步驟／小撇步／調味與時間，降低模型中文字亂碼風險。 |
 | 情境 | 清冰箱、兒童餐、`🍳 隨機配菜`、`🛒 檢視清單`、菜系輪播等。 |
 | 媒體 | 傳圖辨識食材後產食譜；收藏輪播與刪除。 |
 | 營運 | Webhook **記憶體佇列**、event **去重**、每日**配額**（`app/billing.py`）、`GET /metrics`、`GET /ready`、可選 **IP 與 per-user webhook 限流**、多租戶 `X-Tenant-ID`。 |
@@ -38,6 +39,7 @@
 - **Flex 介面**：LINE Flex 主選單、菜系輪播、食譜卡與 fallback 卡片統一採 **Dark Michelin Theme**，以深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA 建立一致視覺。  
 - **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
 - **食譜海報**：以 **Pillow** 將既有 recipe JSON 渲染成可分享的 PNG 資訊圖，海報會優先嵌入既有主圖（快取命中時直接使用，否則按目前 provider 補圖）；若主圖下載失敗則自動退回純文字版，不阻斷海報生成。沿用既有 `/media/recipe-hero/{token}` 短期媒體機制對外提供；目前預設為 Dark Michelin 深色石板版型，在 CI / Linux 環境找不到 CJK 字型時會自動退回內建字型，避免渲染直接失敗。  
+- **兩段式食譜圖卡**：`app/recipe_card_generator.py` 提供可重用管線：先由 `build_base_image_prompt(...)` + `generate_base_image(...)` 產出「少文字」視覺底圖，再以 `compose_recipe_card(...)` 在固定格線上疊繁中資訊，輸出 `1200x1500` PNG（適合 LINE 分享）。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
 
@@ -73,6 +75,12 @@ METRICS_TOKEN=test_metrics_token \
 ```
 
 目前套件 **102** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報主圖嵌入、Deep Research fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **102 passed**。
+
+可用以下指令快速驗證兩段式食譜圖卡（`--skip-api` 代表先用本機佔位底圖，不呼叫 OpenAI）：
+
+```bash
+python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.json --skip-api
+```
 
 ---
 
@@ -219,6 +227,7 @@ my-chef-ai-agent/
 │   ├── ai_service.py
 │   ├── deep_research.py    # Google Interactions API Deep Research 預處理
 │   ├── recipe_poster.py    # Pillow 食譜資訊圖海報渲染（含主圖嵌入與純文字 fallback）
+│   ├── recipe_card_generator.py # 兩段式食譜圖卡：gpt-image-2 底圖 + 繁中文字疊字
 │   ├── image_cache.py      # 圖片快取（memory / redis）
 │   ├── db.py
 │   ├── billing.py
@@ -245,6 +254,8 @@ my-chef-ai-agent/
 ├── setup_richmenu.py
 ├── richmenu_config.json
 ├── richmenu.jpg            # 圖文選單圖（預設；須 ≤1 MB）
+├── examples/sample-recipe.json  # 兩段式食譜圖卡範例輸入
+├── scripts/generate_recipe_card_example.py # 範例 runner（可 --skip-api）
 ├── render.yaml
 └── init_db.py
 ```
