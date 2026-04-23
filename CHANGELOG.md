@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-04-23（程式碼清理與 Token 精簡）
+
+- **殭屍代碼**：刪除未使用的 `render_recipe_poster_png_html_async` 與多餘 `asyncio` import；移除未引用常數 `VIEW_FAVORITES_CMD`；`handlers.py` 不再 import 未使用的 `save_user_memory`。
+- **佇列**：`job_queue.py` 以內部 `_dispatch()` 統一 text／image／postback 分派，消除 OpenTelemetry tracer 有／無時的重複邏輯。
+- **海報輔助函式**：`_derive_cook_time`、`_derive_quick_tips` 集中在 `recipe_poster.py`，`recipe_poster_html.py` 改為共用 import，避免雙份維護。
+- **Prompt**：`SYSTEM_PROMPT` 移除與 `_build_system_prompt` 動態行重複的靜態步驟上限；精簡 `deep_research._build_research_prompt` 與圖片辨識 vision prompt，降低每請求 token。
+- **測試**：全量 **122 passed**。
+
 ## 2026-04-23（修正 Playwright 部署 & 全面溫暖明亮化）
 
 - **修正 Playwright 在 Render 上無法啟動的根本原因**：`render.yaml` 的 `buildCommand` 改為 `pip install -r requirements.txt && python -m playwright install --with-deps chromium`，原本只用 Dockerfile（Render Python env 不讀取），現在正確安裝 Chromium 及系統依賴。
