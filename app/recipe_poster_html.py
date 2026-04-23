@@ -10,7 +10,6 @@
 """
 from __future__ import annotations
 
-import asyncio
 import html
 import io
 import logging
@@ -22,6 +21,7 @@ import base64
 from typing import Any
 
 from app.helpers import _parse_to_list, _safe_str
+from app.recipe_poster import _derive_cook_time, _derive_quick_tips
 
 logger = logging.getLogger("chef-agent")
 
@@ -80,28 +80,6 @@ def _parse_shopping(raw: Any) -> list[str]:
     return [str(s).strip() for s in items if str(s).strip()][:8]
 
 
-def _derive_cook_time(steps: list[str]) -> str:
-    n = len(steps)
-    minutes = max(10, min(30, n * 4 + 2))
-    return f"約 {minutes} 分鐘"
-
-
-def _derive_quick_tips(recipe_data: dict, steps: list[str], ingredients: list[dict]) -> list[str]:
-    tips: list[str] = []
-    names = [i["name"] for i in ingredients[:4]]
-    if names:
-        tips.append(f"食材先備妥：{'、'.join(names)}，冰鮮食材於烹調前 15 分鐘取出。")
-    if steps:
-        tips.append(f"起手關鍵：{steps[0][:30]}")
-    if len(steps) > 1:
-        tips.append(f"收尾提醒：{steps[-1][:30]}")
-    shopping = _parse_shopping(recipe_data.get("shopping_list", []))
-    if shopping:
-        tips.append(f"採買提示：{shopping[0][:30]}")
-    if not tips:
-        tips = ["照步驟快速拌炒，依口味再微調鹹度與火候。"]
-    return tips[:4]
-
 
 def _fetch_photo_as_data_uri(photo_url: str) -> str | None:
     """下載食譜主圖並轉為 data URI（避免 Playwright 外部網路限制）。"""
@@ -137,7 +115,7 @@ def build_poster_html(recipe_data: dict) -> str:
     shopping       = _parse_shopping(recipe_data.get("shopping_list", []))
     cost           = _safe_str(recipe_data.get("estimated_total_cost"), "估算中", max_len=20)
     cook_time      = _derive_cook_time(steps)
-    tips           = _derive_quick_tips(recipe_data, steps, ingredients)
+    tips           = _derive_quick_tips(recipe_data)
     photo_url      = _safe_str(recipe_data.get("photo_url"), "", max_len=2000)
     photo_data_uri = _fetch_photo_as_data_uri(photo_url) if photo_url else None
     kitchen_talk   = _parse_to_list(recipe_data.get("kitchen_talk", []))
@@ -610,9 +588,3 @@ def render_recipe_poster_png_html(recipe_data: dict) -> bytes:
         logger.error("Playwright 海報截圖失敗，退回 Pillow: %s", exc)
         from app.recipe_poster import render_recipe_poster_png  # noqa: PLC0415
         return render_recipe_poster_png(recipe_data)
-
-
-async def render_recipe_poster_png_html_async(recipe_data: dict) -> bytes:
-    """非同步版本（在 thread pool 跑同步 Playwright）。"""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, render_recipe_poster_png_html, recipe_data)

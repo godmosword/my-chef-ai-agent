@@ -229,6 +229,12 @@ def _derive_quick_tips(recipe_data: dict) -> list[str]:
     return tips[:4] or ["照步驟快速拌炒，依口味再微調鹹度與火候。"]
 
 
+def _derive_cook_time(steps: list[str]) -> str:
+    n = len(steps)
+    minutes = max(10, min(30, n * 4 + 2))
+    return f"約 {minutes} 分鐘"
+
+
 def _derive_summary(recipe_data: dict) -> tuple[str, str]:
     steps = [str(s).strip() for s in _parse_to_list(recipe_data.get("steps", [])) if str(s).strip()]
     cost = _safe_str(recipe_data.get("estimated_total_cost"), "估算中")

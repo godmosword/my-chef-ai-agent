@@ -38,7 +38,6 @@ from app.db import (
     get_user_memory,
     is_database_configured,
     save_favorite_recipe,
-    save_user_memory,
     update_user_cuisine_context,
 )
 from app.helpers import (

@@ -213,7 +213,6 @@ RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
 CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
 RANDOM_SIDEDISH_CMD = "🍳 隨機配菜"
 VIEW_SHOPPING_CMD   = "🛒 檢視清單"
-VIEW_FAVORITES_CMD  = "我的最愛"
 FAVORITES_KEYWORDS  = {"我的最愛", "收藏", "最愛食譜", "我的收藏"}
 
 RANDOM_STYLES = [
@@ -229,7 +228,7 @@ SCENARIO_MOOD   = (["心情", "壓力", "開心", "難過"], "心情點餐：副
 SYSTEM_PROMPT = (
     "你是米其林三星廚房(行政主廚/副主廚/食材總管)。先由三人各一句（每句≤12字），再產出精簡食譜。"
     "僅回傳 JSON，勿 markdown。為避免輸出過長被截斷：kitchen_talk 固定 3 筆；ingredients 最多 6 項；"
-    "steps 最多 6 步（每步一句）；shopping_list 最多 8 字串；字數盡量精簡。\n"
+    "shopping_list 最多 8 字串；字數盡量精簡。\n"
     '{"kitchen_talk":['
     '{"role":"行政主廚","content":"≤12字"},'
     '{"role":"副主廚","content":"≤12字"},'

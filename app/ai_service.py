@@ -584,7 +584,6 @@ async def identify_ingredients_from_image(image_bytes: bytes) -> str:
         "請仔細觀察這張照片，辨識出所有可見的食材、食物或食品。"
         "只列出食材名稱，用頓號（、）分隔。"
         "如果看不出是食物相關的照片，回覆「無法辨識食材」。"
-        "範例格式：番茄、雞蛋、洋蔥、牛肉"
     )
 
     messages = [
