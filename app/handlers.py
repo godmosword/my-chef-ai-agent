@@ -538,10 +538,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
                 raise RuntimeError("PUBLIC_APP_BASE_URL missing")
             await _push_line_message(
                 event.user_id,
-                [
-                    ImageMessage(original_content_url=poster_url, preview_image_url=poster_url),
-                    TextMessage(text=f"🖼 食譜海報已完成：{poster_url}"),
-                ],
+                ImageMessage(original_content_url=poster_url, preview_image_url=poster_url),
             )
         except Exception as exc:
             logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)

@@ -6,6 +6,13 @@
 
 ---
 
+## 2026-04-23（食譜海報視覺重設計）
+
+- **全新精緻雜誌風配色**：`recipe_poster_html.py` 標題區改為深森綠漸層（#2A6049）底色，強調色改為琥珀金（#C8922A），底色改為溫暖米白（#F9F7F4），整體視覺提升為高端食譜雜誌質感。
+- **字體升級**：標題與區塊標籤改用 Noto Serif TC 宋體；食材清單、時間框等使用細緻 border-left 與圓點修飾，去除舊橙紅風格。
+- **移除多餘文字訊息**：`handlers.py` 海報生成完成後，不再推送「食譜海報已完成：URL」那行文字，只傳送圖片本身。
+- **Dockerfile 補齊 Playwright 依賴**：加入 Chromium 所需系統套件（libnss3、libgbm1、fonts-noto-cjk 等）及 `python -m playwright install chromium`，確保 Render 部署後 Playwright 可正常執行。
+
 ## 2026-04-23（食譜與圖片低延遲調整）
 
 - **預設主路徑改為偏快模式**：背景食譜生成不再預設執行 Deep Research；需顯式設 `ENABLE_DEEP_RESEARCH=1` 才會啟用。啟用後 `DEEP_RESEARCH_TIMEOUT_SEC` 也改為限制在 **5-20 秒**，預設 **10** 秒，避免單次請求卡住近一分鐘。

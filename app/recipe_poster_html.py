@@ -29,20 +29,20 @@ logger = logging.getLogger("chef-agent")
 POSTER_WIDTH  = 1080
 POSTER_HEIGHT = 1920
 
-# ── 調色盤（對應參考圖）────────────────────────────────────────────────────────
-COLOR_ACCENT      = "#E85C2A"   # 橙紅主色
-COLOR_ACCENT_DARK = "#C94A1A"
-COLOR_ACCENT_LIGHT = "#FFF3ED"
-COLOR_GREEN       = "#4A7C59"   # 標籤底色（食材/步驟標題）
-COLOR_GREEN_LIGHT = "#E8F5EC"
-COLOR_BODY_BG     = "#FFFAF7"   # 整頁底色
-COLOR_CARD_BG     = "#FFFFFF"
-COLOR_TITLE_TEXT  = "#1A1A1A"
-COLOR_BODY_TEXT   = "#333333"
-COLOR_MUTED       = "#888888"
-COLOR_BORDER      = "#EDEBE8"
-COLOR_STEP_BADGE  = "#E85C2A"
-COLOR_TIP_STAR    = "#E85C2A"
+# ── 調色盤（精緻食譜雜誌風）────────────────────────────────────────────────────
+COLOR_ACCENT       = "#C8922A"   # 琥珀金主色
+COLOR_ACCENT_DARK  = "#A67318"   # 深金
+COLOR_ACCENT_LIGHT = "#FDF6E7"   # 淡金底色
+COLOR_GREEN        = "#2A6049"   # 深森綠（標籤、標題）
+COLOR_GREEN_LIGHT  = "#EBF5F0"   # 淡綠底色
+COLOR_BODY_BG      = "#F9F7F4"   # 溫暖米白底色
+COLOR_CARD_BG      = "#FFFFFF"
+COLOR_TITLE_TEXT   = "#1C1917"   # 深棕黑
+COLOR_BODY_TEXT    = "#3D3530"   # 溫暖深棕
+COLOR_MUTED        = "#9C8F84"   # 溫暖灰
+COLOR_BORDER       = "#EAE4DC"   # 米色邊框
+COLOR_STEP_BADGE   = "#2A6049"   # 深森綠徽章
+COLOR_TIP_STAR     = "#C8922A"   # 琥珀金星號
 
 
 def _esc(text: object, max_len: int = 200) -> str:
@@ -148,6 +148,7 @@ def build_poster_html(recipe_data: dict) -> str:
         price_str = f"<span class='ing-price'>{_esc(ing['price'])}</span>" if ing["price"] else ""
         return (
             f"<div class='ing-item'>"
+            f"<span class='ing-dot'></span>"
             f"<span class='ing-name'>{_esc(ing['name'])}</span>"
             f"{qty_str}{price_str}"
             f"</div>"
@@ -243,7 +244,7 @@ def build_poster_html(recipe_data: dict) -> str:
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
@@ -265,189 +266,218 @@ def build_poster_html(recipe_data: dict) -> str:
 
   /* ── 頂部標題區 ────────────────────────────────────────────── */
   .header {{
-    background: linear-gradient(135deg, {COLOR_ACCENT} 0%, {COLOR_ACCENT_DARK} 100%);
-    padding: 48px 52px 40px;
+    background: linear-gradient(160deg, {COLOR_GREEN} 0%, #1A4030 55%, #12302A 100%);
+    padding: 52px 52px 44px;
     position: relative;
     overflow: hidden;
   }}
   .header::before {{
     content: '';
     position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 60%);
+    background: radial-gradient(ellipse at 85% 10%, rgba(200,146,42,0.20) 0%, transparent 55%);
+  }}
+  .header::after {{
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, {COLOR_ACCENT} 0%, {COLOR_ACCENT_DARK} 50%, {COLOR_ACCENT} 100%);
   }}
   .header-tagline {{
-    font-size: 26px; font-weight: 700; color: rgba(255,255,255,0.85);
-    background: rgba(255,255,255,0.18); border-radius: 30px;
-    padding: 6px 20px; display: inline-block; margin-bottom: 20px;
-    letter-spacing: 1px;
+    font-size: 23px; font-weight: 600; color: {COLOR_ACCENT};
+    background: rgba(200,146,42,0.15); border: 1px solid rgba(200,146,42,0.35);
+    border-radius: 4px;
+    padding: 5px 16px; display: inline-block; margin-bottom: 22px;
+    letter-spacing: 3px; text-transform: uppercase;
   }}
   .header-title {{
-    font-size: 74px; font-weight: 900; color: #FFFFFF;
-    line-height: 1.15; text-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    margin-bottom: 16px; letter-spacing: -1px;
+    font-family: 'Noto Serif TC', 'PingFang TC', serif;
+    font-size: 72px; font-weight: 700; color: #F5F0E6;
+    line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    margin-bottom: 20px; letter-spacing: 2px;
+    max-width: 580px;
   }}
   .header-meta {{
-    display: flex; gap: 24px; align-items: center;
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
   }}
   .header-meta-tag {{
-    font-size: 24px; color: rgba(255,255,255,0.9); font-weight: 500;
-    display: flex; align-items: center; gap: 6px;
+    font-size: 22px; color: rgba(245,240,230,0.82); font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    border-left: 2px solid rgba(200,146,42,0.5); padding-left: 12px;
   }}
-  .header-meta-tag::before {{ content: '✦'; font-size: 16px; }}
+  .header-meta-tag:first-child {{ border-left: none; padding-left: 0; }}
   .header-hero-wrap {{
-    position: absolute; right: 48px; top: 36px;
-    width: 340px; height: 260px;
+    position: absolute; right: 44px; top: 38px;
+    width: 330px; height: 270px;
   }}
   .hero-img {{
-    width: 340px; height: 260px; object-fit: cover;
-    border-radius: 20px;
-    border: 3px solid rgba(255,255,255,0.4);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    width: 330px; height: 270px; object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid rgba(200,146,42,0.5);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
   }}
   .hero-img-placeholder {{
-    width: 340px; height: 260px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 20px; border: 2px dashed rgba(255,255,255,0.4);
+    width: 330px; height: 270px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px; border: 1px dashed rgba(200,146,42,0.4);
     display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px;
   }}
-  .placeholder-text {{ color: rgba(255,255,255,0.7); font-size: 22px; }}
+  .placeholder-text {{ color: rgba(200,146,42,0.7); font-size: 20px; }}
 
-  /* ── 食材標籤 ────────────────────────────────────────────────── */
+  /* ── 區塊標題 ────────────────────────────────────────────────── */
   .section {{
-    margin: 32px 48px 0;
+    margin: 36px 48px 0;
   }}
   .section-header {{
-    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 22px;
   }}
   .section-label {{
-    font-size: 30px; font-weight: 800; color: {COLOR_TITLE_TEXT};
-    letter-spacing: 1px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 28px; font-weight: 700; color: {COLOR_TITLE_TEXT};
+    letter-spacing: 2px;
+    position: relative; padding-bottom: 6px;
+  }}
+  .section-label::after {{
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, {COLOR_ACCENT} 0%, transparent 100%);
   }}
   .section-badge {{
-    background: {COLOR_GREEN}; color: #fff;
-    font-size: 20px; font-weight: 700;
-    padding: 4px 18px; border-radius: 30px;
+    background: {COLOR_GREEN}; color: #F5F0E6;
+    font-size: 19px; font-weight: 600;
+    padding: 4px 16px; border-radius: 3px;
+    letter-spacing: 1px;
   }}
   .section-sub {{
-    font-size: 20px; color: {COLOR_MUTED}; font-weight: 400;
+    font-size: 19px; color: {COLOR_MUTED}; font-weight: 400;
   }}
 
+  /* ── 食材清單 ────────────────────────────────────────────────── */
   .ing-grid {{
-    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }}
-  .ing-col {{ display: flex; flex-direction: column; gap: 14px; }}
+  .ing-col {{ display: flex; flex-direction: column; gap: 12px; }}
   .ing-item {{
-    display: flex; align-items: center; gap: 10px;
-    background: {COLOR_CARD_BG}; border-radius: 14px;
-    padding: 16px 20px;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-    border-left: 5px solid {COLOR_ACCENT};
+    display: flex; align-items: center; gap: 12px;
+    background: {COLOR_CARD_BG}; border-radius: 8px;
+    padding: 14px 18px;
+    border: 1px solid {COLOR_BORDER};
+    border-left: 3px solid {COLOR_ACCENT};
   }}
-  .ing-name {{ font-size: 26px; font-weight: 700; flex: 1; }}
-  .ing-qty  {{ font-size: 22px; color: {COLOR_MUTED}; }}
-  .ing-price {{ font-size: 22px; color: {COLOR_ACCENT}; font-weight: 600; margin-left: auto; }}
-
-  /* ── 食材處理（說明文字）──────────────────────────────────────── */
-  .ing-notes {{
-    display: flex; gap: 20px; margin-top: 20px;
+  .ing-dot {{
+    width: 8px; height: 8px; min-width: 8px; border-radius: 50%;
+    background: {COLOR_ACCENT};
   }}
-  .ing-note-box {{
-    flex: 1; background: {COLOR_GREEN_LIGHT}; border-radius: 14px;
-    padding: 16px 20px;
-  }}
-  .ing-note-title {{ font-size: 22px; font-weight: 700; color: {COLOR_GREEN}; margin-bottom: 6px; }}
-  .ing-note-text  {{ font-size: 20px; color: {COLOR_BODY_TEXT}; line-height: 1.55; }}
+  .ing-name {{ font-size: 24px; font-weight: 600; flex: 1; color: {COLOR_TITLE_TEXT}; }}
+  .ing-qty  {{ font-size: 20px; color: {COLOR_MUTED}; }}
+  .ing-price {{ font-size: 20px; color: {COLOR_ACCENT}; font-weight: 700; margin-left: auto; }}
 
   /* ── 步驟格 ──────────────────────────────────────────────────── */
   .steps-grid {{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 18px;
   }}
   .step-card {{
-    background: {COLOR_CARD_BG}; border-radius: 18px;
+    background: {COLOR_CARD_BG}; border-radius: 10px;
     padding: 20px 22px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    border: 1px solid {COLOR_BORDER};
     display: flex; align-items: flex-start; gap: 16px;
-    border: 1.5px solid {COLOR_BORDER};
     min-height: 120px;
+    position: relative; overflow: hidden;
+  }}
+  .step-card::before {{
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, {COLOR_GREEN} 0%, transparent 80%);
   }}
   .step-badge {{
-    width: 52px; height: 52px; min-width: 52px;
-    background: {COLOR_STEP_BADGE}; color: #fff;
+    width: 48px; height: 48px; min-width: 48px;
+    background: {COLOR_STEP_BADGE}; color: #F5F0E6;
     border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 28px; font-weight: 900;
-    box-shadow: 0 3px 10px rgba(232,92,42,0.35);
+    justify-content: center; font-size: 26px; font-weight: 800;
+    flex-shrink: 0;
   }}
   .step-body {{ flex: 1; }}
-  .step-subtitle {{ font-size: 20px; font-weight: 700; color: {COLOR_ACCENT}; margin-bottom: 6px; }}
-  .step-text {{ font-size: 22px; color: {COLOR_BODY_TEXT}; line-height: 1.5; }}
+  .step-subtitle {{
+    font-size: 18px; font-weight: 700; color: {COLOR_GREEN};
+    margin-bottom: 6px; letter-spacing: 1px;
+    text-transform: uppercase;
+  }}
+  .step-text {{ font-size: 21px; color: {COLOR_BODY_TEXT}; line-height: 1.55; }}
 
   /* ── 廚師對話 ────────────────────────────────────────────────── */
   .talk-section {{
     margin: 32px 48px 0;
-    background: #F5F0FF; border-radius: 18px; padding: 24px 28px;
-    border-left: 6px solid #7B5EA7;
+    background: #F5F2FA; border-radius: 10px; padding: 22px 28px;
+    border-left: 4px solid #7B5EA7;
   }}
   .talk-inner {{ display: flex; flex-direction: column; gap: 12px; }}
   .talk-row {{ display: flex; align-items: flex-start; gap: 12px; }}
-  .talk-role {{ font-size: 22px; font-weight: 800; min-width: 80px; }}
-  .talk-content {{ font-size: 22px; color: {COLOR_BODY_TEXT}; }}
+  .talk-role {{ font-size: 21px; font-weight: 800; min-width: 80px; }}
+  .talk-content {{ font-size: 21px; color: {COLOR_BODY_TEXT}; }}
 
   /* ── 小撇步 ──────────────────────────────────────────────────── */
   .tips-box {{
-    background: {COLOR_ACCENT_LIGHT}; border-radius: 18px;
+    background: {COLOR_ACCENT_LIGHT};
+    border-radius: 10px;
     padding: 24px 28px; flex: 1;
+    border: 1px solid rgba(200,146,42,0.2);
   }}
   .tip-row {{ display: flex; gap: 10px; margin-bottom: 14px; align-items: flex-start; }}
-  .tip-star {{ color: {COLOR_TIP_STAR}; font-size: 24px; line-height: 1.3; }}
-  .tip-text {{ font-size: 22px; line-height: 1.5; }}
+  .tip-star {{ color: {COLOR_TIP_STAR}; font-size: 22px; line-height: 1.4; flex-shrink: 0; }}
+  .tip-text {{ font-size: 21px; line-height: 1.55; color: {COLOR_BODY_TEXT}; }}
 
   /* ── 調味比例 & 烹調時間 ──────────────────────────────────────── */
   .bottom-row {{
     display: flex; gap: 20px; margin: 32px 48px 0;
   }}
   .season-box {{
-    flex: 1; background: {COLOR_CARD_BG}; border-radius: 18px;
+    flex: 1; background: {COLOR_CARD_BG}; border-radius: 10px;
     padding: 24px 28px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid {COLOR_BORDER};
   }}
-  .season-title {{ font-size: 24px; font-weight: 800; color: {COLOR_TITLE_TEXT}; margin-bottom: 16px; }}
-  .season-sub   {{ font-size: 18px; color: {COLOR_MUTED}; margin-bottom: 16px; }}
-  .season-row   {{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid {COLOR_BORDER}; }}
+  .season-title {{
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px; font-weight: 700; color: {COLOR_TITLE_TEXT};
+    margin-bottom: 6px; letter-spacing: 1px;
+  }}
+  .season-sub   {{ font-size: 17px; color: {COLOR_MUTED}; margin-bottom: 16px; }}
+  .season-row   {{ display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid {COLOR_BORDER}; }}
   .season-row:last-child {{ border-bottom: none; }}
-  .season-name  {{ font-size: 22px; }}
-  .season-val   {{ font-size: 22px; font-weight: 700; color: {COLOR_ACCENT}; }}
+  .season-name  {{ font-size: 21px; color: {COLOR_BODY_TEXT}; }}
+  .season-val   {{ font-size: 21px; font-weight: 700; color: {COLOR_ACCENT}; }}
   .time-box {{
-    width: 250px; background: {COLOR_CARD_BG}; border-radius: 18px;
-    padding: 24px 28px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    width: 240px; background: {COLOR_GREEN}; border-radius: 10px;
+    padding: 24px 24px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
   }}
-  .time-icon  {{ font-size: 56px; margin-bottom: 12px; }}
-  .time-label {{ font-size: 20px; color: {COLOR_MUTED}; margin-bottom: 6px; }}
-  .time-value {{ font-size: 34px; font-weight: 900; color: {COLOR_TITLE_TEXT}; }}
+  .time-icon  {{ font-size: 48px; margin-bottom: 14px; }}
+  .time-label {{ font-size: 18px; color: rgba(245,240,230,0.7); margin-bottom: 4px; letter-spacing: 1px; }}
+  .time-value {{ font-size: 32px; font-weight: 900; color: #F5F0E6; margin-bottom: 20px; }}
 
   /* ── 採買提示 ──────────────────────────────────────────────────── */
   .shopping-bar {{
-    margin: 28px 48px 0;
-    background: {COLOR_CARD_BG}; border-radius: 14px;
-    padding: 18px 24px; display: flex; align-items: center; gap: 14px;
-    border: 1.5px solid {COLOR_BORDER};
+    margin: 24px 48px 0;
+    background: {COLOR_GREEN_LIGHT}; border-radius: 8px;
+    padding: 16px 22px; display: flex; align-items: center; gap: 12px;
+    border: 1px solid rgba(42,96,73,0.2);
   }}
-  .shopping-icon {{ font-size: 28px; }}
-  .shopping-text {{ font-size: 22px; color: {COLOR_BODY_TEXT}; }}
+  .shopping-icon {{ font-size: 26px; }}
+  .shopping-text {{ font-size: 21px; color: {COLOR_BODY_TEXT}; }}
 
   /* ── 底部署名 ──────────────────────────────────────────────────── */
   .footer {{
-    margin: 40px 48px 36px;
+    margin: 36px 48px 32px;
     display: flex; justify-content: space-between; align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid {COLOR_BORDER};
   }}
-  .footer-brand {{ font-size: 22px; color: {COLOR_MUTED}; font-weight: 500; }}
-  .footer-tag   {{ font-size: 20px; color: rgba(232,92,42,0.7); }}
+  .footer-brand {{ font-size: 20px; color: {COLOR_MUTED}; font-weight: 500; letter-spacing: 1px; }}
+  .footer-tag   {{ font-size: 19px; color: {COLOR_ACCENT}; font-weight: 600; letter-spacing: 1px; }}
 
-  /* ── 通用分隔 ──────────────────────────────────────────────────── */
-  .divider {{ height: 2px; background: {COLOR_BORDER}; margin: 0; }}
+  /* ── 分隔線 ──────────────────────────────────────────────────── */
+  .divider {{ height: 1px; background: {COLOR_BORDER}; margin: 0 48px; }}
 </style>
 </head>
 <body>
@@ -470,7 +500,7 @@ def build_poster_html(recipe_data: dict) -> str:
   <div class="section">
     <div class="section-header">
       <span class="section-label">食材</span>
-      <span class="section-badge">（{_esc(servings)} 人份）</span>
+      <span class="section-badge">{_esc(servings)} 人份</span>
       <span class="section-sub">含採買建議</span>
     </div>
     <div class="ing-grid">
@@ -483,7 +513,7 @@ def build_poster_html(recipe_data: dict) -> str:
   {talk_html}
 
   <!-- ══ 料理步驟 ══ -->
-  <div class="section" style="margin-top:32px">
+  <div class="section" style="margin-top:36px">
     <div class="section-header">
       <span class="section-label">料理步驟</span>
     </div>
@@ -495,11 +525,11 @@ def build_poster_html(recipe_data: dict) -> str:
   <!-- ══ 採買提示 ══ -->
   {'<div class="shopping-bar"><span class="shopping-icon">🛒</span><span class="shopping-text">'+_esc(shopping_preview)+'</span></div>' if shopping_preview else ''}
 
-  <!-- ══ 小撇步 & 底部資訊 ══ -->
+  <!-- ══ 小撇步 ══ -->
   <div class="bottom-row">
     <div class="tips-box">
       <div class="section-header" style="margin-bottom:16px">
-        <span class="section-label" style="font-size:26px">小撇步</span>
+        <span class="section-label" style="font-size:24px">小撇步</span>
       </div>
       {tips_html}
     </div>
@@ -509,22 +539,22 @@ def build_poster_html(recipe_data: dict) -> str:
   <div class="bottom-row">
     <div class="season-box">
       <div class="season-title">調味比例</div>
-      <div class="season-sub">（可依口味調整）</div>
+      <div class="season-sub">可依口味調整</div>
       {seasoning_rows_html}
     </div>
     <div class="time-box">
       <div class="time-icon">🕐</div>
       <div class="time-label">烹調時間</div>
       <div class="time-value">{_esc(cook_time)}</div>
-      <div class="time-label" style="margin-top:20px">預估花費</div>
-      <div class="time-value" style="font-size:26px">NT$ {_esc(cost)}</div>
+      <div class="time-label">預估花費</div>
+      <div class="time-value" style="font-size:26px; margin-bottom:0">NT$ {_esc(cost)}</div>
     </div>
   </div>
 
   <!-- ══ 底部署名 ══ -->
   <div class="footer">
-    <span class="footer-brand">米其林職人大腦 · Recipe Poster</span>
-    <span class="footer-tag">配飯超級適合！❤</span>
+    <span class="footer-brand">米其林職人大腦</span>
+    <span class="footer-tag">✦ Recipe Poster</span>
   </div>
 
 </div>
