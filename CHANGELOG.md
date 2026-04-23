@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-04-23（修正 Playwright 部署 & 全面溫暖明亮化）
+
+- **修正 Playwright 在 Render 上無法啟動的根本原因**：`render.yaml` 的 `buildCommand` 改為 `pip install -r requirements.txt && python -m playwright install --with-deps chromium`，原本只用 Dockerfile（Render Python env 不讀取），現在正確安裝 Chromium 及系統依賴。
+- **Flex 食譜卡改為溫暖明亮主題**：`flex_theme.py` 全面從深色轉為溫暖米白底（#FFFAF5）、琥珀金強調色（#C8922A）、深棕黑文字，視覺更舒適。
+- **Pillow fallback 也同步改版**：`recipe_poster.py` 背景改溫暖米白、卡片改純白、步驟徽章改深森綠，即使 Playwright 不可用也能呈現明亮海報。
+
 ## 2026-04-23（食譜海報視覺重設計）
 
 - **全新精緻雜誌風配色**：`recipe_poster_html.py` 標題區改為深森綠漸層（#2A6049）底色，強調色改為琥珀金（#C8922A），底色改為溫暖米白（#F9F7F4），整體視覺提升為高端食譜雜誌質感。
