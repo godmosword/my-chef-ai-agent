@@ -75,6 +75,11 @@ def test_cost_control_defaults_are_tightened():
     assert config.MAX_COMPLETION_TOKENS == 1024
     assert config.MAX_HISTORY_TURNS == 2
     assert config.AI_MAX_RETRIES == 1
+    assert config.AI_TRANSPORT_MAX_RETRIES == 1
+    assert config.AI_CHAT_TIMEOUT_SEC == 18
+    assert config.YOUTUBE_SEARCH_TIMEOUT_SEC == 3
+    assert config.QUEUE_WORKER_COUNT == 4
+    assert config.ENABLE_DEEP_RESEARCH is False
 
 
 def test_build_ai_client_uses_gemini_openai_compatible_endpoint(monkeypatch):

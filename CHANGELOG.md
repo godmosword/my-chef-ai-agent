@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-04-23（食譜與圖片低延遲調整）
+
+- **預設主路徑改為偏快模式**：背景食譜生成不再預設執行 Deep Research；需顯式設 `ENABLE_DEEP_RESEARCH=1` 才會啟用。啟用後 `DEEP_RESEARCH_TIMEOUT_SEC` 也改為限制在 **5-20 秒**，預設 **10** 秒，避免單次請求卡住近一分鐘。
+- **首包不再等 YouTube**：初次食譜回覆不阻塞等待教學影片搜尋，改為背景預抓與記憶體快取；YouTube timeout 預設縮短為 **3** 秒，後續需要影片按鈕時可直接吃快取。
+- **AI timeout / retry 下修**：文字食譜 timeout 新增 `AI_CHAT_TIMEOUT_SEC`（預設 **18** 秒）、主圖 timeout 新增 `AI_IMAGE_TIMEOUT_SEC`（預設 **25** 秒）、圖片辨識 timeout 新增 `AI_VISION_TIMEOUT_SEC`（預設 **20** 秒）；`AI_TRANSPORT_MAX_RETRIES` 預設由 **3 → 1**，降低尾延遲。
+- **海報不再補生成品照**：`generate_recipe_poster` 若已有主圖快取會沿用；若尚未有圖，直接生成純文字海報，不再同步等待圖片模型。
+- **佇列吞吐提高**：`QUEUE_WORKER_COUNT` 預設由 **2 → 4**，降低多請求排隊時間。
+- **測試**：全量測試更新為 **122 passed**。
+
 ## 2026-04-23（食譜海報升級：HTML+CSS → PNG）
 
 - **雜誌級食譜資訊圖**：新增 `app/recipe_poster_html.py`，以 Playwright headless Chromium 渲染 HTML+CSS 模板，輸出品質大幅提升：橙紅漸層標題、兩欄食材清單、6 步驟橘色圓形 badge 卡片、廚師三人對話、小撇步、調味比例表與烹調時間。

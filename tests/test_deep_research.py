@@ -26,6 +26,7 @@ async def test_perform_recipe_deep_research_returns_empty_string_without_intent(
 
 @pytest.mark.asyncio
 async def test_perform_recipe_deep_research_skips_placeholder_api_key(monkeypatch):
+    monkeypatch.setattr(deep_research, "ENABLE_DEEP_RESEARCH", True)
     monkeypatch.setattr(deep_research, "_deep_research_api_key", lambda: "test_key")
     sync_mock_called = False
 
@@ -42,6 +43,7 @@ async def test_perform_recipe_deep_research_skips_placeholder_api_key(monkeypatc
 
 @pytest.mark.asyncio
 async def test_perform_recipe_deep_research_returns_empty_string_on_failure(monkeypatch):
+    monkeypatch.setattr(deep_research, "ENABLE_DEEP_RESEARCH", True)
     monkeypatch.setattr(deep_research, "_deep_research_api_key", lambda: "test_key")
     monkeypatch.setattr(deep_research, "_is_placeholder_api_key", lambda _key: False)
     monkeypatch.setattr(
@@ -56,6 +58,7 @@ async def test_perform_recipe_deep_research_returns_empty_string_on_failure(monk
 
 @pytest.mark.asyncio
 async def test_perform_recipe_deep_research_returns_report(monkeypatch):
+    monkeypatch.setattr(deep_research, "ENABLE_DEEP_RESEARCH", True)
     monkeypatch.setattr(deep_research, "_deep_research_api_key", lambda: "test_key")
     monkeypatch.setattr(deep_research, "_is_placeholder_api_key", lambda _key: False)
     monkeypatch.setattr(
@@ -66,3 +69,19 @@ async def test_perform_recipe_deep_research_returns_report(monkeypatch):
 
     report = await deep_research.perform_recipe_deep_research("三杯雞")
     assert "雞腿肉 600g" in report
+
+
+@pytest.mark.asyncio
+async def test_perform_recipe_deep_research_skips_when_disabled(monkeypatch):
+    monkeypatch.setattr(deep_research, "ENABLE_DEEP_RESEARCH", False)
+    sync_mock_called = False
+
+    def _unexpected_sync(*_args, **_kwargs):
+        nonlocal sync_mock_called
+        sync_mock_called = True
+        return "should not happen"
+
+    monkeypatch.setattr(deep_research, "_perform_recipe_deep_research_sync", _unexpected_sync)
+
+    assert await deep_research.perform_recipe_deep_research("三杯雞") == ""
+    assert sync_mock_called is False

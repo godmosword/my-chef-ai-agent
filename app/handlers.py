@@ -529,8 +529,6 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         )
         try:
             photo_url = await get_cached_recipe_image(recipe_name)
-            if not photo_url:
-                photo_url = await generate_recipe_image(recipe_name)
             poster_recipe = dict(recipe)
             if photo_url:
                 poster_recipe["photo_url"] = photo_url

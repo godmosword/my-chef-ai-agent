@@ -6,10 +6,10 @@ import os
 import time
 from typing import Any
 
-from app.config import logger
+from app.config import ENABLE_DEEP_RESEARCH, logger
 
 DEEP_RESEARCH_AGENT = "deep-research-preview-04-2026"
-DEFAULT_TIMEOUT_SEC = 55.0
+DEFAULT_TIMEOUT_SEC = 10.0
 POLL_INTERVAL_SEC = 3.0
 
 
@@ -27,7 +27,7 @@ def _deep_research_timeout_sec() -> float:
     if not raw:
         return DEFAULT_TIMEOUT_SEC
     try:
-        return min(60.0, max(45.0, float(raw)))
+        return min(20.0, max(5.0, float(raw)))
     except ValueError:
         logger.warning("Invalid DEEP_RESEARCH_TIMEOUT_SEC=%r; using default %.1fs", raw, DEFAULT_TIMEOUT_SEC)
         return DEFAULT_TIMEOUT_SEC
@@ -106,6 +106,9 @@ async def perform_recipe_deep_research(recipe_intent: str) -> str:
     """Return a condensed grounding report or an empty string on failure."""
     recipe_intent = (recipe_intent or "").strip()
     if not recipe_intent:
+        return ""
+    if not ENABLE_DEEP_RESEARCH:
+        logger.info("Skip deep research: ENABLE_DEEP_RESEARCH is disabled")
         return ""
 
     api_key = _deep_research_api_key()

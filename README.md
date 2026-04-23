@@ -19,7 +19,7 @@
 
 | 類別 | 說明 |
 |------|------|
-| 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出，並可在生成前用 Google Deep Research 做研究式 Grounding，圖／影片由後端依 `IMAGE_PROVIDER`、`YOUTUBE_API_KEY` 補齊。 |
+| 食譜 | 主題／菜名／步驟、採買清單與估算成本；`kitchen_talk`、`ingredients`、`steps`、`shopping_list` 等欄位由模型輸出。預設走低延遲路徑；若顯式開啟 `ENABLE_DEEP_RESEARCH=1`，才會在生成前加上 Google Deep Research Grounding。 |
 | 卡片 | 僅在有效 **https** 成品圖時顯示 hero；否則文字色塊標頭，避免與菜名無關的隨機圖。 |
 | 海報 | 可從食譜卡按鈕按需生成雜誌級 **PNG 食譜資訊圖**；以 **Playwright headless Chromium 渲染 HTML+CSS**，具備橙紅漸層標題、食材兩欄、步驟卡片、廚師對話、調味比例表；Playwright 不可用時自動退回 Pillow 版。 |
 | 食譜圖卡（兩段式） | 新增可重用「先生底圖、後疊繁中」流程：Stage A 以 `gpt-image-2` 產生高質感版面底圖，Stage B 由程式穩定疊上繁中標題／食材／步驟／小撇步／調味與時間，降低模型中文字亂碼風險。 |
@@ -34,11 +34,11 @@
 
 - **Web**：FastAPI、Uvicorn  
 - **訊息**：LINE Messaging API（非同步 SDK）  
-- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）  
-- **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；超時或失敗時會自動回退到原本無 Grounding 的生成流程。  
+- **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；具 **429／逾時／連線** 退避（`AI_TRANSPORT_*`）與 JSON **截斷修復**（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）。目前預設偏低延遲：`AI_TRANSPORT_MAX_RETRIES=1`、`AI_CHAT_TIMEOUT_SEC=18`。  
+- **Deep Research Grounding**：可選用 Google Interactions API 的 **`deep-research-preview-04-2026`** agent，在食譜生成前補充比例、食安與近期市場時價研究摘要；預設 **關閉**，需設 `ENABLE_DEEP_RESEARCH=1` 才啟用。啟用後 timeout 會限制在 **5-20 秒**，預設 **10** 秒，失敗時自動回退。  
 - **Flex 介面**：LINE Flex 主選單、菜系輪播、食譜卡與 fallback 卡片統一採 **Dark Michelin Theme**，以深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA 建立一致視覺。  
-- **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。  
-- **食譜海報**：以 **Playwright headless Chromium** 將 HTML+CSS 模板截圖成雜誌級 PNG 資訊圖（橙紅漸層標題、食材兩欄、步驟 badge 卡片、廚師對話、調味比例表、小撇步）；成品主圖以 base64 data URI 嵌入 HTML 以規避沙盒網路限制。Playwright 不可用時自動退回舊版 Pillow 渲染，不阻斷部署。沿用既有 `/media/recipe-hero/{token}` 短期媒體管線對外提供 URL。  
+- **食譜主圖**：recipe card 預設**不自動生圖**；使用者於 Flex 卡片按下「🖼 生成主圖」時，`IMAGE_PROVIDER=openai_compatible` 才會使用 **GPT-Image-2** snapshot（`gpt-image-2-2026-04-21`）生成主圖，並將 `b64_json` 轉成本站短期公開 URL 供 Flex hero 使用。YouTube 教學影片查詢改為背景預抓與快取，不阻塞首包食譜。  
+- **食譜海報**：以 **Playwright headless Chromium** 將 HTML+CSS 模板截圖成雜誌級 PNG 資訊圖（橙紅漸層標題、食材兩欄、步驟 badge 卡片、廚師對話、調味比例表、小撇步）；若尚未有主圖快取，海報會直接走純文字版而不額外等待生圖。Playwright 不可用時自動退回舊版 Pillow 渲染，不阻斷部署。沿用既有 `/media/recipe-hero/{token}` 短期媒體管線對外提供 URL。  
 - **兩段式食譜圖卡**：`app/recipe_card_generator.py` 提供可重用管線：先由 `build_base_image_prompt(...)` + `generate_base_image(...)` 產出「少文字」視覺底圖，再以 `compose_recipe_card(...)` 在固定格線上疊繁中資訊，輸出 `1200x1500` PNG（適合 LINE 分享）。  
 - **資料**：`DATABASE_URL` → **psycopg** 直連 Postgres；見 [`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/SCHEMA_MIGRATIONS.md`](docs/SCHEMA_MIGRATIONS.md)  
 - **部署**：`render.yaml`；可選 GCP Cloud Run（[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)）
@@ -74,7 +74,7 @@ METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
 
-目前套件 **102** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報主圖嵌入、Deep Research fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback 與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **115 passed**。
+目前套件 **122** 則測試（涵蓋 Flex、佇列、配額、`/ready`、`/metrics`、IP／per-user rate limit、AI transport、多媒體、按需生成主圖、食譜海報主圖嵌入、Deep Research 開關與 fallback、Gemini/OpenAI client 路徑、主圖/海報設定錯誤提示、CI 字型 fallback、YouTube 快取與成本控制預設值等）。其中 `tests/integration/` 兩則需可連的 Postgres（`DATABASE_URL`）；具可用資料庫時應為 **122 passed**。
 
 可用以下指令快速驗證兩段式食譜圖卡（`--skip-api` 代表先用本機佔位底圖，不呼叫 OpenAI）：
 
@@ -105,12 +105,18 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | `MAX_COMPLETION_TOKENS` |  | 預設 **1024**；控制文字食譜輸出成本，遇截斷會觸發修復提示，必要時可拉高 |
 | `MAX_HISTORY_TURNS` |  | 送入模型的對話輪數（不含 system），預設 **2** |
 | `AI_MAX_RETRIES` |  | JSON 解析／截斷修復輪數，預設 **1** |
-| `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試 |
+| `AI_TRANSPORT_MAX_RETRIES` |  | 傳輸層額外重試，預設 **1** |
 | `AI_TRANSPORT_BASE_DELAY_SEC` |  | 退避起始秒數 |
+| `AI_CHAT_TIMEOUT_SEC` |  | 文字食譜 timeout，預設 **18** 秒 |
+| `AI_IMAGE_TIMEOUT_SEC` |  | 主圖生成 timeout，預設 **25** 秒 |
+| `AI_VISION_TIMEOUT_SEC` |  | 圖片辨識 timeout，預設 **20** 秒 |
+| `ENABLE_DEEP_RESEARCH` |  | 預設 **0**；設 **1** 才會在食譜生成前啟用 Deep Research |
 | `DEEP_RESEARCH_API_KEY` |  | 可選；若設置則 Deep Research 優先使用它，未設時會回退使用 `GEMINI_API_KEY` |
-| `DEEP_RESEARCH_TIMEOUT_SEC` |  | 可選；Deep Research timeout，程式會限制在 **45-60 秒** 間，預設 **55** 秒 |
+| `DEEP_RESEARCH_TIMEOUT_SEC` |  | 可選；Deep Research timeout，程式會限制在 **5-20 秒** 間，預設 **10** 秒 |
 | `DATABASE_URL` |  | Render Postgres 等；記憶／收藏／配額與訂閱走 psycopg（多租戶 `tenant_id`） |
-| `YOUTUBE_API_KEY` |  | 教學影片連結 |
+| `YOUTUBE_API_KEY` |  | 教學影片連結；查詢走短 timeout 與快取，不阻塞首包食譜 |
+| `YOUTUBE_SEARCH_TIMEOUT_SEC` |  | YouTube 搜尋 timeout，預設 **3** 秒 |
+| `YOUTUBE_CACHE_TTL_SEC` |  | YouTube 搜尋快取秒數，預設 **86400** |
 | `IMAGE_PROVIDER` |  | `placeholder` / `vertex_imagen` / `openai_compatible`（recipe card 預設不自動生圖；點擊「🖼 生成主圖」時才會用對應 provider 生成） |
 | `GCP_PROJECT_ID` | Vertex 時 | Vertex 專案 |
 | `VERTEX_LOCATION` / `VERTEX_IMAGEN_MODEL` |  | 區域與 Imagen 模型 |
@@ -132,7 +138,7 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | `RECIPE_STEPS_MAX_COUNT` / `RECIPE_STEP_MAX_CHARS` |  | 提示模型輸出步驟數與每步長度上限 |
 | `DEFAULT_TENANT_ID` |  | 預設租戶 |
 | `PLAN_*_DAILY_LIMIT` |  | 各方案每日上限 |
-| `QUEUE_WORKER_COUNT` / `QUEUE_MAX_SIZE` / `QUEUE_DEDUPE_TTL_SEC` |  | 佇列與去重 |
+| `QUEUE_WORKER_COUNT` / `QUEUE_MAX_SIZE` / `QUEUE_DEDUPE_TTL_SEC` |  | 佇列與去重；`QUEUE_WORKER_COUNT` 預設 **4** |
 | `REQUIRE_ATOMIC_USAGE` |  | `1` 時強制 DB 原子扣量 |
 | `BILLING_PROVIDER` / `CHECKOUT_URL_TEMPLATE` / `BILLING_BASE_URL` |  | 升級連結與金流占位 |
 | `PUBLIC_APP_BASE_URL` |  | 產生 Flex 內 legal URI 按鈕網址（`/legal/*`），也用於主圖與食譜海報回傳 `/media/recipe-hero/{token}` 公開網址；需為 **https** |

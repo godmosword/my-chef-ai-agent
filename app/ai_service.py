@@ -16,10 +16,13 @@ from openai import AsyncOpenAI
 
 from app.config import (
     AI_MAX_RETRIES,
+    AI_CHAT_TIMEOUT_SEC,
+    AI_IMAGE_TIMEOUT_SEC,
     AI_RETRY_EXTRA_PROMPT,
     AI_TRUNCATION_RECOVERY_PROMPT,
     AI_TRANSPORT_BASE_DELAY_SEC,
     AI_TRANSPORT_MAX_RETRIES,
+    AI_VISION_TIMEOUT_SEC,
     DEBUG_MODE,
     GCP_PROJECT_ID,
     GCS_SIGNED_URL_TTL_SEC,
@@ -32,7 +35,9 @@ from app.config import (
     VERTEX_IMAGEN_MODEL,
     VERTEX_IMAGEN_OUTPUT_GCS_URI,
     VERTEX_LOCATION,
+    YOUTUBE_CACHE_TTL_SEC,
     YOUTUBE_API_KEY,
+    YOUTUBE_SEARCH_TIMEOUT_SEC,
     logger,
 )
 from app.clients import ai_client, AI_MODEL_FOR_CALL
@@ -97,6 +102,33 @@ async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
 # Backward-compatible alias for tests that clear in-memory cache directly.
 _recipe_image_url_cache = _memory_cache
 _recipe_image_client: AsyncOpenAI | None = None
+_youtube_cache: dict[str, tuple[float, str | None]] = {}
+
+
+def _youtube_cache_key(recipe_name: str) -> str:
+    return recipe_name.strip().casefold()
+
+
+def _youtube_cache_get(recipe_name: str) -> str | None | object:
+    if YOUTUBE_CACHE_TTL_SEC <= 0:
+        return ...
+    entry = _youtube_cache.get(_youtube_cache_key(recipe_name))
+    if entry is None:
+        return ...
+    expires_at, value = entry
+    if expires_at < time.monotonic():
+        _youtube_cache.pop(_youtube_cache_key(recipe_name), None)
+        return ...
+    return value
+
+
+def _youtube_cache_set(recipe_name: str, url: str | None) -> None:
+    if YOUTUBE_CACHE_TTL_SEC <= 0:
+        return
+    _youtube_cache[_youtube_cache_key(recipe_name)] = (
+        time.monotonic() + YOUTUBE_CACHE_TTL_SEC,
+        url,
+    )
 
 
 def _recipe_placeholder_image_url(_recipe_name: str) -> str:
@@ -355,7 +387,7 @@ async def generate_recipe_image(recipe_name: str) -> str:
             prompt=prompt,
             size="1024x1024",
             quality="low",
-            timeout=45.0,
+            timeout=AI_IMAGE_TIMEOUT_SEC,
         )
         image_bytes = None
         if getattr(response, "data", None):
@@ -383,10 +415,13 @@ async def search_youtube_video(recipe_name: str) -> str | None:
     """Search first YouTube tutorial video; return None if unavailable or failed."""
     if not YOUTUBE_API_KEY:
         return None
+    cached = _youtube_cache_get(recipe_name)
+    if cached is not ...:
+        return cached
 
     try:
         query = f"{recipe_name} 食譜 教學"
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=YOUTUBE_SEARCH_TIMEOUT_SEC) as client:
             resp = await client.get(
                 "https://www.googleapis.com/youtube/v3/search",
                 params={
@@ -401,15 +436,20 @@ async def search_youtube_video(recipe_name: str) -> str | None:
             data = resp.json()
         items = data.get("items") or []
         if not items:
+            _youtube_cache_set(recipe_name, None)
             return None
         video_id = ((items[0].get("id") or {}).get("videoId") or "").strip()
         if not video_id:
+            _youtube_cache_set(recipe_name, None)
             return None
         incr("youtube.search.success_total")
-        return f"https://www.youtube.com/watch?v={video_id}"
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        _youtube_cache_set(recipe_name, url)
+        return url
     except Exception as exc:
         logger.warning("YouTube search failed for recipe %s: %s", recipe_name, exc)
         incr("youtube.search.errors_total")
+        _youtube_cache_set(recipe_name, None)
         return None
 
 
@@ -470,7 +510,7 @@ async def call_ai_with_retry(
             temperature=0.3,
             max_tokens=MAX_COMPLETION_TOKENS,
             response_format={"type": "json_object"},
-            timeout=45.0,
+            timeout=AI_CHAT_TIMEOUT_SEC,
         )
         elapsed = time.perf_counter() - t0
         incr("ai.calls_total")
@@ -566,7 +606,7 @@ async def identify_ingredients_from_image(image_bytes: bytes) -> str:
         messages=messages,
         temperature=0.2,
         max_tokens=256,
-        timeout=30.0,
+        timeout=AI_VISION_TIMEOUT_SEC,
     )
     incr("ai.vision.calls_total")
     return response.choices[0].message.content.strip()

@@ -51,6 +51,16 @@ def build_recipe_flex_message(
     )
 
 
+def _prefetch_youtube_video(recipe_name: str) -> None:
+    async def _runner() -> None:
+        try:
+            await search_youtube_video(recipe_name)
+        except Exception as exc:
+            logger.warning("YouTube prefetch failed for recipe %s: %s", recipe_name, exc)
+
+    asyncio.create_task(_runner())
+
+
 async def background_generate_recipe(
     *,
     user_id: str,
@@ -122,12 +132,12 @@ async def background_generate_recipe(
         asyncio.create_task(save_user_memory(user_id, to_save, tenant_id=tenant_id))
 
         recipe_name = _safe_str(ai_data.get("recipe_name"), "美味食譜", max_len=80)
-        video_url = await search_youtube_video(recipe_name)
+        _prefetch_youtube_video(recipe_name)
         return build_recipe_flex_message(
             ai_data,
             recipe_lookup_ts=now_iso,
             photo_url=None,
-            video_url=video_url,
+            video_url=None,
         )
 
     try:
