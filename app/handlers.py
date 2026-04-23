@@ -65,7 +65,7 @@ from app.ai_service import (
 from app.billing import consume_quota
 from app.observability import incr
 from app.recipe_hero_media import register_recipe_hero_png
-from app.recipe_poster import render_recipe_poster_png
+from app.recipe_poster_html import render_recipe_poster_png_html as render_recipe_poster_png
 from app.subscriptions import build_checkout_url
 
 
