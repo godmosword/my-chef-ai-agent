@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-04-23（食譜海報升級：HTML+CSS → PNG）
+
+- **雜誌級食譜資訊圖**：新增 `app/recipe_poster_html.py`，以 Playwright headless Chromium 渲染 HTML+CSS 模板，輸出品質大幅提升：橙紅漸層標題、兩欄食材清單、6 步驟橘色圓形 badge 卡片、廚師三人對話、小撇步、調味比例表與烹調時間。
+- **成品主圖直接嵌入**：有 `photo_url` 時，自動下載並以 base64 data URI 嵌入 HTML，避免 Playwright 外部網路限制。
+- **Pillow 雙重 fallback**：Playwright 未安裝或截圖失敗時，自動退回舊版 Pillow 渲染，不影響既有部署。
+- **依賴新增**：`playwright>=1.40.0` 加入 `requirements.txt`；Render 部署需確認 chromium headless 可用（或讓 fallback 自動接管）。
+- **測試**：新增 `tests/test_recipe_poster_html.py`（16 tests），全量測試由 **99 → 115 passed**。
+
 ## 2026-04-23（兩段式食譜圖卡產生器）
 
 - **新增兩段式產圖模組**：`app/recipe_card_generator.py` 新增 `RecipeCardData` schema、`build_base_image_prompt(...)`、`generate_base_image(...)` 與 `compose_recipe_card(...)`，採「先生底圖、後疊繁中」策略，降低大量繁中文字直接交給模型渲染造成的亂碼與版面漂移。

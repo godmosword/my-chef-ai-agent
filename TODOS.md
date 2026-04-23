@@ -10,6 +10,7 @@
 
 | 日期 | 摘要 |
 |------|------|
+| 2026-04-23 | **食譜海報升級至 HTML+CSS 版本**：新增 `app/recipe_poster_html.py`，以 Playwright headless Chromium 將 HTML 模板截圖為 PNG，達到雜誌級食譜資訊圖效果（漸層標題、步驟卡片、食材清單、調味比例、廚師對話），原 Pillow 版自動作為 fallback；tests 由 99 → 115 passed。 |
 | 2026-04-23 | 新增兩段式食譜圖卡產生器（Stage A: gpt-image-2 視覺底圖；Stage B: 程式疊繁中），並補上 sample recipe、範例 runner 與單元測試。 |
 | 2026-04-22 | Dark Michelin UI 重構完成：集中更新 `flex_theme` token，LINE Flex 與食譜海報統一為深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA，並補上代表性視覺測試。 |
 | 2026-04-22 | 修正主圖與海報回傳：GPT-Image-2 改走獨立 OpenAI image client，不再受 Gemini 文字 client 牽制；缺少 `PUBLIC_APP_BASE_URL` 時改為明確提示管理員設定。 |
@@ -46,7 +47,7 @@
 - [ ] **Supabase CLI**：團隊若固定用 CLI，補 `config.toml` 範本與 CI migration 驗證。
 - [ ] **GPT-Image-2 prompt 微調**：若實際上線後繁中文字渲染仍偶發變形，針對菜名長度、字體風格與擺放位置做 A/B prompt 調整。
 - [ ] **圖片配額策略**：若按需出圖後成本仍偏高，再評估將「生成主圖」綁定付費方案或每日圖片額度，而非所有方案無上限開放。
-- [ ] **海報第二版**：若要更接近範例教學圖，可再評估加入單張成品圖、調味比例區塊、步驟縮圖或多模板版型。
+- [x] **海報第二版**：HTML+CSS 版本已完成，具備漸層標題、步驟卡片、食材兩欄、調味比例表、廚師對話、小撇步與烹調時間等雜誌級元素。
 - [ ] **兩段式食譜圖卡主題模板**：在 `app/recipe_card_generator.py` 增加 warm/minimal/premium/night-market 等可切換視覺 preset，並讓不同模板共用同一份 recipe schema。
 - [ ] **Deep Research 成本與快取策略**：若 research grounding 上線後延遲或成本偏高，評估只對高價值需求啟用、加入 memoization，或將市場時價研究獨立成較短 TTL 快取。
 
