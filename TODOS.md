@@ -27,6 +27,18 @@
 
 ---
 
+## 零、本機接續測試（回去繼續）
+
+> 2026-04-23 Cloud Agent 完成程式碼，推上 `main` 觸發 Render 部署。以下是回到本機後需要驗收的清單。
+
+- [ ] **Render 部署確認**：確認 Render 已成功 build + deploy，`GET /` 回 `{"status":"ok"}`，`GET /ready` 無 503。
+- [ ] **Playwright Chromium 安裝**：Render build command 或 Dockerfile 中加入 `python3 -m playwright install chromium`，確保正式環境使用 HTML 版海報（目前 fallback 到 Pillow 仍可用）。
+- [ ] **LINE Bot 端對端測試（海報）**：在真實 LINE 對話中輸入任一食譜，按「🖼 生成食譜海報」，確認收到的圖片為新版 HTML 排版（橙紅漸層標題、步驟 badge 卡片），而非舊版 Pillow 深色版。
+- [ ] **LINE Bot 端對端測試（含成品主圖）**：先「🖼 生成主圖」，再「🖼 生成食譜海報」，確認海報右上角成功嵌入成品照。
+- [ ] **字型確認**：若 Render 容器無 Noto Sans TC，Google Fonts `@import` 在 Playwright 有沒有被沙盒擋住（可用 `--disable-web-security` 或改為內嵌字型 base64）。
+
+---
+
 ## 一、平台與後端
 
 ### 建議優先
