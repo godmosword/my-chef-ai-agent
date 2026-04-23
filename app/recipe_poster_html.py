@@ -244,14 +244,23 @@ def build_poster_html(recipe_data: dict) -> str:
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+  @font-face {{
+    font-family: 'Noto Sans TC';
+    src: local('Noto Sans CJK TC'), local('Noto Sans TC'), local('NotoSansCJKtc');
+    font-weight: 100 900;
+  }}
+  @font-face {{
+    font-family: 'Noto Serif TC';
+    src: local('Noto Serif CJK TC'), local('Noto Serif TC'), local('NotoSerifCJKtc');
+    font-weight: 100 900;
+  }}
 
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
   body {{
     width: {POSTER_WIDTH}px;
     background: {COLOR_BODY_BG};
-    font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    font-family: 'Noto Sans TC', 'Noto Sans CJK TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
     color: {COLOR_BODY_TEXT};
     -webkit-font-smoothing: antialiased;
   }}
@@ -289,7 +298,7 @@ def build_poster_html(recipe_data: dict) -> str:
     letter-spacing: 3px; text-transform: uppercase;
   }}
   .header-title {{
-    font-family: 'Noto Serif TC', 'PingFang TC', serif;
+    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', 'PingFang TC', serif;
     font-size: 72px; font-weight: 700; color: #F5F0E6;
     line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,0.3);
     margin-bottom: 20px; letter-spacing: 2px;
@@ -331,7 +340,7 @@ def build_poster_html(recipe_data: dict) -> str:
     display: flex; align-items: center; gap: 16px; margin-bottom: 22px;
   }}
   .section-label {{
-    font-family: 'Noto Serif TC', serif;
+    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', serif;
     font-size: 28px; font-weight: 700; color: {COLOR_TITLE_TEXT};
     letter-spacing: 2px;
     position: relative; padding-bottom: 6px;
@@ -438,7 +447,7 @@ def build_poster_html(recipe_data: dict) -> str:
     border: 1px solid {COLOR_BORDER};
   }}
   .season-title {{
-    font-family: 'Noto Serif TC', serif;
+    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', serif;
     font-size: 22px; font-weight: 700; color: {COLOR_TITLE_TEXT};
     margin-bottom: 6px; letter-spacing: 1px;
   }}
