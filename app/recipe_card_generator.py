@@ -1,6 +1,7 @@
 """Two-stage recipe card generator (base image + Traditional Chinese text overlay)."""
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
@@ -9,12 +10,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from openai import AsyncOpenAI
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from app.config import IMAGE_OPENAI_API_KEY, OPENAI_API_KEY
+from app.config import IMAGE_OPENAI_API_KEY, OPENAI_API_KEY, OPENAI_GPT_IMAGE_MODEL_ID
+from app.helpers import _parse_to_list
 
 CANVAS_W = 1200
 CANVAS_H = 1500
+
+# Tier-A editorial accent (section headers, step badges); hero embed uses rounded rect.
+_SECTION_RGB = (32, 85, 68)
+_STEP_BADGE_RGB = (200, 95, 40)
+_HERO_BOX = (708, 42, 1148, 292)  # top-right, below full-width title band
 
 
 @dataclass(frozen=True)
@@ -62,43 +69,60 @@ class RecipeCardData:
         )
 
 
+def _paste_rounded_hero(canvas: Image.Image, hero_image_path: str, box: tuple[int, int, int, int]) -> None:
+    """Paste a cover-cropped hero photo with rounded corners (RGB canvas)."""
+    try:
+        im = Image.open(hero_image_path).convert("RGBA")
+    except OSError:
+        return
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    if w < 32 or h < 32:
+        return
+    fitted = ImageOps.fit(im, (w, h), Image.Resampling.LANCZOS)
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, w, h), radius=22, fill=255)
+    canvas.paste(fitted.convert("RGB"), (x0, y0), mask)
+
+
+def _normalize_tip_bullets(data: object) -> list[str]:
+    """Turn tips or shopping_list entries into short lines (avoid str(dict) in card)."""
+    lines: list[str] = []
+    for raw in _parse_to_list(data):
+        if isinstance(raw, dict):
+            name = str(raw.get("name") or raw.get("item") or "").strip()
+            extra = str(
+                raw.get("amount") or raw.get("qty") or raw.get("quantity") or raw.get("note") or ""
+            ).strip()
+            if name and extra:
+                lines.append(f"{name} {extra}")
+            elif name:
+                lines.append(name)
+            elif extra:
+                lines.append(extra)
+        else:
+            s = str(raw).strip()
+            if s:
+                lines.append(s)
+    return lines
+
+
 def build_base_image_prompt(recipe: RecipeCardData) -> str:
-    """Build Stage A prompt for gpt-image-2 visual base generation."""
+    """Build Stage A prompt for GPT Image visual base generation."""
     step_hints = "\n".join(f"{idx + 1}. {s.title} ({s.description[:24]})" for idx, s in enumerate(recipe.steps[:6]))
     if not step_hints:
-        step_hints = "1. prep ingredients\n2. stir-fry\n3. plate"
+        step_hints = "1. prep\n2. stir-fry\n3. plate"
     ingredients_hint = "、".join(recipe.ingredients[:6])
-    return f"""
-Create a premium Taiwanese-style recipe infographic base image for a LINE bot recipe card.
-Generate visual structure only; important text will be added later by code.
-
-Important rules:
-- Avoid dense readable text.
-- No long Chinese paragraphs.
-- No watermark, no logo, no brand.
-
-Canvas/layout:
-- vertical 4:5 composition
-- warm off-white background
-- clean editorial grid
-- mobile-friendly spacing
-- include section placeholders for title, hero, ingredients, prep, steps, tips, seasoning, cook time
-
-Dish:
-- {recipe.title}
-- style: realistic Taiwanese home cooking, appetizing stir-fry texture
-- visible ingredients: {ingredients_hint}
-
-Step panel visual cues:
-{step_hints}
-
-Visual tone:
-- premium cookbook look
-- rounded section cards
-- subtle shadows
-- cohesive hierarchy
-- minimal clutter
-""".strip()
+    return (
+        "Create a Taiwanese recipe infographic base (LINE card). "
+        "Visual structure only; text will be overlaid later by code.\n"
+        "Rules: sparse readable text; no long Chinese paragraphs; no watermark/logo/brand.\n"
+        "Layout: vertical 4:5; warm off-white; editorial grid; mobile spacing; "
+        "placeholders for title, hero, ingredients, prep, steps, tips, seasoning, cook time.\n"
+        f"Dish: {recipe.title}; realistic home stir-fry; ingredients: {ingredients_hint}.\n"
+        f"Step cues:\n{step_hints}\n"
+        "Tone: premium cookbook, rounded cards, subtle shadows, clear hierarchy, low clutter."
+    ).strip()
 
 
 def _load_font(size: int, *, bold: bool = False) -> ImageFont.ImageFont:
@@ -163,15 +187,16 @@ async def generate_base_image(
     *,
     output_path: str,
     size: str = "1024x1024",
-    model: str = "gpt-image-2",
+    model: str | None = None,
 ) -> str:
     """Stage A: generate visual base image via OpenAI image API."""
     api_key = (IMAGE_OPENAI_API_KEY or OPENAI_API_KEY or "").strip()
     if not api_key:
         raise RuntimeError("Missing IMAGE_OPENAI_API_KEY/OPENAI_API_KEY for base image generation")
+    resolved_model = (model or OPENAI_GPT_IMAGE_MODEL_ID).strip() or OPENAI_GPT_IMAGE_MODEL_ID
     client = AsyncOpenAI(api_key=api_key)
     prompt = build_base_image_prompt(recipe)
-    result = await client.images.generate(model=model, prompt=prompt, size=size)
+    result = await client.images.generate(model=resolved_model, prompt=prompt, size=size)
     data = getattr(result, "data", None) or []
     if not data:
         raise RuntimeError("Image API returned empty data")
@@ -185,8 +210,18 @@ async def generate_base_image(
     return str(path)
 
 
-def compose_recipe_card(*, recipe: RecipeCardData, base_image_path: str, output_path: str) -> str:
-    """Stage B: overlay Traditional Chinese text on top of generated base image."""
+def compose_recipe_card(
+    *,
+    recipe: RecipeCardData,
+    base_image_path: str,
+    output_path: str,
+    hero_image_path: str | None = None,
+) -> str:
+    """Stage B: overlay Traditional Chinese text on top of generated base image.
+
+    When ``hero_image_path`` is set (Tier A), a rounded hero thumbnail is composited
+    top-right after all vector/text layers so the finished dish appears on-card.
+    """
     base = Image.open(base_image_path).convert("RGB")
     canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (248, 244, 236))
 
@@ -220,20 +255,21 @@ def compose_recipe_card(*, recipe: RecipeCardData, base_image_path: str, output_
     for b in (title_box, ing_box, prep_box, steps_box, tips_box, seasoning_box, time_box):
         card(b)
 
-    _draw_text_block(draw, text=recipe.title, x=60, y=54, width=560, font=title_font, fill=(42, 36, 28), max_lines=2)
-    _draw_text_block(draw, text=f"{recipe.subtitle}｜{recipe.serving}", x=60, y=138, width=560, font=subtitle_font, fill=(112, 99, 85), max_lines=1)
+    title_w = 580 if hero_image_path else 560
+    _draw_text_block(draw, text=recipe.title, x=60, y=54, width=title_w, font=title_font, fill=(42, 36, 28), max_lines=2)
+    _draw_text_block(draw, text=f"{recipe.subtitle}｜{recipe.serving}", x=60, y=138, width=title_w, font=subtitle_font, fill=(112, 99, 85), max_lines=1)
 
-    draw.text((60, 238), "食材", font=section_font, fill=(164, 88, 24))
+    draw.text((60, 238), "食材", font=section_font, fill=_SECTION_RGB)
     y = 278
     for item in recipe.ingredients[:10]:
         y = _draw_text_block(draw, text=f"• {item}", x=66, y=y, width=530, font=body_font, fill=(53, 45, 35), max_lines=1)
 
-    draw.text((60, 488), "前置處理", font=section_font, fill=(164, 88, 24))
+    draw.text((60, 488), "前置處理", font=section_font, fill=_SECTION_RGB)
     y = 528
     for p in recipe.prep[:2]:
         y = _draw_text_block(draw, text=f"• {p.name}：{p.note}", x=66, y=y, width=530, font=small_font, fill=(53, 45, 35), max_lines=2)
 
-    draw.text((60, 778), "料理步驟", font=section_font, fill=(164, 88, 24))
+    draw.text((60, 778), "料理步驟", font=section_font, fill=_SECTION_RGB)
     step_w = 350
     step_h = 210
     start_x, start_y = 58, 820
@@ -244,23 +280,26 @@ def compose_recipe_card(*, recipe: RecipeCardData, base_image_path: str, output_
         y1 = start_y + row * (step_h + 14)
         x2, y2 = x1 + step_w, y1 + step_h
         draw.rounded_rectangle((x1, y1, x2, y2), radius=18, fill=(255, 252, 247), outline=(230, 220, 207), width=2)
-        draw.ellipse((x1 + 12, y1 + 10, x1 + 52, y1 + 50), fill=(224, 115, 41))
+        draw.ellipse((x1 + 12, y1 + 10, x1 + 52, y1 + 50), fill=_STEP_BADGE_RGB)
         draw.text((x1 + 24, y1 + 17), str(idx + 1), font=_load_font(22, bold=True), fill=(255, 255, 255))
         _draw_text_block(draw, text=step.title, x=x1 + 60, y=y1 + 14, width=step_w - 76, font=small_font, fill=(59, 45, 30), max_lines=1)
         _draw_text_block(draw, text=step.description, x=x1 + 16, y=y1 + 56, width=step_w - 28, font=_load_font(20), fill=(74, 58, 39), max_lines=4)
 
-    draw.text((60, 1288), "小撇步", font=section_font, fill=(164, 88, 24))
+    draw.text((60, 1288), "小撇步", font=section_font, fill=_SECTION_RGB)
     y = 1328
     for tip in recipe.tips[:4]:
         y = _draw_text_block(draw, text=f"• {tip}", x=66, y=y, width=540, font=_load_font(20), fill=(53, 45, 35), max_lines=2)
 
-    draw.text((660, 1288), "調味比例", font=section_font, fill=(164, 88, 24))
+    draw.text((660, 1288), "調味比例", font=section_font, fill=_SECTION_RGB)
     y = 1328
     for s in recipe.seasoning[:4]:
         y = _draw_text_block(draw, text=f"• {s}", x=662, y=y, width=250, font=_load_font(20), fill=(53, 45, 35), max_lines=1)
 
-    draw.text((970, 1288), "時間", font=section_font, fill=(164, 88, 24))
+    draw.text((970, 1288), "時間", font=section_font, fill=_SECTION_RGB)
     _draw_text_block(draw, text=recipe.cook_time, x=972, y=1338, width=170, font=_load_font(24, bold=True), fill=(53, 45, 35), max_lines=2)
+
+    if hero_image_path:
+        _paste_rounded_hero(canvas, hero_image_path, _HERO_BOX)
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -287,6 +326,12 @@ def recipe_card_data_from_recipe_json(recipe_data: dict) -> RecipeCardData:
         )
         normalized_steps.append({"title": title or f"步驟 {idx + 1}", "description": text or "依序完成料理。"})
 
+    tips_src = recipe_data.get("tips")
+    if tips_src:
+        tip_lines = _normalize_tip_bullets(tips_src)
+    else:
+        tip_lines = _normalize_tip_bullets(recipe_data.get("shopping_list") or [])
+
     return RecipeCardData.from_dict(
         {
             "title": recipe_data.get("recipe_name") or "本日料理",
@@ -298,19 +343,46 @@ def recipe_card_data_from_recipe_json(recipe_data: dict) -> RecipeCardData:
             ],
             "prep": recipe_data.get("prep") or [],
             "steps": normalized_steps,
-            "tips": recipe_data.get("tips") or recipe_data.get("shopping_list") or [],
+            "tips": tip_lines,
             "seasoning": recipe_data.get("seasoning") or [],
-            "cookTime": recipe_data.get("cookTime") or "約15分鐘",
+            "cookTime": recipe_data.get("cookTime") or recipe_data.get("cook_time") or "約15分鐘",
         }
     )
+
+
+async def _download_hero_photo_to_tmp(url: str, tmpdir: str) -> str | None:
+    if not (isinstance(url, str) and url.startswith("https://")):
+        return None
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            ctype = (resp.headers.get("content-type") or "").lower()
+            ext = ".jpg" if "jpeg" in ctype or "jpg" in ctype else ".png"
+            hero_file = Path(tmpdir) / f"hero{ext}"
+            hero_file.write_bytes(resp.content)
+            return str(hero_file)
+    except Exception:
+        return None
 
 
 async def generate_recipe_card_png(recipe_data: dict) -> bytes:
     """Run Stage A + Stage B and return final recipe card PNG bytes."""
     mapped = recipe_card_data_from_recipe_json(recipe_data)
     with tempfile.TemporaryDirectory(prefix="recipe-card-") as tmpdir:
+        url = recipe_data.get("photo_url")
         base_path = str(Path(tmpdir) / "base.png")
         final_path = str(Path(tmpdir) / "final.png")
-        await generate_base_image(mapped, output_path=base_path)
-        compose_recipe_card(recipe=mapped, base_image_path=base_path, output_path=final_path)
+        hero_path, _ = await asyncio.gather(
+            _download_hero_photo_to_tmp(url, tmpdir),
+            generate_base_image(mapped, output_path=base_path),
+        )
+        compose_recipe_card(
+            recipe=mapped,
+            base_image_path=base_path,
+            output_path=final_path,
+            hero_image_path=hero_path,
+        )
         return Path(final_path).read_bytes()

@@ -128,13 +128,15 @@ PUBLIC_APP_BASE_URL       = (os.getenv("PUBLIC_APP_BASE_URL") or "").strip().rst
 YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
 IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "openai_compatible").lower()
 IMAGE_OPENAI_API_KEY      = (os.getenv("IMAGE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip() or None
+# 主圖與兩段式食譜卡 Stage A 共用同一 GPT Image snapshot，可環境變數覆寫。
+OPENAI_GPT_IMAGE_MODEL_ID = (os.getenv("OPENAI_GPT_IMAGE_MODEL_ID") or "gpt-image-2-2026-04-21").strip()
 GCP_PROJECT_ID            = os.getenv("GCP_PROJECT_ID")
 VERTEX_LOCATION           = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generate-002")
 VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
 # 食譜主圖 URL 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
-IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "3600")))
+IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "86400")))
 IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip().lower()
 REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
 IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
@@ -150,8 +152,8 @@ RECIPE_IMAGE_STORAGE_BACKEND = (os.getenv("RECIPE_IMAGE_STORAGE_BACKEND", "memor
 RECIPE_IMAGE_GCS_BUCKET = (os.getenv("RECIPE_IMAGE_GCS_BUCKET") or "").strip()
 RECIPE_IMAGE_GCS_PREFIX = (os.getenv("RECIPE_IMAGE_GCS_PREFIX", "recipe-hero") or "recipe-hero").strip().strip("/")
 RECIPE_IMAGE_GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("RECIPE_IMAGE_GCS_SIGNED_URL_TTL_SEC", "3600")))
-# 圖片生成 API timeout 與重試（額外次數，不含首次）
-AI_IMAGE_TIMEOUT_SEC = max(10.0, float(os.getenv("AI_IMAGE_TIMEOUT_SEC", "60")))
+# 圖片生成 API timeout 與重試（額外次數，不含首次）；預設 25s 與食譜卡階段對齊
+AI_IMAGE_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_IMAGE_TIMEOUT_SEC", "25")))
 AI_IMAGE_MAX_RETRIES = max(0, int(os.getenv("AI_IMAGE_MAX_RETRIES", "3")))
 AI_IMAGE_BASE_DELAY_SEC = max(0.1, float(os.getenv("AI_IMAGE_BASE_DELAY_SEC", "0.8")))
 # 無 AI 主圖時 Flex hero 使用的公開 https 圖；設為 none/- 可關閉（改回純文字區塊）
@@ -179,7 +181,6 @@ OTEL_SAMPLING_RATIO = max(0.0, min(1.0, float(os.getenv("OTEL_SAMPLING_RATIO", "
 AI_TRANSPORT_MAX_RETRIES = max(0, int(os.getenv("AI_TRANSPORT_MAX_RETRIES", "1")))
 AI_TRANSPORT_BASE_DELAY_SEC = max(0.05, float(os.getenv("AI_TRANSPORT_BASE_DELAY_SEC", "0.5")))
 AI_CHAT_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_CHAT_TIMEOUT_SEC", "18")))
-AI_IMAGE_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_IMAGE_TIMEOUT_SEC", "25")))
 AI_VISION_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_VISION_TIMEOUT_SEC", "20")))
 YOUTUBE_SEARCH_TIMEOUT_SEC = max(1.0, float(os.getenv("YOUTUBE_SEARCH_TIMEOUT_SEC", "3")))
 # 每 IP 每分鐘請求上限；0 關閉該類型限制
@@ -204,7 +205,8 @@ else:
 MAX_MESSAGE_LENGTH    = 500
 # 送入模型的對話輪數（不含 system）；預設 2 以降低 prompt token；必要時以 MAX_HISTORY_TURNS 提高。
 MAX_HISTORY_TURNS     = max(1, int(os.getenv("MAX_HISTORY_TURNS", "2")))
-# 食譜 JSON 長度上限；預設 2048 平衡成本與截斷風險，遇截斷會觸發修復提示（見 AI_TRUNCATION_RECOVERY_PROMPT）。
+# 食譜 JSON completion token 上限（程式下限 512）。預設 1024；若要省輸出計價可設 768–896，但步驟多時較易
+# finish_reason=length，會多一輪截斷修復（見 AI_TRUNCATION_RECOVERY_PROMPT），input token 也會略增。
 MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "1024")))
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
@@ -217,6 +219,9 @@ RECIPE_STEPS_PREVIEW_COUNT = max(1, int(os.getenv("RECIPE_STEPS_PREVIEW_COUNT", 
 RECIPE_STEPS_MAX_COUNT = max(1, int(os.getenv("RECIPE_STEPS_MAX_COUNT", "6")))
 RECIPE_STEP_MAX_CHARS = max(10, int(os.getenv("RECIPE_STEP_MAX_CHARS", "24")))
 ENABLE_DEEP_RESEARCH = os.getenv("ENABLE_DEEP_RESEARCH", "0").lower() in ("1", "true", "yes")
+# 深度研究報告併入 system 前最多保留字元（明顯降低 ENABLE_DEEP_RESEARCH 時的 input token）。建議 800–1200；範圍 400–8000。
+_DR_SYS_MAX = int(os.getenv("DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM", "1200"))
+DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM = max(400, min(8000, _DR_SYS_MAX))
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
 CUISINE_SELECTOR_KEYWORDS = {"換菜單"}

@@ -33,6 +33,7 @@ from app.config import (
     IMAGE_OPENAI_API_KEY,
     IMAGE_PUBLIC_BASE_URL,
     IMAGE_PROVIDER,
+    OPENAI_GPT_IMAGE_MODEL_ID,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
     VERTEX_IMAGEN_MODEL,
@@ -368,7 +369,7 @@ async def _generate_openai_image_resilient(*, image_client: AsyncOpenAI, prompt:
     for attempt in range(max_tries):
         try:
             return await image_client.images.generate(
-                model="gpt-image-2-2026-04-21",
+                model=OPENAI_GPT_IMAGE_MODEL_ID,
                 prompt=prompt,
                 size="1024x1024",
                 quality="low",

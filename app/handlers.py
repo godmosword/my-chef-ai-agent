@@ -63,7 +63,8 @@ from app.ai_service import (
 )
 from app.billing import consume_quota
 from app.observability import incr
-from app.recipe_poster import render_recipe_poster_png
+from app.recipe_hero_media import register_recipe_hero_png
+from app.recipe_poster_html import render_recipe_poster_png_html as render_recipe_poster_png
 from app.recipe_card_generator import generate_recipe_card_png
 from app.media_storage import store_recipe_png
 from app.subscriptions import build_checkout_url
@@ -543,12 +544,6 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             )
         except Exception as exc:
             logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)
-            if not PUBLIC_APP_BASE_URL.startswith("https://"):
-                await _push_line_message(
-                    event.user_id,
-                    TextMessage(text="👨‍🍳 食譜海報需要公開網址才能回傳圖片，請管理員設定 PUBLIC_APP_BASE_URL 為 https 網址。"),
-                )
-                return
             await _push_line_message(
                 event.user_id,
                 TextMessage(text="👨‍🍳 食譜海報生成失敗，請稍後再試。"),
@@ -588,7 +583,12 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             user_id=event.user_id,
         )
         try:
-            card_png = await generate_recipe_card_png(recipe)
+            recipe_for_card = dict(recipe)
+            if not recipe_for_card.get("photo_url"):
+                cached_hero = await get_cached_recipe_image(recipe_name)
+                if cached_hero:
+                    recipe_for_card["photo_url"] = cached_hero
+            card_png = await generate_recipe_card_png(recipe_for_card)
             stored = await store_recipe_png(payload=card_png, purpose="recipe-card")
             card_url = stored.url if stored else None
             if not card_url or not card_url.startswith("https://"):

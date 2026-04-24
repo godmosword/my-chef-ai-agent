@@ -6,6 +6,59 @@
 
 ---
 
+## 2026-04-24（生圖效率與 Token 優化）
+
+- **Deep Research**：併入 system 前依 `DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`（預設 1200，範圍 400–8000）截斷研究報告並標註摘要從略，降低啟用時的 input token。
+- **圖卡 Stage A**：精簡 `build_base_image_prompt`、保留 4:5 版面與區塊 placeholder 等約束。
+- **圖卡管線**：HTTPS hero 下載與 Stage A 底圖以 `asyncio.gather` 並行。
+- **`MAX_COMPLETION_TOKENS`**：補充 env／成本與截斷修復權衡說明；新增 `tests/test_call_ai_truncation.py`。
+- **測試**：全量 **140 passed**。
+
+## 2026-04-23（文件：重寫 TODOS／README）
+
+- **TODOS.md**：重寫為目前 backlog 結構；里程碑摘要對齊溫暖明亮主題、Render（Playwright + `fonts-noto-cjk`）、程式碼清理等；**零章**改為可重複的部署／LINE 手動驗收清單；移除與現況不符的舊敘述（如 Dark Michelin、舊海報色敘事）。
+- **README.md**：全篇對齊現有產品與技術（溫暖明亮 Flex、海報雙管線、Render 建置要點）；精簡重複段、更新專案結構與指令表。
+- **AGENTS.md**：測試數量更新為 **122** 則（與 CI／本機一致）。
+
+## 2026-04-23（程式碼清理與 Token 精簡）
+
+- **殭屍代碼**：刪除未使用的 `render_recipe_poster_png_html_async` 與多餘 `asyncio` import；移除未引用常數 `VIEW_FAVORITES_CMD`；`handlers.py` 不再 import 未使用的 `save_user_memory`。
+- **佇列**：`job_queue.py` 以內部 `_dispatch()` 統一 text／image／postback 分派，消除 OpenTelemetry tracer 有／無時的重複邏輯。
+- **海報輔助函式**：`_derive_cook_time`、`_derive_quick_tips` 集中在 `recipe_poster.py`，`recipe_poster_html.py` 改為共用 import，避免雙份維護。
+- **Prompt**：`SYSTEM_PROMPT` 移除與 `_build_system_prompt` 動態行重複的靜態步驟上限；精簡 `deep_research._build_research_prompt` 與圖片辨識 vision prompt，降低每請求 token。
+- **測試**：全量 **122 passed**。
+
+## 2026-04-23（修正 Playwright 部署 & 全面溫暖明亮化）
+
+- **修正 Playwright 在 Render 上無法啟動的根本原因**：`render.yaml` 的 `buildCommand` 改為 `pip install -r requirements.txt && python -m playwright install --with-deps chromium`，原本只用 Dockerfile（Render Python env 不讀取），現在正確安裝 Chromium 及系統依賴。
+- **Flex 食譜卡改為溫暖明亮主題**：`flex_theme.py` 全面從深色轉為溫暖米白底（#FFFAF5）、琥珀金強調色（#C8922A）、深棕黑文字，視覺更舒適。
+- **Pillow fallback 也同步改版**：`recipe_poster.py` 背景改溫暖米白、卡片改純白、步驟徽章改深森綠，即使 Playwright 不可用也能呈現明亮海報。
+
+## 2026-04-23（食譜海報視覺重設計）
+
+- **全新精緻雜誌風配色**：`recipe_poster_html.py` 標題區改為深森綠漸層（#2A6049）底色，強調色改為琥珀金（#C8922A），底色改為溫暖米白（#F9F7F4），整體視覺提升為高端食譜雜誌質感。
+- **字體升級**：標題與區塊標籤改用 Noto Serif TC 宋體；食材清單、時間框等使用細緻 border-left 與圓點修飾，去除舊橙紅風格。
+- **移除多餘文字訊息**：`handlers.py` 海報生成完成後，不再推送「食譜海報已完成：URL」那行文字，只傳送圖片本身。
+- **Dockerfile 補齊 Playwright 依賴**：加入 Chromium 所需系統套件（libnss3、libgbm1、fonts-noto-cjk 等）及 `python -m playwright install chromium`，確保 Render 部署後 Playwright 可正常執行。
+
+## 2026-04-23（食譜與圖片低延遲調整）
+
+- **預設主路徑改為偏快模式**：背景食譜生成不再預設執行 Deep Research；需顯式設 `ENABLE_DEEP_RESEARCH=1` 才會啟用。啟用後 `DEEP_RESEARCH_TIMEOUT_SEC` 也改為限制在 **5-20 秒**，預設 **10** 秒，避免單次請求卡住近一分鐘。
+- **首包不再等 YouTube**：初次食譜回覆不阻塞等待教學影片搜尋，改為背景預抓與記憶體快取；YouTube timeout 預設縮短為 **3** 秒，後續需要影片按鈕時可直接吃快取。
+- **AI timeout / retry 下修**：文字食譜 timeout 新增 `AI_CHAT_TIMEOUT_SEC`（預設 **18** 秒）、主圖 timeout 新增 `AI_IMAGE_TIMEOUT_SEC`（預設 **25** 秒）、圖片辨識 timeout 新增 `AI_VISION_TIMEOUT_SEC`（預設 **20** 秒）；`AI_TRANSPORT_MAX_RETRIES` 預設由 **3 → 1**，降低尾延遲。
+- **海報不再補生成品照**：`generate_recipe_poster` 若已有主圖快取會沿用；若尚未有圖，直接生成純文字海報，不再同步等待圖片模型。
+- **佇列吞吐提高**：`QUEUE_WORKER_COUNT` 預設由 **2 → 4**，降低多請求排隊時間。
+- **測試**：全量測試更新為 **122 passed**。
+
+## 2026-04-23（食譜海報升級：HTML+CSS → PNG）
+
+- **雜誌級食譜資訊圖**：新增 `app/recipe_poster_html.py`，以 Playwright headless Chromium 渲染 HTML+CSS 模板，輸出品質大幅提升：橙紅漸層標題、兩欄食材清單、6 步驟橘色圓形 badge 卡片、廚師三人對話、小撇步、調味比例表與烹調時間。
+- **成品主圖直接嵌入**：有 `photo_url` 時，自動下載並以 base64 data URI 嵌入 HTML，避免 Playwright 外部網路限制。
+- **Pillow 雙重 fallback**：Playwright 未安裝或截圖失敗時，自動退回舊版 Pillow 渲染，不影響既有部署。
+- **依賴新增**：`playwright>=1.40.0` 加入 `requirements.txt`；Render 部署需在 build command 加 `python3 -m playwright install chromium`（或讓 fallback 自動接管）。
+- **測試**：新增 `tests/test_recipe_poster_html.py`（16 tests），全量測試由 **99 → 115 passed**。
+- **部署狀態**：程式碼已直接推送 `main`，Render 應已自動觸發 deploy；**LINE Bot 端對端測試（海報排版與成品主圖嵌入）待回本機後驗收**，詳見 `TODOS.md`「零、本機接續測試」。
+
 ## 2026-04-23（兩段式食譜圖卡產生器）
 
 - **主圖穩定性修正**：`generate_recipe_image(...)` 新增 image transport retry/backoff（RateLimit/Timeout/Connection）、timeout 預設提升至 60 秒，並改為「僅成功生成的 https URL 才可快取」；fallback 圖不寫快取，避免暫時故障被放大。
@@ -13,6 +66,13 @@
 - **媒體儲存抽象**：新增 `app/media_storage.py`（`memory|gcs`），主圖／海報／食譜圖卡輸出可走 durable GCS；GCS 設定不完整時會警告並優雅回退 memory，不中斷主流程。
 - **兩段式食譜圖卡整合上線**：`action=generate_recipe_card` 已接入 postback，Stage A 產底圖、Stage B 程式疊繁中，成功後 push 圖片網址；失敗時回安全錯誤訊息。
 - **部署文件同步**：更新 `render.yaml`、`.env.example`、README 的 image 相關設定（`IMAGE_PROVIDER` 預設、`AI_IMAGE_*`、`RECIPE_IMAGE_STORAGE_*`、快取 TTL 3600）。
+
+## 2026-04-23（主圖、媒體儲存與兩段式食譜圖卡）
+
+- **主圖穩定性**：`generate_recipe_image(...)` 具 image transport retry／backoff；timeout 提升；僅成功生成的 **https** URL 寫快取，fallback 圖不快取。
+- **主圖 prompt**：純成品食物攝影（no readable text／no logo／no watermark），菜名由 Flex 文字層呈現。
+- **媒體儲存抽象**：新增 `app/media_storage.py`（`memory|gcs`）；GCS 不完整時警告並回退 memory。
+- **兩段式圖卡上線**：`action=generate_recipe_card` 接入 postback；Stage A 底圖、Stage B 疊繁中；部署見 `render.yaml`、`.env.example`、README 之 image／storage 變數。
 
 ## 2026-04-23（食譜海報補上主圖）
 

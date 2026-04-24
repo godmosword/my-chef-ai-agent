@@ -12,6 +12,7 @@ from app import billing, routes  # noqa: E402
 from app.clients import app  # noqa: E402
 from app import clients  # noqa: E402
 from app import config  # noqa: E402
+from app.recipe_visual_strategy import RECIPE_VISUAL_TIER  # noqa: E402
 
 
 @pytest.mark.asyncio
@@ -73,6 +74,8 @@ def test_admin_subscription_requires_token_and_updates(monkeypatch):
 def test_cost_control_defaults_are_tightened():
     assert config.IMAGE_CACHE_TTL_SEC == 86400
     assert config.MAX_COMPLETION_TOKENS == 1024
+    assert config.MAX_COMPLETION_TOKENS >= 512
+    assert config.DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM == 1200
     assert config.MAX_HISTORY_TURNS == 2
     assert config.AI_MAX_RETRIES == 1
     assert config.AI_TRANSPORT_MAX_RETRIES == 1
@@ -80,6 +83,7 @@ def test_cost_control_defaults_are_tightened():
     assert config.YOUTUBE_SEARCH_TIMEOUT_SEC == 3
     assert config.QUEUE_WORKER_COUNT == 4
     assert config.ENABLE_DEEP_RESEARCH is False
+    assert RECIPE_VISUAL_TIER == "A"
 
 
 def test_build_ai_client_uses_gemini_openai_compatible_endpoint(monkeypatch):

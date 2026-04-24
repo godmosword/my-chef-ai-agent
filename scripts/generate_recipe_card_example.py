@@ -19,6 +19,7 @@ async def main() -> None:
     parser.add_argument("--recipe", default="examples/sample-recipe.json")
     parser.add_argument("--base", default="output/recipe-base.png")
     parser.add_argument("--final", default="output/recipe-final.png")
+    parser.add_argument("--hero", default="", help="Optional local image path embedded top-right (Tier A)")
     parser.add_argument("--skip-api", action="store_true", help="Skip Stage A API call and create a local placeholder base")
     args = parser.parse_args()
 
@@ -31,7 +32,13 @@ async def main() -> None:
     else:
         base_path = await generate_base_image(recipe, output_path=args.base)
 
-    final_path = compose_recipe_card(recipe=recipe, base_image_path=base_path, output_path=args.final)
+    hero = (args.hero or "").strip() or None
+    final_path = compose_recipe_card(
+        recipe=recipe,
+        base_image_path=base_path,
+        output_path=args.final,
+        hero_image_path=hero,
+    )
     print(final_path)
 
 
