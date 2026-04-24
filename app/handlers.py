@@ -583,7 +583,12 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             user_id=event.user_id,
         )
         try:
-            card_png = await generate_recipe_card_png(recipe)
+            recipe_for_card = dict(recipe)
+            if not recipe_for_card.get("photo_url"):
+                cached_hero = await get_cached_recipe_image(recipe_name)
+                if cached_hero:
+                    recipe_for_card["photo_url"] = cached_hero
+            card_png = await generate_recipe_card_png(recipe_for_card)
             stored = await store_recipe_png(payload=card_png, purpose="recipe-card")
             card_url = stored.url if stored else None
             if not card_url or not card_url.startswith("https://"):

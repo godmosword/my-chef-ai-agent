@@ -105,7 +105,7 @@ async def test_generate_recipe_image_uses_gpt_image_2_low_quality_and_prompt(mon
     assert url.startswith("https://app.example.com/media/recipe-hero/")
     mock_generate.assert_awaited_once()
     kwargs = mock_generate.await_args.kwargs
-    assert kwargs["model"] == "gpt-image-2-2026-04-21"
+    assert kwargs["model"] == config.OPENAI_GPT_IMAGE_MODEL_ID
     assert kwargs["quality"] == "low"
     assert kwargs["size"] == "1024x1024"
     assert kwargs["timeout"] == ai_service.AI_IMAGE_TIMEOUT_SEC
@@ -576,6 +576,57 @@ async def test_background_generate_recipe_injects_deep_research_report(monkeypat
     assert api_messages[0]["role"] == "system"
     assert "【研發主廚的深度研究報告】" in api_messages[0]["content"]
     assert "醬汁 90g、糖 12g、醋 18g" in api_messages[0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_background_generate_recipe_truncates_long_deep_research_report(monkeypatch):
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow._fetch_ai_context",
+        AsyncMock(return_value=([], [], "不拘", None)),
+    )
+    long_report = "醬" * 400
+    monkeypatch.setattr(
+        "app.handlers_recipe_flow.perform_recipe_deep_research",
+        AsyncMock(return_value=long_report),
+    )
+    monkeypatch.setattr("app.handlers_recipe_flow.DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM", 80)
+    call_mock = AsyncMock(
+        return_value=(
+            '{"recipe_name":"截斷研報菜","kitchen_talk":[],"theme":"家常","ingredients":[],"steps":["a"],'
+            '"shopping_list":[],"estimated_total_cost":"188"}',
+            {
+                "recipe_name": "截斷研報菜",
+                "kitchen_talk": [],
+                "theme": "家常",
+                "ingredients": [],
+                "steps": ["a"],
+                "shopping_list": [],
+                "estimated_total_cost": "188",
+            },
+        )
+    )
+    monkeypatch.setattr("app.handlers_recipe_flow.call_ai_with_retry", call_mock)
+    monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
+    monkeypatch.setattr("app.handlers_recipe_flow._prefetch_youtube_video", Mock())
+
+    pushed = []
+
+    async def _push(_user_id, msg):
+        pushed.append(msg)
+
+    monkeypatch.setattr(handlers, "_push_line_message", _push)
+
+    await handlers._background_generate_recipe(
+        user_id="U123",
+        tenant_id="default",
+        user_message="幫我做截斷研報菜",
+    )
+
+    assert len(pushed) == 1
+    api_messages = call_mock.await_args.args[0]
+    system_content = api_messages[0]["content"]
+    assert "其餘從略" in system_content
+    assert long_report not in system_content
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from datetime import datetime, timezone
 from typing import Awaitable, Callable
 
@@ -11,7 +12,13 @@ from openai import APITimeoutError, AuthenticationError, BadRequestError
 
 from app.ai_errors import format_ai_error_for_user
 from app.ai_service import _fetch_ai_context, call_ai_with_retry, search_youtube_video
-from app.config import MAX_HISTORY_TURNS, QUOTA_WARN_THRESHOLD, RECIPE_STEPS_PREVIEW_COUNT, logger
+from app.config import (
+    DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM,
+    MAX_HISTORY_TURNS,
+    QUOTA_WARN_THRESHOLD,
+    RECIPE_STEPS_PREVIEW_COUNT,
+    logger,
+)
 from app.deep_research import perform_recipe_deep_research
 from app.db import save_user_memory
 from app.flex_messages import _flex_safe_https_url, build_fallback_recipe_flex, generate_flex_message
@@ -19,6 +26,18 @@ from app.helpers import _build_system_prompt, _condense_assistant_message, _safe
 from app.observability import incr
 
 PushFn = Callable[[str, TextMessage | FlexMessage], Awaitable[None]]
+
+
+def _truncate_research_report_for_system(report: str, max_chars: int) -> str:
+    """Cap deep-research text before it is merged into the system prompt."""
+    text = (report or "").strip()
+    if len(text) <= max_chars:
+        return text
+    suffix = "\n…（以上為摘要；其餘從略）"
+    keep = max_chars - len(suffix)
+    if keep < 1:
+        return text[:max_chars]
+    return text[:keep].rstrip() + suffix
 
 
 def build_recipe_flex_message(
@@ -85,17 +104,23 @@ async def background_generate_recipe(
         tracer = None
 
     async def _run_flow() -> TextMessage | FlexMessage:
+        t0 = time.perf_counter()
         full_history, filtered_history, active_cuisine, prefs = await _fetch_ai_context(
             user_id,
             tenant_id=tenant_id,
         )
+        t_fetch = time.perf_counter()
         effective_system = _build_system_prompt(prefs, active_cuisine or "不拘")
         research_report = await perform_recipe_deep_research(user_message)
+        t_research = time.perf_counter()
         if research_report:
+            research_for_prompt = _truncate_research_report_for_system(
+                research_report, DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM
+            )
             effective_system = (
                 f"{effective_system}\n"
                 "【研發主廚的深度研究報告】：請嚴格依據以下數據與比例來設計此份食譜：\n"
-                f"{research_report}"
+                f"{research_for_prompt}"
             )
 
         history = filtered_history
@@ -123,6 +148,15 @@ async def background_generate_recipe(
         ]
 
         ai_content, ai_data = await call_ai_with_retry(api_messages, user_id=user_id)
+        t_ai = time.perf_counter()
+        logger.info(
+            "recipe_flow_timing_sec fetch_ctx=%.3f deep_research=%.3f ai_call=%.3f total=%.3f deep_nonempty=%s",
+            t_fetch - t0,
+            t_research - t_fetch,
+            t_ai - t_research,
+            t_ai - t0,
+            bool((research_report or "").strip()),
+        )
         to_save = full_history + [
             {"role": "user", "content": user_message, "timestamp": now_iso},
             {"role": "assistant", "content": ai_content, "timestamp": now_iso},
