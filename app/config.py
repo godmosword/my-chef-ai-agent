@@ -138,6 +138,7 @@ IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "3600")))
 IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip().lower()
 REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
 IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
+YOUTUBE_CACHE_TTL_SEC = max(0, int(os.getenv("YOUTUBE_CACHE_TTL_SEC", "86400")))
 IMAGE_PUBLIC_BASE_URL = (os.getenv("IMAGE_PUBLIC_BASE_URL") or "").strip().rstrip("/")
 if IMAGE_PUBLIC_BASE_URL and not IMAGE_PUBLIC_BASE_URL.startswith("https://"):
     logger.warning("IMAGE_PUBLIC_BASE_URL 必須為 https，已忽略目前設定")
@@ -175,8 +176,12 @@ OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "my-chef-ai-agent")
 OTEL_EXPORTER_OTLP_ENDPOINT = (os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip()
 OTEL_SAMPLING_RATIO = max(0.0, min(1.0, float(os.getenv("OTEL_SAMPLING_RATIO", "1.0"))))
 # AI chat.completions 遇 429／逾時／連線錯誤時的額外重試次數（不含第一次請求）
-AI_TRANSPORT_MAX_RETRIES = max(0, int(os.getenv("AI_TRANSPORT_MAX_RETRIES", "3")))
+AI_TRANSPORT_MAX_RETRIES = max(0, int(os.getenv("AI_TRANSPORT_MAX_RETRIES", "1")))
 AI_TRANSPORT_BASE_DELAY_SEC = max(0.05, float(os.getenv("AI_TRANSPORT_BASE_DELAY_SEC", "0.5")))
+AI_CHAT_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_CHAT_TIMEOUT_SEC", "18")))
+AI_IMAGE_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_IMAGE_TIMEOUT_SEC", "25")))
+AI_VISION_TIMEOUT_SEC = max(5.0, float(os.getenv("AI_VISION_TIMEOUT_SEC", "20")))
+YOUTUBE_SEARCH_TIMEOUT_SEC = max(1.0, float(os.getenv("YOUTUBE_SEARCH_TIMEOUT_SEC", "3")))
 # 每 IP 每分鐘請求上限；0 關閉該類型限制
 RATE_LIMIT_CALLBACK_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_CALLBACK_PER_MINUTE", "120")))
 RATE_LIMIT_PUBLIC_PER_MINUTE = max(0, int(os.getenv("RATE_LIMIT_PUBLIC_PER_MINUTE", "90")))
@@ -204,19 +209,19 @@ MAX_COMPLETION_TOKENS = max(512, int(os.getenv("MAX_COMPLETION_TOKENS", "1024"))
 DEBUG_MODE           = os.getenv("DEBUG", "").lower() in ("1", "true", "yes")
 MAX_WEBHOOK_BODY     = 1_000_000
 LINE_TEXT_MAX        = 5000
-QUEUE_WORKER_COUNT   = int(os.getenv("QUEUE_WORKER_COUNT", "2"))
+QUEUE_WORKER_COUNT   = int(os.getenv("QUEUE_WORKER_COUNT", "4"))
 QUEUE_MAX_SIZE       = int(os.getenv("QUEUE_MAX_SIZE", "1000"))
 QUEUE_DEDUPE_TTL_SEC = int(os.getenv("QUEUE_DEDUPE_TTL_SEC", "900"))
 REQUIRE_ATOMIC_USAGE = os.getenv("REQUIRE_ATOMIC_USAGE", "0").lower() in ("1", "true", "yes")
 RECIPE_STEPS_PREVIEW_COUNT = max(1, int(os.getenv("RECIPE_STEPS_PREVIEW_COUNT", "3")))
 RECIPE_STEPS_MAX_COUNT = max(1, int(os.getenv("RECIPE_STEPS_MAX_COUNT", "6")))
 RECIPE_STEP_MAX_CHARS = max(10, int(os.getenv("RECIPE_STEP_MAX_CHARS", "24")))
+ENABLE_DEEP_RESEARCH = os.getenv("ENABLE_DEEP_RESEARCH", "0").lower() in ("1", "true", "yes")
 
 RESET_KEYWORDS = {"清除記憶", "重新開始", "洗腦", "你好", "嗨"}
 CUISINE_SELECTOR_KEYWORDS = {"換菜單"}
 RANDOM_SIDEDISH_CMD = "🍳 隨機配菜"
 VIEW_SHOPPING_CMD   = "🛒 檢視清單"
-VIEW_FAVORITES_CMD  = "我的最愛"
 FAVORITES_KEYWORDS  = {"我的最愛", "收藏", "最愛食譜", "我的收藏"}
 
 RANDOM_STYLES = [
@@ -232,7 +237,7 @@ SCENARIO_MOOD   = (["心情", "壓力", "開心", "難過"], "心情點餐：副
 SYSTEM_PROMPT = (
     "你是米其林三星廚房(行政主廚/副主廚/食材總管)。先由三人各一句（每句≤12字），再產出精簡食譜。"
     "僅回傳 JSON，勿 markdown。為避免輸出過長被截斷：kitchen_talk 固定 3 筆；ingredients 最多 6 項；"
-    "steps 最多 6 步（每步一句）；shopping_list 最多 8 字串；字數盡量精簡。\n"
+    "shopping_list 最多 8 字串；字數盡量精簡。\n"
     '{"kitchen_talk":['
     '{"role":"行政主廚","content":"≤12字"},'
     '{"role":"副主廚","content":"≤12字"},'

@@ -205,6 +205,33 @@ class TestGenerateFlexMessage:
             if isinstance(c, dict)
         )
 
+    def test_dark_michelin_theme_uses_dark_surfaces_and_orange_cta(self):
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "recipe_name_for_postback": "番茄炒蛋", "recipe_lookup_ts": "2026-04-22T00:00:00+00:00"}
+        )
+        assert result["body"]["backgroundColor"] == flex_theme.SURFACE_CARD
+        assert result["footer"]["backgroundColor"] == flex_theme.PRIMARY_BG
+        assert result["body"]["contents"][1]["backgroundColor"] == flex_theme.ACCENT_TOP_STRIP
+        cost_panel = result["body"]["contents"][5]
+        assert cost_panel["backgroundColor"] == flex_theme.PANEL_COST_OUTER_BG
+        assert cost_panel["contents"][2]["color"] == flex_theme.SEP_COLOR
+        primary_btn = next(
+            c for c in result["footer"]["contents"]
+            if c.get("type") == "box"
+        )["contents"][1]
+        assert primary_btn["style"] == "primary"
+        assert primary_btn["color"] == flex_theme.FOOTER_BTN_FAVORITE
+
+    def test_video_button_uses_michelin_orange(self):
+        photo = "https://placehold.co/800x520/EA580C/FFFFFF?text=demo"
+        video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        result = generate_flex_message(
+            **{**self.SAMPLE_ARGS, "photo_url": photo, "video_url": video},
+        )
+        video_btn = result["footer"]["contents"][0]
+        assert video_btn["style"] == "primary"
+        assert video_btn["color"] == flex_theme.VIDEO_BTN
+
     def test_no_photo_kwarg_shows_text_banner_not_picsum(self):
         result = generate_flex_message(**self.SAMPLE_ARGS)
         assert "hero" not in result
@@ -308,6 +335,12 @@ class TestBuildFallbackRecipeFlex:
         assert "截斷" in joined
         assert "技術摘要" in joined
         assert len(joined) < len(raw) + 500
+
+    def test_fallback_flex_uses_dark_surfaces(self):
+        flex = build_fallback_recipe_flex("一般文字內容")
+        d = flex.contents.dict()
+        assert d["body"]["background_color"] == flex_theme.SURFACE_CARD
+        assert d["footer"]["background_color"] == flex_theme.PRIMARY_BG
 
 
 class TestFlexSafeHttpsUrl:

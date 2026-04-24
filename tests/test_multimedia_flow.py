@@ -347,12 +347,14 @@ async def test_resolve_public_image_url_uses_cdn_base(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_search_youtube_video_returns_none_without_key(monkeypatch):
+    ai_service._youtube_cache.clear()
     monkeypatch.setattr(ai_service, "YOUTUBE_API_KEY", None)
     assert await ai_service.search_youtube_video("番茄炒蛋") is None
 
 
 @pytest.mark.asyncio
 async def test_search_youtube_video_returns_first_result(monkeypatch):
+    ai_service._youtube_cache.clear()
     monkeypatch.setattr(ai_service, "YOUTUBE_API_KEY", "yt-key")
 
     class _Resp:
@@ -461,7 +463,7 @@ async def test_background_generate_recipe_warns_when_quota_low(monkeypatch):
         )),
     )
     monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
-    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", AsyncMock(return_value=None))
+    monkeypatch.setattr("app.handlers_recipe_flow._prefetch_youtube_video", Mock())
 
     pushed = []
 
@@ -504,8 +506,8 @@ async def test_background_generate_recipe_does_not_auto_generate_image(monkeypat
         )),
     )
     monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
-    video_mock = AsyncMock(return_value=None)
-    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", video_mock)
+    prefetch_mock = Mock()
+    monkeypatch.setattr("app.handlers_recipe_flow._prefetch_youtube_video", prefetch_mock)
 
     pushed = []
 
@@ -523,7 +525,7 @@ async def test_background_generate_recipe_does_not_auto_generate_image(monkeypat
     )
 
     assert len(pushed) == 1
-    video_mock.assert_awaited_once()
+    prefetch_mock.assert_called_once_with("番茄炒蛋")
     generate_mock.assert_not_awaited()
     flex_dict = pushed[0].contents.dict()
     hero = flex_dict.get("hero")
@@ -554,7 +556,7 @@ async def test_background_generate_recipe_injects_deep_research_report(monkeypat
     ))
     monkeypatch.setattr("app.handlers_recipe_flow.call_ai_with_retry", call_mock)
     monkeypatch.setattr("app.handlers_recipe_flow.save_user_memory", AsyncMock())
-    monkeypatch.setattr("app.handlers_recipe_flow.search_youtube_video", AsyncMock(return_value=None))
+    monkeypatch.setattr("app.handlers_recipe_flow._prefetch_youtube_video", Mock())
 
     pushed = []
 
@@ -703,10 +705,9 @@ async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch)
     handlers.generate_recipe_image.assert_not_awaited()
     render_recipe = render_mock.call_args.args[0]
     assert render_recipe["photo_url"] == "https://app.example.com/cached-hero.png"
-    pushed_messages = handlers._push_line_message.await_args.args[1]
-    assert len(pushed_messages) == 2
-    assert pushed_messages[0].original_content_url == "https://app.example.com/poster.png"
-    assert "https://app.example.com/poster.png" in pushed_messages[1].text
+    # 只推送圖片，不附帶 URL 文字訊息
+    pushed_msg = handlers._push_line_message.await_args.args[1]
+    assert pushed_msg.original_content_url == "https://app.example.com/poster.png"
 
 
 @pytest.mark.asyncio
@@ -794,6 +795,35 @@ async def test_postback_generate_recipe_card_failure_is_safe(monkeypatch):
     )
     await handlers.process_postback_reply(event)
     assert "食譜圖卡生成失敗" in handlers._push_line_message.await_args.args[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_poster_skips_uncached_hero_generation(monkeypatch):
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "steps": ["切番茄", "炒蛋"],
+    }
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "get_cached_recipe_image", AsyncMock(return_value=None))
+    generate_mock = AsyncMock(return_value="https://app.example.com/should-not-be-used.png")
+    monkeypatch.setattr(handlers, "generate_recipe_image", generate_mock)
+    render_mock = Mock(return_value=b"\x89PNG\r\n\x1a\nposter")
+    monkeypatch.setattr(handlers, "render_recipe_poster_png", render_mock)
+    monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value="https://app.example.com/poster.png"))
+
+    event = WebhookPostbackEvent(
+        reply_token="r8",
+        user_id="U123",
+        data="action=generate_recipe_poster&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+
+    generate_mock.assert_not_awaited()
+    assert "photo_url" not in render_mock.call_args.args[0]
 
 
 @pytest.mark.asyncio

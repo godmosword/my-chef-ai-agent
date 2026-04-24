@@ -38,7 +38,6 @@ from app.db import (
     get_user_memory,
     is_database_configured,
     save_favorite_recipe,
-    save_user_memory,
     update_user_cuisine_context,
 )
 from app.helpers import (
@@ -530,8 +529,6 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         )
         try:
             photo_url = await get_cached_recipe_image(recipe_name)
-            if not photo_url:
-                photo_url = await generate_recipe_image(recipe_name)
             poster_recipe = dict(recipe)
             if photo_url:
                 poster_recipe["photo_url"] = photo_url
@@ -542,10 +539,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
                 raise RuntimeError("PUBLIC_APP_BASE_URL missing")
             await _push_line_message(
                 event.user_id,
-                [
-                    ImageMessage(original_content_url=poster_url, preview_image_url=poster_url),
-                    TextMessage(text=f"🖼 食譜海報已完成：{poster_url}"),
-                ],
+                ImageMessage(original_content_url=poster_url, preview_image_url=poster_url),
             )
         except Exception as exc:
             logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)

@@ -6,10 +6,10 @@ import os
 import time
 from typing import Any
 
-from app.config import logger
+from app.config import ENABLE_DEEP_RESEARCH, logger
 
 DEEP_RESEARCH_AGENT = "deep-research-preview-04-2026"
-DEFAULT_TIMEOUT_SEC = 55.0
+DEFAULT_TIMEOUT_SEC = 10.0
 POLL_INTERVAL_SEC = 3.0
 
 
@@ -27,7 +27,7 @@ def _deep_research_timeout_sec() -> float:
     if not raw:
         return DEFAULT_TIMEOUT_SEC
     try:
-        return min(60.0, max(45.0, float(raw)))
+        return min(20.0, max(5.0, float(raw)))
     except ValueError:
         logger.warning("Invalid DEEP_RESEARCH_TIMEOUT_SEC=%r; using default %.1fs", raw, DEFAULT_TIMEOUT_SEC)
         return DEFAULT_TIMEOUT_SEC
@@ -35,20 +35,13 @@ def _deep_research_timeout_sec() -> float:
 
 def _build_research_prompt(recipe_intent: str) -> str:
     return (
-        "你是米其林研發主廚，正在為 LINE 食譜助理做深度研究。"
-        "請先在內部制定研究計畫，再用 Google Deep Research 搜尋並整理一份濃縮報告。"
-        "研究主題是："
-        f"{recipe_intent}\n\n"
-        "必須優先覆蓋以下三個面向：\n"
-        "1. 權威食譜的黃金比例，特別是香料、麵糊、醬汁的具體公克數、湯匙數與比例。\n"
-        "2. 烹飪化學與食安重點，例如梅納反應適合溫度、熟成/靜置時間、避免失敗的關鍵物理條件。\n"
-        "3. 台灣當地市場近期食材時價與季節性，指出哪些原料正當季、哪些價格偏高。\n\n"
-        "輸出要求：\n"
-        "- 以繁體中文回答。\n"
-        "- 請濃縮成一份可直接餵給食譜生成模型的研究摘要。\n"
-        "- 先給 3 到 5 點重點結論，再給一個建議配方比例段落。\n"
-        "- 若不同來源有差異，請標註較穩妥的折衷做法。\n"
-        "- 盡量提供可執行的數值與條件，不要空泛描述。"
+        "你是米其林研發主廚，為 LINE 食譜助理做深度研究。"
+        f"主題：{recipe_intent}\n\n"
+        "請優先覆蓋：\n"
+        "1. 黃金比例：香料、醬汁的具體公克數與比例。\n"
+        "2. 烹飪化學與食安：梅納溫度、熟成時間、關鍵物理條件。\n"
+        "3. 台灣當地市場近期食材時價與季節性：當季食材與偏高品項。\n\n"
+        "輸出（繁體中文）：3-5 點結論 + 建議配方比例；來源有差異時標折衷做法；提供可執行數值。"
     )
 
 
@@ -106,6 +99,9 @@ async def perform_recipe_deep_research(recipe_intent: str) -> str:
     """Return a condensed grounding report or an empty string on failure."""
     recipe_intent = (recipe_intent or "").strip()
     if not recipe_intent:
+        return ""
+    if not ENABLE_DEEP_RESEARCH:
+        logger.info("Skip deep research: ENABLE_DEEP_RESEARCH is disabled")
         return ""
 
     api_key = _deep_research_api_key()

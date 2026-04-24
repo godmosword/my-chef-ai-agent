@@ -81,21 +81,19 @@ async def _process_job(job: QueueJob) -> None:
         except Exception:
             tracer = None
 
-        if tracer:
-            with tracer.start_as_current_span(f"queue.process_{job.job_type}"):
-                if job.job_type == "text":
-                    await process_ai_reply(job.event)  # type: ignore[arg-type]
-                elif job.job_type == "image":
-                    await process_image_reply(job.event)  # type: ignore[arg-type]
-                else:
-                    await process_postback_reply(job.event)  # type: ignore[arg-type]
-        else:
+        async def _dispatch() -> None:
             if job.job_type == "text":
                 await process_ai_reply(job.event)  # type: ignore[arg-type]
             elif job.job_type == "image":
                 await process_image_reply(job.event)  # type: ignore[arg-type]
             else:
                 await process_postback_reply(job.event)  # type: ignore[arg-type]
+
+        if tracer:
+            with tracer.start_as_current_span(f"queue.process_{job.job_type}"):
+                await _dispatch()
+        else:
+            await _dispatch()
     finally:
         if trace_token is not None:
             try:

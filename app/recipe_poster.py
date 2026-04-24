@@ -13,17 +13,17 @@ from app.helpers import _flex_safe_https_url, _parse_to_list, _safe_str
 
 W = 1200
 H = 1800
-BG = (26, 28, 30)
-CARD = (42, 45, 48)
-CARD_BORDER = (112, 106, 95)
-TITLE = (247, 243, 235)
-SUBTITLE = (112, 106, 95)
-BODY = (247, 243, 235)
-MUTED = (112, 106, 95)
-ACCENT = (234, 88, 12)
-ACCENT_LIGHT = (42, 45, 48)
-STEP_BADGE = (234, 88, 12)
-STEP_BADGE_TEXT = (255, 255, 255)
+BG = (249, 247, 244)          # 溫暖米白底色
+CARD = (255, 255, 255)         # 白色卡片
+CARD_BORDER = (234, 228, 220)  # 米色邊框
+TITLE = (28, 25, 23)           # 深棕黑標題
+SUBTITLE = (156, 143, 132)     # 暖灰輔助
+BODY = (61, 53, 48)            # 溫暖深棕內文
+MUTED = (156, 143, 132)        # 暖灰
+ACCENT = (200, 146, 42)        # 琥珀金
+ACCENT_LIGHT = (245, 239, 230) # 淡金底色
+STEP_BADGE = (42, 96, 73)      # 深森綠徽章
+STEP_BADGE_TEXT = (245, 240, 230)  # 米白文字
 
 FONT_PROBE = "米其林職人大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
 FONT_CANDIDATES: list[tuple[str, int]] = []
@@ -229,6 +229,12 @@ def _derive_quick_tips(recipe_data: dict) -> list[str]:
     return tips[:4] or ["照步驟快速拌炒，依口味再微調鹹度與火候。"]
 
 
+def _derive_cook_time(steps: list[str]) -> str:
+    n = len(steps)
+    minutes = max(10, min(30, n * 4 + 2))
+    return f"約 {minutes} 分鐘"
+
+
 def _derive_summary(recipe_data: dict) -> tuple[str, str]:
     steps = [str(s).strip() for s in _parse_to_list(recipe_data.get("steps", [])) if str(s).strip()]
     cost = _safe_str(recipe_data.get("estimated_total_cost"), "估算中")
@@ -277,7 +283,7 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
     if has_photo:
         draw.text((760, 74), "成品主圖", font=fonts.body_small, fill=TITLE)
 
-    draw.text((72, 394), "食材清單", font=fonts.section, fill=ACCENT)
+    draw.text((72, 394), "食材清單", font=fonts.section, fill=STEP_BADGE)
     ingredients = _parse_to_list(recipe_data.get("ingredients", []))
     left_x = 78
     right_x = 620
@@ -320,7 +326,7 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=2,
         )
 
-    draw.text((72, 774), "料理步驟", font=fonts.section, fill=ACCENT)
+    draw.text((72, 774), "料理步驟", font=fonts.section, fill=STEP_BADGE)
     steps = [str(s).strip() for s in _parse_to_list(recipe_data.get("steps", [])) if str(s).strip()]
     step_positions = [
         (72, 836), (620, 836),
@@ -344,7 +350,7 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=4,
         )
 
-    draw.text((72, 1434), "小撇步", font=fonts.section, fill=ACCENT)
+    draw.text((72, 1434), "小撇步", font=fonts.section, fill=STEP_BADGE)
     tips = _derive_quick_tips(recipe_data)
     tip_y = 1492
     for tip in tips:
@@ -360,7 +366,7 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
             max_lines=2,
         ) + 10
 
-    draw.text((818, 1434), "摘要", font=fonts.section, fill=ACCENT)
+    draw.text((818, 1434), "摘要", font=fonts.section, fill=STEP_BADGE)
     time_text, cost_text = _derive_summary(recipe_data)
     draw.text((826, 1512), "料理時間", font=fonts.body_small, fill=MUTED)
     draw.text((826, 1556), time_text, font=fonts.section, fill=TITLE)

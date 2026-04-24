@@ -81,6 +81,16 @@ def _build_cuisine_selector() -> FlexMessage:
     bubbles = [
         {
             "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "paddingAll": "lg",
+                "backgroundColor": fx.SURFACE_CARD,
+                "contents": [
+                    {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": fx.CUISINE_BODY_TITLE},
+                    {"type": "text", "text": c["description"], "size": "sm", "color": fx.CUISINE_BODY_DESC, "wrap": True, "margin": "md"},
+                ],
+            },
             "hero": {
                 "type": "box",
                 "layout": "vertical",
@@ -94,11 +104,7 @@ def _build_cuisine_selector() -> FlexMessage:
                     {"type": "text", "text": c["title"], "size": "xl", "weight": "bold", "color": fx.CUISINE_HERO_TITLE, "wrap": True, "align": "center", "margin": "md"},
                 ],
             },
-            "body": {"type": "box", "layout": "vertical", "contents": [
-                {"type": "text", "text": c["title"], "weight": "bold", "size": "xl", "color": fx.CUISINE_BODY_TITLE},
-                {"type": "text", "text": c["description"], "size": "sm", "color": fx.CUISINE_BODY_DESC, "wrap": True, "margin": "md"},
-            ]},
-            "footer": {"type": "box", "layout": "vertical", "contents": [
+            "footer": {"type": "box", "layout": "vertical", "paddingAll": "lg", "backgroundColor": fx.PRIMARY_BG, "contents": [
                 {"type": "button", "style": "primary", "color": fx.CUISINE_FOOTER_BTN, "action": {
                     "type": "postback", "label": "選擇此菜系",
                     "data": f"action=change_cuisine&cuisine={c['cuisine']}", "displayText": c["display_text"],
@@ -117,7 +123,7 @@ CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
 def get_main_menu_flex() -> FlexMessage:
-    """Main menu with core action buttons（石板墨＋天青主題）。"""
+    """Main menu with Dark Michelin action buttons."""
     menu_dict = {
         "type": "bubble",
         "header": {
@@ -285,7 +291,7 @@ def generate_flex_message(
             ],
         },
         "footer": {
-            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "xl", "paddingTop": "none",
+            "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "xl", "paddingTop": "none", "backgroundColor": fx.PRIMARY_BG,
             "contents": [
                 {
                     "type": "box", "layout": "horizontal", "spacing": "md",
@@ -426,6 +432,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "link",
                 "height": "sm",
+                "color": fx.SECONDARY_TEXT,
                 "action": {
                     "type": "uri",
                     "label": "完整免責聲明",
@@ -439,6 +446,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "link",
                 "height": "sm",
+                "color": fx.SECONDARY_TEXT,
                 "action": {
                     "type": "uri",
                     "label": "隱私政策",
@@ -473,7 +481,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
             "type": "bubble",
             "size": "kilo",
             "body": {
-                "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "lg",
+                "type": "box", "layout": "vertical", "spacing": "md", "paddingAll": "lg", "backgroundColor": fx.SURFACE_CARD,
                 "contents": [
                     {"type": "text", "text": _safe_str(theme, "收藏").upper(), "size": "xxs", "color": fx.FAV_THEME_LABEL, "weight": "bold"},
                     {"type": "text", "text": _safe_str(recipe_name, "美味食譜"), "size": "lg", "weight": "bold", "color": fx.FAV_TITLE, "wrap": True},
@@ -485,7 +493,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
                 ],
             },
             "footer": {
-                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "md",
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "md", "backgroundColor": fx.PRIMARY_BG,
                 "contents": [
                     {
                         "type": "button", "style": "primary", "height": "sm", "color": fx.FAV_REDO_BTN,
@@ -497,7 +505,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
                         },
                     },
                     {
-                        "type": "button", "style": "secondary", "height": "sm",
+                        "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
                         "action": {
                             "type": "postback",
                             "label": "🗑️ 刪除收藏",
@@ -548,7 +556,7 @@ def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
     bubble = {
         "type": "bubble",
         "body": {
-            "type": "box", "layout": "vertical", "paddingAll": "xl",
+            "type": "box", "layout": "vertical", "paddingAll": "xl", "backgroundColor": fx.SURFACE_CARD,
             "contents": [
                 {"type": "box", "layout": "vertical", "height": "4px", "backgroundColor": fx.FALLBACK_STRIP, "contents": []},
                 {"type": "text", "text": title, "size": "lg", "weight": "bold", "color": fx.FALLBACK_TITLE, "margin": "lg", "wrap": True},
@@ -557,7 +565,7 @@ def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
             ],
         },
         "footer": {
-            "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "lg",
+            "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "lg", "backgroundColor": fx.PRIMARY_BG,
             "contents": [
                 {"type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
                 {"type": "button", "style": "primary", "height": "sm", "color": fx.FOOTER_BTN_FAVORITE, "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
