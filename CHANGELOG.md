@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-04-23（兩段式食譜圖卡產生器）
+
+- **主圖穩定性修正**：`generate_recipe_image(...)` 新增 image transport retry/backoff（RateLimit/Timeout/Connection）、timeout 預設提升至 60 秒，並改為「僅成功生成的 https URL 才可快取」；fallback 圖不寫快取，避免暫時故障被放大。
+- **主圖 prompt 修正**：移除要求模型渲染繁中菜名的文字生圖指令，改為純成品食物攝影（no readable text / no logo / no watermark），菜名改由 Flex 文字層呈現。
+- **媒體儲存抽象**：新增 `app/media_storage.py`（`memory|gcs`），主圖／海報／食譜圖卡輸出可走 durable GCS；GCS 設定不完整時會警告並優雅回退 memory，不中斷主流程。
+- **兩段式食譜圖卡整合上線**：`action=generate_recipe_card` 已接入 postback，Stage A 產底圖、Stage B 程式疊繁中，成功後 push 圖片網址；失敗時回安全錯誤訊息。
+- **部署文件同步**：更新 `render.yaml`、`.env.example`、README 的 image 相關設定（`IMAGE_PROVIDER` 預設、`AI_IMAGE_*`、`RECIPE_IMAGE_STORAGE_*`、快取 TTL 3600）。
+
 ## 2026-04-23（食譜海報補上主圖）
 
 - **海報會優先帶成品照**：`generate_recipe_poster` 現在會先取既有主圖快取；若尚未有圖，會沿用目前 `IMAGE_PROVIDER` 現場補一張，再把 `photo_url` 傳進 `app/recipe_poster.py`。

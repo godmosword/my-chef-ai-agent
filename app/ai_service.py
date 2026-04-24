@@ -15,6 +15,9 @@ from openai import APIConnectionError, APITimeoutError, RateLimitError
 from openai import AsyncOpenAI
 
 from app.config import (
+    AI_IMAGE_BASE_DELAY_SEC,
+    AI_IMAGE_MAX_RETRIES,
+    AI_IMAGE_TIMEOUT_SEC,
     AI_MAX_RETRIES,
     AI_RETRY_EXTRA_PROMPT,
     AI_TRUNCATION_RECOVERY_PROMPT,
@@ -48,7 +51,7 @@ from app.helpers import (
     _parse_ai_json,
 )
 from app.observability import incr
-from app.recipe_hero_media import register_recipe_hero_png
+from app.media_storage import store_recipe_png
 
 
 async def _chat_completions_create_resilient(*, user_id: str, **kwargs: object):
@@ -262,7 +265,11 @@ async def _generate_recipe_image_with_vertex(recipe_name: str) -> str | None:
         b = bytes(raw)
         if not b:
             return None
-        return await register_recipe_hero_png(b)
+        stored = await store_recipe_png(payload=b, purpose="hero")
+        if stored:
+            incr(f"media.storage.backend.{stored.backend}_total")
+            return stored.url
+        return None
     if isinstance(raw, str):
         if raw.startswith("https://"):
             return raw
@@ -303,6 +310,57 @@ def _decode_generated_image_bytes(image_data: object) -> bytes | None:
         return None
 
 
+def _is_cacheable_generated_url(recipe_name: str, url: str | None) -> bool:
+    if not isinstance(url, str) or not url.startswith("https://"):
+        return False
+    fallback = _recipe_placeholder_image_url(recipe_name)
+    if fallback and url == fallback:
+        return False
+    return True
+
+
+def _build_openai_recipe_hero_prompt(recipe_name: str) -> str:
+    return (
+        "Professional food photography of a finished Taiwanese dish. "
+        "Tight composition, realistic texture, warm natural lighting, premium cookbook style, "
+        "minimal background clutter, no people. "
+        f"Dish: {recipe_name}. "
+        "No readable text, no logo, no watermark, no caption, no typography overlays."
+    )
+
+
+async def _generate_openai_image_resilient(*, image_client: AsyncOpenAI, prompt: str):
+    max_tries = 1 + max(0, AI_IMAGE_MAX_RETRIES)
+    delay = AI_IMAGE_BASE_DELAY_SEC
+    last_exc: BaseException | None = None
+    for attempt in range(max_tries):
+        try:
+            return await image_client.images.generate(
+                model="gpt-image-2-2026-04-21",
+                prompt=prompt,
+                size="1024x1024",
+                quality="low",
+                timeout=AI_IMAGE_TIMEOUT_SEC,
+            )
+        except RateLimitError as exc:
+            last_exc = exc
+            incr("ai.images.errors.rate_limit_total")
+        except APITimeoutError as exc:
+            last_exc = exc
+            incr("ai.images.errors.timeout_total")
+        except APIConnectionError as exc:
+            last_exc = exc
+            incr("ai.images.errors.connection_total")
+        if attempt + 1 >= max_tries:
+            break
+        incr("ai.images.retry_total")
+        jitter = random.uniform(0.0, 0.25)
+        await asyncio.sleep(min(8.0, delay) + jitter)
+        delay = min(8.0, delay * 2)
+    assert last_exc is not None
+    raise last_exc
+
+
 async def generate_recipe_image(recipe_name: str) -> str:
     """Generate a recipe image URL via provider selector, with safe fallback."""
     if IMAGE_PROVIDER == "placeholder":
@@ -311,7 +369,7 @@ async def generate_recipe_image(recipe_name: str) -> str:
 
     cache_key = _recipe_image_cache_key(recipe_name)
     cached = await _recipe_image_cache_get(cache_key)
-    if cached is not None:
+    if _is_cacheable_generated_url(recipe_name, cached):
         return cached
 
     if IMAGE_PROVIDER == "vertex_imagen":
@@ -325,9 +383,8 @@ async def generate_recipe_image(recipe_name: str) -> str:
         except Exception as exc:
             logger.warning("Vertex image generation failed for recipe %s: %s", recipe_name, exc)
             incr("ai.images.vertex.errors_total")
-        out = _recipe_placeholder_image_url(recipe_name)
-        await _recipe_image_cache_set(cache_key, out)
-        return out
+        incr("ai.images.fallback_total")
+        return _recipe_placeholder_image_url(recipe_name)
 
     if IMAGE_PROVIDER != "openai_compatible":
         logger.warning("Unknown IMAGE_PROVIDER=%s; fallback to placeholder", IMAGE_PROVIDER)
@@ -338,45 +395,36 @@ async def generate_recipe_image(recipe_name: str) -> str:
     if image_client is None:
         logger.warning("OpenAI image generation unavailable: OPENAI_API_KEY / IMAGE_OPENAI_API_KEY not configured")
         incr("ai.images.misconfigured_total")
-        out = _recipe_placeholder_image_url(recipe_name)
-        await _recipe_image_cache_set(cache_key, out)
-        return out
+        incr("ai.images.fallback_total")
+        return _recipe_placeholder_image_url(recipe_name)
 
-    prompt = (
-        "Professional food photography, Michelin star plating, dark slate background, "
-        "dramatic top lighting, cinematic depth of field, dish: "
-        f"{recipe_name}. "
-        f"Please beautifully and clearly render the exact text '{recipe_name}' "
-        "in Traditional Chinese on an elegant menu card, small wooden sign, or dark slate next to the dish."
-    )
+    prompt = _build_openai_recipe_hero_prompt(recipe_name)
     try:
-        response = await image_client.images.generate(
-            model="gpt-image-2-2026-04-21",
-            prompt=prompt,
-            size="1024x1024",
-            quality="low",
-            timeout=45.0,
-        )
+        response = await _generate_openai_image_resilient(image_client=image_client, prompt=prompt)
         image_bytes = None
         if getattr(response, "data", None):
             image_bytes = _decode_generated_image_bytes(getattr(response.data[0], "b64_json", None))
         if image_bytes:
-            image_url = await register_recipe_hero_png(image_bytes)
-            if isinstance(image_url, str) and image_url.startswith("https://"):
+            stored = await store_recipe_png(payload=image_bytes, purpose="hero")
+            image_url = stored.url if stored else None
+            if _is_cacheable_generated_url(recipe_name, image_url):
                 incr("ai.images.generated_total")
+                if stored:
+                    incr(f"media.storage.backend.{stored.backend}_total")
                 await _recipe_image_cache_set(cache_key, image_url)
                 return image_url
             logger.warning(
-                "Image generation succeeded for recipe %s but PUBLIC_APP_BASE_URL is missing or not https",
+                "Image generation succeeded for recipe %s but URL publish failed",
                 recipe_name,
             )
             incr("ai.images.media_url_unavailable_total")
+        else:
+            incr("ai.images.invalid_payload_total")
     except Exception as exc:
         logger.warning("Image generation failed for recipe %s: %s", recipe_name, exc)
         incr("ai.images.errors_total")
-    out = _recipe_placeholder_image_url(recipe_name)
-    await _recipe_image_cache_set(cache_key, out)
-    return out
+    incr("ai.images.fallback_total")
+    return _recipe_placeholder_image_url(recipe_name)
 
 
 async def search_youtube_video(recipe_name: str) -> str | None:
