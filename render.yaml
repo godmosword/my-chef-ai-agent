@@ -21,3 +21,21 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: IMAGE_PROVIDER
+        sync: false
+      - key: IMAGE_OPENAI_API_KEY
+        sync: false
+      - key: PUBLIC_APP_BASE_URL
+        sync: false
+      - key: AI_IMAGE_TIMEOUT_SEC
+        sync: false
+      - key: IMAGE_CACHE_TTL_SEC
+        sync: false
+      - key: RECIPE_IMAGE_STORAGE_BACKEND
+        sync: false
+      - key: RECIPE_IMAGE_GCS_BUCKET
+        sync: false
+      - key: RECIPE_IMAGE_GCS_PREFIX
+        sync: false
+      - key: RECIPE_IMAGE_GCS_SIGNED_URL_TTL_SEC
+        sync: false

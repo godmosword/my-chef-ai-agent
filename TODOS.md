@@ -10,12 +10,20 @@
 
 | 時間 | 內容 |
 |------|------|
-| 2026-04-23 | **程式碼清理與 token 精簡**：移除殭屍函式與重複邏輯；`job_queue` 合併 dispatch；`SYSTEM_PROMPT` 與 Deep Research／vision prompt 去冗餘。 |
-| 2026-04-23 | **溫暖明亮主題全線**：`flex_theme`、Pillow 海報、HTML 海報統一溫暖米白／琥珀金／深森綠；換菜單等 Flex 需符合 LINE 之 HEX 色（曾修正 `rgba` 導致無回應）。 |
-| 2026-04-23 | **Render 產圖可部署**：`render.yaml` 的 `buildCommand` 含 `pip`、**`playwright install --with-deps chromium`** 與 **`apt-get install fonts-noto-cjk`**；與本機 `Dockerfile` 路徑分離問題已釐清。 |
-| 2026-04-23 | **食譜海報**：`recipe_poster_html.py` 以 Playwright 截圖；本機 CJK 以 `@font-face` + 系統字型，避免純依賴 Google Fonts 於 headless 環境失敗。 |
-| 2026-04-23 | **低延遲與佇列**：Deep Research 預設關、短 timeout；YouTube 背景快取；佇列 worker 預設 4；全量測試 **122 passed**。 |
-| 更早 | 兩段式圖卡、Deep Research Grounding、OpenAI 主圖、多租戶 Postgres、配額與限流等——詳見 `CHANGELOG.md` 舊條。 |
+| 2026-04-24 | 主圖流程穩定化：fallback 不快取、圖片重試與 timeout 提升、新增 media_storage（memory/gcs）與 recipe card postback 整合。 |
+| 2026-04-23 | 新增兩段式食譜圖卡產生器（Stage A: gpt-image-2 視覺底圖；Stage B: 程式疊繁中），並補上 sample recipe、範例 runner 與單元測試。 |
+| 2026-04-22 | Dark Michelin UI 重構完成：集中更新 `flex_theme` token，LINE Flex 與食譜海報統一為深墨背景、石板卡片、暖白文字與 Michelin 橘 CTA，並補上代表性視覺測試。 |
+| 2026-04-22 | 修正主圖與海報回傳：GPT-Image-2 改走獨立 OpenAI image client，不再受 Gemini 文字 client 牽制；缺少 `PUBLIC_APP_BASE_URL` 時改為明確提示管理員設定。 |
+| 2026-04-22 | 食譜海報字型 fallback 已補強：新增 Linux 常見 CJK 字型候選，找不到字型時回退 Pillow 內建字型，避免 CI／容器環境因缺字型而失敗。 |
+| 2026-04-23 | 食譜海報已補上主圖：postback 會優先取快取或補生成品照，再嵌入海報；若主圖下載失敗則自動退回純文字版，README／CHANGELOG／測試已同步。 |
+| 2026-04-22 | 非 Gemini API 路徑已由 OpenRouter 改為 OpenAI，`OPENROUTER_API_KEY` 改為 `OPENAI_API_KEY`，並同步更新 `render.yaml`、`.env.example`、README／CHANGELOG。 |
+| 2026-04-22 | Deep Research Grounding 完成：背景食譜生成可先透過 Google Interactions API 執行研究式預處理，再把濃縮報告注入 system prompt；timeout / 錯誤時自動 fallback，README／CHANGELOG／測試已同步。 |
+| 2026-04-22 | 食譜資訊圖海報 v1 完成：新增 recipe card「生成食譜海報」按鈕、Pillow 海報模板渲染、既有短期 PNG 媒體管線重用；README／CHANGELOG／測試已同步。 |
+| 2026-04-22 | 成本改善第一階段完成：recipe card 改為按需「生成主圖」、圖片快取預設拉高至 86400 秒、文字輸出與 JSON retry 預設下修；README／CHANGELOG／測試已同步。 |
+| 2026-04-14 | 開源前整理：`MAX_COMPLETION_TOKENS` 預設 2048、`MAX_HISTORY_TURNS` 預設 2 與截斷提示縮短；`.gitignore` 擴充；刪 `TODO.md`；README／CHANGELOG 同步。 |
+| 2026-04-14 | 開源準備：`LICENSE`、`docs/THIRD_PARTY_LICENSES.md`（腳本產生）、`docs/OPEN_SOURCE_CHECKLIST.md`；`/metrics` 未設 `METRICS_TOKEN` 回 503；README／AGENTS／CONTRIBUTING 測試數與環境變數說明已同步。 |
+| 2026-04-22 | `openai_compatible` 食譜主圖已升級至 GPT-Image-2，並改為解析 `b64_json` 後掛本站公開 hero URL；README／CHANGELOG／測試已同步。 |
+| 2026-04-13 | 圖文選單：`richmenu.jpg` 換版、`docs/preview_richmenu.html` 熱區預覽、可選 `scripts/render_richmenu_michelin.py`；README／CHANGELOG 已同步。LINE 端仍須自行執行 `python3 setup_richmenu.py`。 |
 
 ---
 
@@ -48,9 +56,13 @@
 
 ### 低優先
 
-- [ ] **README 內大段手動 SQL**：以 migration／`init_db.py` 為單一來源，避免雙份敘述。
-- [ ] **兩段式圖卡主題模板**：`recipe_card_generator.py` 增加 warm / minimal / premium 等 preset 共用同一 recipe schema。
-- [ ] **Deep Research 啟用策略**：若再上線，建議只對高價值查詢啟用或加 memoization，避免延遲與成本回彈。
+- [ ] **README 內大段手動 SQL**：與 `supabase/migrations` 已一致時，改為連結 migration／`init_db.py`，避免雙份維護。
+- [ ] **Supabase CLI**：團隊若固定用 CLI，補 `config.toml` 範本與 CI migration 驗證。
+- [ ] **GPT-Image-2 prompt 微調**：若實際上線後繁中文字渲染仍偶發變形，針對菜名長度、字體風格與擺放位置做 A/B prompt 調整。
+- [ ] **圖片配額策略**：若按需出圖後成本仍偏高，再評估將「生成主圖」綁定付費方案或每日圖片額度，而非所有方案無上限開放。
+- [ ] **海報第二版**：若要更接近範例教學圖，可再評估加入單張成品圖、調味比例區塊、步驟縮圖或多模板版型。
+- [ ] **兩段式食譜圖卡主題模板**：在 `app/recipe_card_generator.py` 增加 warm/minimal/premium/night-market 等可切換視覺 preset，並讓不同模板共用同一份 recipe schema。
+- [ ] **Deep Research 成本與快取策略**：若 research grounding 上線後延遲或成本偏高，評估只對高價值需求啟用、加入 memoization，或將市場時價研究獨立成較短 TTL 快取。
 
 ---
 

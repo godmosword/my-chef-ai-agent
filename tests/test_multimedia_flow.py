@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
+import httpx
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 
 os.environ.setdefault("LINE_CHANNEL_ACCESS_TOKEN", "test_token")
 os.environ.setdefault("LINE_CHANNEL_SECRET", "test_secret")
@@ -17,6 +19,20 @@ from app.clients import app  # noqa: E402
 from app.billing import QuotaDecision  # noqa: E402
 from app.models import WebhookMessageEvent  # noqa: E402
 from app.models import WebhookPostbackEvent  # noqa: E402
+
+
+def _make_openai_exc(exc_type):
+    if exc_type is RateLimitError:
+        req = httpx.Request("POST", "https://api.openai.com/v1/images")
+        resp = httpx.Response(429, request=req)
+        return RateLimitError("rate limit", response=resp, body={})
+    if exc_type is APITimeoutError:
+        req = httpx.Request("POST", "https://api.openai.com/v1/images")
+        return APITimeoutError(request=req)
+    if exc_type is APIConnectionError:
+        req = httpx.Request("POST", "https://api.openai.com/v1/images")
+        return APIConnectionError(message="conn", request=req)
+    raise RuntimeError("unsupported")
 
 
 @pytest.mark.asyncio
@@ -31,6 +47,7 @@ async def test_generate_recipe_image_returns_placeholder_on_failure(monkeypatch)
     url = await ai_service.generate_recipe_image("番茄炒蛋")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
     assert url.startswith("https://")
+    assert await ai_service.get_cached_recipe_image("番茄炒蛋") is None
 
 
 @pytest.mark.asyncio
@@ -93,7 +110,9 @@ async def test_generate_recipe_image_uses_gpt_image_2_low_quality_and_prompt(mon
     assert kwargs["size"] == "1024x1024"
     assert kwargs["timeout"] == ai_service.AI_IMAGE_TIMEOUT_SEC
     assert "宮保雞丁" in kwargs["prompt"]
-    assert "Traditional Chinese" in kwargs["prompt"]
+    assert "Traditional Chinese" not in kwargs["prompt"]
+    assert "No readable text" in kwargs["prompt"]
+    assert "no logo" in kwargs["prompt"].lower()
     recipe_hero_media.clear_recipe_hero_media_for_tests()
 
 
@@ -109,6 +128,39 @@ async def test_generate_recipe_image_falls_back_when_b64_json_missing(monkeypatc
 
     url = await ai_service.generate_recipe_image("蚵仔煎")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert await ai_service.get_cached_recipe_image("蚵仔煎") is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exc_type", [RateLimitError, APITimeoutError, APIConnectionError])
+async def test_generate_recipe_image_retries_transport_errors(monkeypatch, exc_type):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(ai_service, "AI_IMAGE_MAX_RETRIES", 2)
+    response_ok = SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(b"\x89PNG\r\n\x1a\nok").decode("ascii"))])
+    generate = AsyncMock(side_effect=[_make_openai_exc(exc_type), _make_openai_exc(exc_type), response_ok])
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=generate)))
+    monkeypatch.setattr(ai_service, "store_recipe_png", AsyncMock(return_value=SimpleNamespace(url="https://img.example.com/retry.png", backend="memory")))
+
+    out = await ai_service.generate_recipe_image("蔥爆牛肉")
+    assert out == "https://img.example.com/retry.png"
+    assert generate.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_fallback_after_retry_exhaustion(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(ai_service, "AI_IMAGE_MAX_RETRIES", 2)
+    generate = AsyncMock(side_effect=_make_openai_exc(APITimeoutError))
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=generate)))
+
+    out = await ai_service.generate_recipe_image("蔥爆牛肉")
+    assert out == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert generate.await_count == 3
+    assert await ai_service.get_cached_recipe_image("蔥爆牛肉") is None
 
 
 @pytest.mark.asyncio
@@ -125,7 +177,7 @@ async def test_generate_recipe_image_falls_back_when_media_registration_fails(mo
         "_get_recipe_image_client",
         lambda: SimpleNamespace(images=SimpleNamespace(generate=AsyncMock(return_value=response))),
     )
-    monkeypatch.setattr(ai_service, "register_recipe_hero_png", AsyncMock(side_effect=RuntimeError("media down")))
+    monkeypatch.setattr(ai_service, "store_recipe_png", AsyncMock(side_effect=RuntimeError("media down")))
 
     url = await ai_service.generate_recipe_image("蔥爆牛肉")
     assert url == config.RECIPE_FALLBACK_HERO_IMAGE_URL
@@ -184,6 +236,23 @@ async def test_generate_recipe_image_vertex_second_call_uses_cache(monkeypatch):
     u2 = await ai_service.generate_recipe_image(name)
     assert u1 == u2 == "https://storage.googleapis.com/demo-bucket/food.png"
     vertex_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_image_transient_failure_does_not_poison_cache(monkeypatch):
+    ai_service._recipe_image_url_cache.clear()
+    monkeypatch.setattr(ai_service, "IMAGE_PROVIDER", "openai_compatible")
+    monkeypatch.setattr(ai_service, "IMAGE_OPENAI_API_KEY", "sk-test")
+    response_ok = SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(b"\x89PNG\r\n\x1a\nok").decode("ascii"))])
+    generate = AsyncMock(side_effect=[RuntimeError("first fail"), response_ok])
+    monkeypatch.setattr(ai_service, "_get_recipe_image_client", lambda: SimpleNamespace(images=SimpleNamespace(generate=generate)))
+    monkeypatch.setattr(ai_service, "store_recipe_png", AsyncMock(return_value=SimpleNamespace(url="https://img.example.com/hero.png", backend="memory")))
+
+    first = await ai_service.generate_recipe_image("鳳梨蝦球")
+    second = await ai_service.generate_recipe_image("鳳梨蝦球")
+    assert first == config.RECIPE_FALLBACK_HERO_IMAGE_URL
+    assert second == "https://img.example.com/hero.png"
+    assert generate.await_count == 2
 
 
 @pytest.mark.asyncio
@@ -621,7 +690,7 @@ async def test_postback_generate_recipe_poster_pushes_image_and_url(monkeypatch)
     monkeypatch.setattr(handlers, "generate_recipe_image", AsyncMock())
     render_mock = Mock(return_value=b"\x89PNG\r\n\x1a\nposter")
     monkeypatch.setattr(handlers, "render_recipe_poster_png", render_mock)
-    monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value="https://app.example.com/poster.png"))
+    monkeypatch.setattr(handlers, "store_recipe_png", AsyncMock(return_value=SimpleNamespace(url="https://app.example.com/poster.png", backend="memory")))
 
     event = WebhookPostbackEvent(
         reply_token="r5",
@@ -675,7 +744,7 @@ async def test_postback_generate_recipe_poster_reports_missing_public_base_url(m
     monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
     monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
     monkeypatch.setattr(handlers, "render_recipe_poster_png", lambda _recipe: b"\x89PNG\r\n\x1a\nposter")
-    monkeypatch.setattr(handlers, "register_recipe_hero_png", AsyncMock(return_value=None))
+    monkeypatch.setattr(handlers, "store_recipe_png", AsyncMock(return_value=None))
 
     event = WebhookPostbackEvent(
         reply_token="r7",
@@ -686,7 +755,46 @@ async def test_postback_generate_recipe_poster_reports_missing_public_base_url(m
     await handlers.process_postback_reply(event)
 
     handlers._push_line_message.assert_awaited_once()
-    assert "PUBLIC_APP_BASE_URL" in handlers._push_line_message.await_args.args[1].text
+    assert "食譜海報生成失敗" in handlers._push_line_message.await_args.args[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_card_pushes_image_and_url(monkeypatch):
+    recipe = {"recipe_name": "番茄炒蛋", "theme": "家常", "steps": ["切番茄", "炒蛋"], "ingredients": []}
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "generate_recipe_card_png", AsyncMock(return_value=b"\x89PNG\r\n\x1a\ncard"))
+    monkeypatch.setattr(handlers, "store_recipe_png", AsyncMock(return_value=SimpleNamespace(url="https://app.example.com/recipe-card.png", backend="memory")))
+
+    event = WebhookPostbackEvent(
+        reply_token="r8",
+        user_id="U123",
+        data="action=generate_recipe_card&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+    handlers._push_line_message.assert_awaited_once()
+    pushed_messages = handlers._push_line_message.await_args.args[1]
+    assert pushed_messages[0].original_content_url == "https://app.example.com/recipe-card.png"
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_card_failure_is_safe(monkeypatch):
+    recipe = {"recipe_name": "番茄炒蛋", "theme": "家常", "steps": ["切番茄", "炒蛋"], "ingredients": []}
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "generate_recipe_card_png", AsyncMock(side_effect=RuntimeError("boom")))
+
+    event = WebhookPostbackEvent(
+        reply_token="r9",
+        user_id="U123",
+        data="action=generate_recipe_card&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+    assert "食譜圖卡生成失敗" in handlers._push_line_message.await_args.args[1].text
 
 
 @pytest.mark.asyncio

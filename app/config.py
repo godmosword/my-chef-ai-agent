@@ -126,15 +126,15 @@ CHECKOUT_URL_TEMPLATE     = os.getenv("CHECKOUT_URL_TEMPLATE")
 BILLING_BASE_URL          = os.getenv("BILLING_BASE_URL", "https://example.com")
 PUBLIC_APP_BASE_URL       = (os.getenv("PUBLIC_APP_BASE_URL") or "").strip().rstrip("/")
 YOUTUBE_API_KEY           = os.getenv("YOUTUBE_API_KEY")
-IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "placeholder").lower()
+IMAGE_PROVIDER            = os.getenv("IMAGE_PROVIDER", "openai_compatible").lower()
 IMAGE_OPENAI_API_KEY      = (os.getenv("IMAGE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip() or None
 GCP_PROJECT_ID            = os.getenv("GCP_PROJECT_ID")
 VERTEX_LOCATION           = os.getenv("VERTEX_LOCATION", "us-central1")
 VERTEX_IMAGEN_MODEL       = os.getenv("VERTEX_IMAGEN_MODEL", "imagen-3.0-generate-002")
 VERTEX_SERVICE_ACCOUNT_JSON = os.getenv("VERTEX_SERVICE_ACCOUNT_JSON")
 VERTEX_IMAGEN_OUTPUT_GCS_URI = os.getenv("VERTEX_IMAGEN_OUTPUT_GCS_URI")
-# 食譜主圖 URL in-memory 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
-IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "86400")))
+# 食譜主圖 URL 快取（秒）；0 表示關閉。僅對 vertex_imagen / openai_compatible 生效。
+IMAGE_CACHE_TTL_SEC = max(0, int(os.getenv("IMAGE_CACHE_TTL_SEC", "3600")))
 IMAGE_CACHE_BACKEND = (os.getenv("IMAGE_CACHE_BACKEND", "auto") or "auto").strip().lower()
 REDIS_URL = (os.getenv("REDIS_URL") or "").strip()
 IMAGE_CACHE_NAMESPACE = (os.getenv("IMAGE_CACHE_NAMESPACE", "recipe_image") or "recipe_image").strip()
@@ -145,6 +145,15 @@ if IMAGE_PUBLIC_BASE_URL and not IMAGE_PUBLIC_BASE_URL.startswith("https://"):
     IMAGE_PUBLIC_BASE_URL = ""
 # Vertex 輸出 gs:// 且 bucket 非公開時需簽名 URL；0 關閉簽名（僅能依賴公開 URL 或 IMAGE_PUBLIC_BASE_URL）
 GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("GCS_SIGNED_URL_TTL_SEC", "3600")))
+# 食譜主圖 / 食譜卡 PNG 儲存後端：memory（預設）/gcs。gcs 需 RECIPE_IMAGE_GCS_BUCKET。
+RECIPE_IMAGE_STORAGE_BACKEND = (os.getenv("RECIPE_IMAGE_STORAGE_BACKEND", "memory") or "memory").strip().lower()
+RECIPE_IMAGE_GCS_BUCKET = (os.getenv("RECIPE_IMAGE_GCS_BUCKET") or "").strip()
+RECIPE_IMAGE_GCS_PREFIX = (os.getenv("RECIPE_IMAGE_GCS_PREFIX", "recipe-hero") or "recipe-hero").strip().strip("/")
+RECIPE_IMAGE_GCS_SIGNED_URL_TTL_SEC = max(0, int(os.getenv("RECIPE_IMAGE_GCS_SIGNED_URL_TTL_SEC", "3600")))
+# 圖片生成 API timeout 與重試（額外次數，不含首次）
+AI_IMAGE_TIMEOUT_SEC = max(10.0, float(os.getenv("AI_IMAGE_TIMEOUT_SEC", "60")))
+AI_IMAGE_MAX_RETRIES = max(0, int(os.getenv("AI_IMAGE_MAX_RETRIES", "3")))
+AI_IMAGE_BASE_DELAY_SEC = max(0.1, float(os.getenv("AI_IMAGE_BASE_DELAY_SEC", "0.8")))
 # 無 AI 主圖時 Flex hero 使用的公開 https 圖；設為 none/- 可關閉（改回純文字區塊）
 _DEFAULT_RECIPE_HERO_FALLBACK = (
     "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/"

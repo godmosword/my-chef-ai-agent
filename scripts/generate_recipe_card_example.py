@@ -25,6 +25,7 @@ async def main() -> None:
     recipe = load_recipe_json(args.recipe)
 
     if args.skip_api:
+        Path(args.base).parent.mkdir(parents=True, exist_ok=True)
         Image.new("RGB", (1200, 1500), (247, 242, 232)).save(args.base)
         base_path = args.base
     else:
