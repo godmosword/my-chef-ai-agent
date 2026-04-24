@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import base64
-import io
+import json
+import os
+import tempfile
 import json
 import os
 from dataclasses import dataclass
@@ -272,3 +274,45 @@ def load_recipe_json(path: str) -> RecipeCardData:
     with open(path, "r", encoding="utf-8") as fh:
         payload = json.load(fh)
     return RecipeCardData.from_dict(payload)
+
+
+def recipe_card_data_from_recipe_json(recipe_data: dict) -> RecipeCardData:
+    """Map existing recipe JSON schema to recipe-card schema."""
+    steps_raw = recipe_data.get("steps") or []
+    normalized_steps: list[dict] = []
+    for idx, step in enumerate(steps_raw):
+        text = str(step).strip() if not isinstance(step, dict) else str(step.get("description") or step.get("content") or "").strip()
+        title = (
+            str(step.get("title") or step.get("name") or "").strip()
+            if isinstance(step, dict)
+            else f"步驟 {idx + 1}"
+        )
+        normalized_steps.append({"title": title or f"步驟 {idx + 1}", "description": text or "依序完成料理。"})
+
+    return RecipeCardData.from_dict(
+        {
+            "title": recipe_data.get("recipe_name") or "本日料理",
+            "subtitle": f"{recipe_data.get('theme') or '家常上桌'}・LINE 食譜卡",
+            "serving": recipe_data.get("serving") or "2人份",
+            "ingredients": [
+                item.get("name", str(item)).strip() if isinstance(item, dict) else str(item).strip()
+                for item in (recipe_data.get("ingredients") or [])
+            ],
+            "prep": recipe_data.get("prep") or [],
+            "steps": normalized_steps,
+            "tips": recipe_data.get("tips") or recipe_data.get("shopping_list") or [],
+            "seasoning": recipe_data.get("seasoning") or [],
+            "cookTime": recipe_data.get("cookTime") or "約15分鐘",
+        }
+    )
+
+
+async def generate_recipe_card_png(recipe_data: dict) -> bytes:
+    """Run Stage A + Stage B and return final recipe card PNG bytes."""
+    mapped = recipe_card_data_from_recipe_json(recipe_data)
+    with tempfile.TemporaryDirectory(prefix="recipe-card-") as tmpdir:
+        base_path = str(Path(tmpdir) / "base.png")
+        final_path = str(Path(tmpdir) / "final.png")
+        await generate_base_image(mapped, output_path=base_path)
+        compose_recipe_card(recipe=mapped, base_image_path=base_path, output_path=final_path)
+        return Path(final_path).read_bytes()
