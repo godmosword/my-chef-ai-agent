@@ -80,9 +80,10 @@ The webhook will return `"OK"`. A **queue worker** will call Gemini AI and gener
 
 ### Git／部署流程（維護者偏好）
 
-- **之後若要觸發 deploy：請直接 commit／push 到 `main`，不要為此另開 PR。**
-- 建議流程：`git checkout main` → `git pull origin main` → 修改 → `git commit` → `git push origin main`（或由 CI 監聽 `main` 自動部署）。
-- 直接推 `main` 會跳過 PR 審查；若需保留審查，可改回 feature branch + PR 模式。
+- **出貨與觸發 deploy：一律在 `main` 上 commit 並 `git push origin main`，不手動開 PR、不把收尾留在 feature branch。**
+- 建議流程：`git checkout main` → `git pull origin main` → 修改 → `git commit` → `git push origin main`（CI 監聽 `main` 跑測試並部署）。
+- Agent 收到「ship」或同等指令時：應合併／rebase 到最新 `main`、跑測試通過後，於 `main` 提交並推送，而非 push 到遠端 feature branch 再請使用者開 PR。
+- 直推 `main` 會跳過 GitHub PR 審查；若儲存庫啟用 branch protection 禁止直推，須在 GitHub 設定允許維護者推 `main`，或暫時改回 feature branch + PR。
 
 ### Gotchas
 
