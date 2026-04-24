@@ -263,11 +263,11 @@ my-chef-ai-agent/
 ├── init_db.py
 ├── setup_richmenu.py
 ├── richmenu_config.json
-├── richmenu.jpg
-├── CHANGELOG.md
-├── TODOS.md
-├── AGENTS.md
-└── CONTRIBUTING.md
+├── richmenu.jpg            # 圖文選單圖（預設；須 ≤1 MB）
+├── examples/sample-recipe.json  # 兩段式食譜圖卡範例輸入
+├── scripts/generate_recipe_card_example.py # 範例 runner（可 --skip-api）
+├── render.yaml
+└── init_db.py
 ```
 
 ---
