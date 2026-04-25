@@ -135,6 +135,17 @@ async def _get_recipe_json_by_timestamp(user_id: str, timestamp: str, tenant_id:
     return None
 
 
+def _build_recipe_text_fallback(recipe: dict, *, kind: str) -> str:
+    name = _safe_str(recipe.get("recipe_name"), "本日料理", max_len=36)
+    theme = _safe_str(recipe.get("theme"), "家常", max_len=18)
+    steps = [_safe_str(s, "", max_len=40) for s in _parse_to_list(recipe.get("steps", []))]
+    step_lines = [f"{idx + 1}. {s}" for idx, s in enumerate([s for s in steps if s][:3])]
+    if not step_lines:
+        step_lines = ["1. 依序處理食材", "2. 熱鍋下料拌炒", "3. 試味後即可上桌"]
+    title = "🧾 圖卡改用文字版" if kind == "card" else "🖼 海報改用文字版"
+    return "\n".join([title, f"{name}｜{theme}", "重點步驟：", *step_lines])
+
+
 async def _background_generate_recipe(
     *,
     user_id: str,
@@ -546,7 +557,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             logger.exception("Recipe poster generation failed for user %s: %s", event.user_id, exc)
             await _push_line_message(
                 event.user_id,
-                TextMessage(text="👨‍🍳 食譜海報生成失敗，請稍後再試。"),
+                TextMessage(text=_build_recipe_text_fallback(recipe, kind="poster")),
             )
         return
 
@@ -591,20 +602,25 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
             card_png = await generate_recipe_card_png(recipe_for_card)
             stored = await store_recipe_png(payload=card_png, purpose="recipe-card")
             card_url = stored.url if stored else None
-            if not card_url or not card_url.startswith("https://"):
-                raise RuntimeError("recipe card media url unavailable")
-            await _push_line_message(
-                event.user_id,
-                [
-                    ImageMessage(original_content_url=card_url, preview_image_url=card_url),
-                    TextMessage(text=f"🧾 雙階段食譜圖卡已完成：{card_url}"),
-                ],
-            )
+            if card_url and card_url.startswith("https://"):
+                await _push_line_message(
+                    event.user_id,
+                    [
+                        ImageMessage(original_content_url=card_url, preview_image_url=card_url),
+                        TextMessage(text=f"🧾 雙階段食譜圖卡已完成：{card_url}"),
+                    ],
+                )
+            else:
+                logger.warning("recipe card media url unavailable; falling back to text summary user=%s", event.user_id)
+                await _push_line_message(
+                    event.user_id,
+                    TextMessage(text=_build_recipe_text_fallback(recipe_for_card, kind="card")),
+                )
         except Exception as exc:
             logger.exception("Recipe card generation failed for user %s: %s", event.user_id, exc)
             await _push_line_message(
                 event.user_id,
-                TextMessage(text="👨‍🍳 食譜圖卡生成失敗，請稍後再試。"),
+                TextMessage(text=_build_recipe_text_fallback(recipe, kind="card")),
             )
         return
 

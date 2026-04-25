@@ -12,7 +12,9 @@ from app.recipe_card_generator import (
     CANVAS_W,
     RecipeCardData,
     build_base_image_prompt,
+    create_fallback_base_image,
     compose_recipe_card,
+    generate_recipe_card_png,
     recipe_card_data_from_recipe_json,
 )
 
@@ -169,3 +171,27 @@ async def test_generate_base_image_downloads_when_api_returns_url(monkeypatch, t
     with patch.object(mod, "build_base_image_prompt", return_value="p"):
         path = await mod.generate_base_image(r, output_path=out)
     assert Path(path).read_bytes() == _png
+
+
+def test_create_fallback_base_image_outputs_png(tmp_path: Path) -> None:
+    out = tmp_path / "fallback-base.png"
+    path = create_fallback_base_image(output_path=str(out))
+    assert Path(path).exists()
+    img = Image.open(path)
+    assert img.size == (CANVAS_W, CANVAS_H)
+
+
+@pytest.mark.asyncio
+async def test_generate_recipe_card_png_falls_back_when_stage_a_fails(monkeypatch) -> None:
+    from app import recipe_card_generator as mod
+
+    recipe = {
+        "recipe_name": "番茄炒蛋",
+        "theme": "家常",
+        "ingredients": ["番茄", "蛋"],
+        "steps": ["切番茄", "炒蛋", "拌炒"],
+    }
+    monkeypatch.setattr(mod, "generate_base_image", AsyncMock(side_effect=RuntimeError("403")))
+    monkeypatch.setattr(mod, "_download_hero_photo_to_tmp", AsyncMock(return_value=None))
+    png = await generate_recipe_card_png(recipe)
+    assert png[:4] == b"\x89PNG"

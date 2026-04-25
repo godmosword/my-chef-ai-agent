@@ -806,7 +806,7 @@ async def test_postback_generate_recipe_poster_reports_missing_public_base_url(m
     await handlers.process_postback_reply(event)
 
     handlers._push_line_message.assert_awaited_once()
-    assert "食譜海報生成失敗" in handlers._push_line_message.await_args.args[1].text
+    assert "海報改用文字版" in handlers._push_line_message.await_args.args[1].text
 
 
 @pytest.mark.asyncio
@@ -845,7 +845,26 @@ async def test_postback_generate_recipe_card_failure_is_safe(monkeypatch):
         tenant_id="default",
     )
     await handlers.process_postback_reply(event)
-    assert "食譜圖卡生成失敗" in handlers._push_line_message.await_args.args[1].text
+    assert "圖卡改用文字版" in handlers._push_line_message.await_args.args[1].text
+
+
+@pytest.mark.asyncio
+async def test_postback_generate_recipe_card_falls_back_when_media_url_unavailable(monkeypatch):
+    recipe = {"recipe_name": "番茄炒蛋", "theme": "家常", "steps": ["切番茄", "炒蛋"], "ingredients": []}
+    monkeypatch.setattr(handlers, "_get_last_recipe_json", AsyncMock(return_value=recipe))
+    monkeypatch.setattr(handlers, "_reply_line", AsyncMock())
+    monkeypatch.setattr(handlers, "_push_line_message", AsyncMock())
+    monkeypatch.setattr(handlers, "generate_recipe_card_png", AsyncMock(return_value=b"\x89PNG\r\n\x1a\ncard"))
+    monkeypatch.setattr(handlers, "store_recipe_png", AsyncMock(return_value=None))
+
+    event = WebhookPostbackEvent(
+        reply_token="r10",
+        user_id="U123",
+        data="action=generate_recipe_card&name=%E7%95%AA%E8%8C%84%E7%82%92%E8%9B%8B",
+        tenant_id="default",
+    )
+    await handlers.process_postback_reply(event)
+    assert "圖卡改用文字版" in handlers._push_line_message.await_args.args[1].text
 
 
 @pytest.mark.asyncio

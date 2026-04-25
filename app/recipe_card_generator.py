@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 import os
 import tempfile
 from dataclasses import dataclass
@@ -15,6 +16,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from app.config import OPENAI_GPT_IMAGE_MODEL_ID, resolve_openai_image_api_key
 from app.helpers import _parse_to_list
+
+logger = logging.getLogger(__name__)
 
 CANVAS_W = 1200
 CANVAS_H = 1500
@@ -219,6 +222,19 @@ async def generate_base_image(
     return str(path)
 
 
+def create_fallback_base_image(*, output_path: str) -> str:
+    """Create a local neutral base image when remote image API is unavailable."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    bg = Image.new("RGB", (CANVAS_W, CANVAS_H), (248, 244, 236))
+    draw = ImageDraw.Draw(bg)
+    draw.rectangle((24, 24, CANVAS_W - 24, CANVAS_H - 24), outline=(226, 216, 203), width=3)
+    draw.rounded_rectangle((40, 30, 660, 200), radius=24, fill=(255, 255, 255), outline=(226, 216, 203), width=2)
+    draw.rounded_rectangle((708, 42, 1148, 292), radius=24, fill=(241, 232, 220), outline=(226, 216, 203), width=2)
+    bg.save(path, format="PNG")
+    return str(path)
+
+
 def compose_recipe_card(
     *,
     recipe: RecipeCardData,
@@ -384,10 +400,16 @@ async def generate_recipe_card_png(recipe_data: dict) -> bytes:
         url = recipe_data.get("photo_url")
         base_path = str(Path(tmpdir) / "base.png")
         final_path = str(Path(tmpdir) / "final.png")
-        hero_path, _ = await asyncio.gather(
-            _download_hero_photo_to_tmp(url, tmpdir),
-            generate_base_image(mapped, output_path=base_path),
-        )
+        hero_task = asyncio.create_task(_download_hero_photo_to_tmp(url, tmpdir))
+        try:
+            await generate_base_image(mapped, output_path=base_path)
+        except Exception as exc:
+            logger.warning("recipe card Stage-A image generation failed, using local fallback base: %s", exc)
+            create_fallback_base_image(output_path=base_path)
+        try:
+            hero_path = await hero_task
+        except Exception:
+            hero_path = None
         compose_recipe_card(
             recipe=mapped,
             base_image_path=base_path,
