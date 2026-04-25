@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from PIL import Image
 
 from app.recipe_card_generator import (
@@ -109,3 +112,60 @@ def test_compose_recipe_card_optional_hero_embed(tmp_path: Path) -> None:
     # Hero is top-right; expect non-background red tint in that region
     px = out.getpixel((900, 120))
     assert px[0] > px[2]
+
+
+@pytest.mark.asyncio
+async def test_generate_base_image_downloads_when_api_returns_url(monkeypatch, tmp_path: Path) -> None:
+    from app import recipe_card_generator as mod
+
+    async def _fake_gen(*_a, **_k):
+        return SimpleNamespace(
+            data=[SimpleNamespace(b64_json=None, url="https://example.com/out.png")],
+        )
+
+    class _FakeImages:
+        generate = _fake_gen
+
+    class _FakeClient:
+        def __init__(self, *_a, **_k):
+            pass
+
+        @property
+        def images(self):
+            return _FakeImages()
+
+    monkeypatch.setattr(mod, "resolve_openai_image_api_key", lambda: "sk-test")
+    monkeypatch.setattr(mod, "AsyncOpenAI", _FakeClient)
+    _png = b"\x89PNG\r\n\x1a\nx"
+
+    async def _fake_get(_url: str):
+        r = SimpleNamespace()
+        r.content = _png
+
+        def _ok():
+            return None
+
+        r.raise_for_status = _ok
+        return r
+
+    _ctx = SimpleNamespace(
+        get=AsyncMock(side_effect=_fake_get),
+    )
+
+    class _FakeHttpx:
+        def __init__(self, *_a, **_k):
+            pass
+
+        async def __aenter__(self):
+            return _ctx
+
+        async def __aexit__(self, *_a):
+            return None
+
+    monkeypatch.setattr(mod, "httpx", SimpleNamespace(AsyncClient=_FakeHttpx))
+
+    out = str(tmp_path / "base.png")
+    r = _sample_recipe()
+    with patch.object(mod, "build_base_image_prompt", return_value="p"):
+        path = await mod.generate_base_image(r, output_path=out)
+    assert Path(path).read_bytes() == _png

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 import urllib.error
 import urllib.request
@@ -10,6 +11,8 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont
 
 from app.helpers import _flex_safe_https_url, _parse_to_list, _safe_str
+
+logger = logging.getLogger(__name__)
 
 W = 1200
 H = 1800
@@ -26,6 +29,12 @@ STEP_BADGE = (42, 96, 73)      # 深森綠徽章
 STEP_BADGE_TEXT = (245, 240, 230)  # 米白文字
 
 FONT_PROBE = "米其林職人大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
+LINUX_NOTO_PRIORITIES: list[str] = [
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc",
+]
 FONT_CANDIDATES: list[tuple[str, int]] = []
 for _path, _max in (
     ("/System/Library/Fonts/PingFang.ttc", 60),
@@ -63,6 +72,20 @@ def _measure_width(font: ImageFont.ImageFont, text: str) -> int:
 
 
 def _pick_font_face() -> tuple[str, int] | None:
+    # In Linux containers (Render/Docker), prefer known Noto CJK paths first.
+    if os.name == "posix" and os.uname().sysname.lower() != "darwin":
+        for path in LINUX_NOTO_PRIORITIES:
+            if not os.path.isfile(path):
+                continue
+            for idx in range(16):
+                try:
+                    font = ImageFont.truetype(path, 72, index=idx)
+                except OSError:
+                    continue
+                if _measure_width(font, FONT_PROBE) < 280:
+                    continue
+                return (path, idx)
+
     best: tuple[str, int] | None = None
     best_score = -1
     for path, max_idx in FONT_CANDIDATES:
@@ -87,6 +110,7 @@ def _truetype(path: str, idx: int, size: int) -> ImageFont.FreeTypeFont:
 def _load_fonts() -> Fonts:
     best = _pick_font_face()
     if best is None:
+        logger.warning("no CJK font found; fallback to PIL default font")
         fallback = ImageFont.load_default()
         return Fonts(
             title=fallback,
@@ -97,6 +121,7 @@ def _load_fonts() -> Fonts:
             badge=fallback,
         )
     path, idx = best
+    logger.info("using font %s (index=%s)", path, idx)
     return Fonts(
         title=_truetype(path, idx, 66),
         subtitle=_truetype(path, idx, 30),

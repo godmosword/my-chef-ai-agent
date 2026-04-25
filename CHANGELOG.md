@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-04-25（主圖／圖卡／海報穩定性）
+
+- **圖像 API 金鑰**：新增 `resolve_openai_image_api_key()`（[`app/config.py`](app/config.py)），`generate_base_image` 與主圖 client 一致；聊天走 Gemini 時仍可用環境變數 `OPENAI_API_KEY` 或 `IMAGE_OPENAI_API_KEY` 產圖。
+- **圖卡 Stage A**：圖像 API 若只回 `url` 則以 `httpx` 下載，不再只接受 `b64_json`。
+- **海報（HTML）**：Linux／Docker 可經 `file://` 載入 Noto CJK（`ChefNotoSans` / `ChefNotoSerif`）；Playwright 改 `domcontentloaded` 並在截圖前等 `document.fonts.ready`；`RECIPE_POSTER_RENDERER=pillow` 可強制純 Pillow。
+- **海報內文**：`_parse_steps` 支援 `steps` 為 `dict`（`title`／`description` 等）與字串。
+- **文件**：`README` 補圖用金鑰與 `RECIPE_POSTER_RENDERER` 說明。
+- **測試**：全量 **146 passed**。
+
 ## 2026-04-24（生圖效率與 Token 優化）
 
 - **Deep Research**：併入 system 前依 `DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`（預設 1200，範圍 400–8000）截斷研究報告並標註摘要從略，降低啟用時的 input token。

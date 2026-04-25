@@ -34,6 +34,7 @@ from app.config import (
     IMAGE_PUBLIC_BASE_URL,
     IMAGE_PROVIDER,
     OPENAI_GPT_IMAGE_MODEL_ID,
+    resolve_openai_image_api_key,
     LINE_CHANNEL_ACCESS_TOKEN,
     MAX_COMPLETION_TOKENS,
     VERTEX_IMAGEN_MODEL,
@@ -144,7 +145,7 @@ def _recipe_placeholder_image_url(_recipe_name: str) -> str:
 
 def _get_recipe_image_client() -> AsyncOpenAI | None:
     global _recipe_image_client
-    api_key = IMAGE_OPENAI_API_KEY or (os.getenv("OPENAI_API_KEY") or "").strip() or None
+    api_key = resolve_openai_image_api_key() or None
     if not api_key:
         return None
     if _recipe_image_client is None:

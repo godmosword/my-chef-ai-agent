@@ -126,8 +126,9 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE Messaging API token |
 | `LINE_CHANNEL_SECRET` | ✅ | Channel secret |
 | `GEMINI_API_KEY` | ✅\* | 走 Gemini 直連 |
-| `OPENAI_API_KEY` | ✅\* | 改走非 gemini 模型時 |
-| `IMAGE_OPENAI_API_KEY` |  | 可選；`IMAGE_PROVIDER=openai_compatible` 時主圖優先使用，否則回退 `OPENAI_API_KEY` |
+| `OPENAI_API_KEY` | ✅\* | 改走非 gemini 模型時。**若聊天走 Gemini 仍要 GPT Image（主圖、兩段式食譜圖卡 Stage A）**，請在環境變數保留 `OPENAI_API_KEY`，或改設專用 `IMAGE_OPENAI_API_KEY`（解析順序與 `resolve_openai_image_api_key()` 一致） |
+| `IMAGE_OPENAI_API_KEY` |  | 專用於圖像 API，優先於環境變數 `OPENAI_API_KEY`；`IMAGE_PROVIDER=openai_compatible` 主圖、食譜圖卡底圖皆用同一解析 |
+| `RECIPE_POSTER_RENDERER` |  | 預設 `html`（Playwright 截圖）。設為 `pillow` 可強制走純 Pillow 海報（不中經 Playwright，利於畫面除錯或環境缺字型時） |
 | `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
 | `MAX_COMPLETION_TOKENS` |  | 預設 **1024**（下限 512）；可下調省輸出，步驟多時易觸發截斷修復 |
 | `MAX_HISTORY_TURNS` |  | 預設 **2** |
@@ -167,7 +168,7 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | `OTEL_*` |  | OpenTelemetry |
 | `DEBUG` |  | `1` 較詳 log |
 
-\* `gemini-*` 用 `GEMINI_API_KEY`；其他經 OpenAI 相容端點用 `OPENAI_API_KEY`。主圖若用 GPT-Image-2 請設 `IMAGE_OPENAI_API_KEY` 或 `OPENAI_API_KEY`。
+\* `gemini-*` 用 `GEMINI_API_KEY`；其他經 OpenAI 相容端點用 `OPENAI_API_KEY`。圖像（主圖、兩階食譜卡底圖）與**聊天**金鑰分開時，請至少設定 **`IMAGE_OPENAI_API_KEY` 或環境變數 `OPENAI_API_KEY`** 給圖用；只設 `GEMINI_API_KEY` 而完全不設圖用 OpenAI 金鑰時，兩段式圖卡 Stage A 與可選主圖會失敗或僅有備援圖。
 
 **Vertex 憑證優先序**：`VERTEX_SERVICE_ACCOUNT_JSON` → `GOOGLE_APPLICATION_CREDENTIALS_JSON`（寫暫存檔）→ 既有 `GOOGLE_APPLICATION_CREDENTIALS`／ADC。失敗回退佔位圖，不中斷食譜。
 

@@ -15,6 +15,7 @@ from app.recipe_poster_html import (
     _parse_ingredients,
     _parse_steps,
     _derive_cook_time,
+    _embedded_noto_file_face_css,
 )
 
 
@@ -129,6 +130,14 @@ def test_render_recipe_poster_png_html_fallback_on_playwright_missing():
     assert len(png) > 0
 
 
+def test_render_recipe_poster_respects_pillow_forcer(monkeypatch):
+    """RECIPE_POSTER_RENDERER=pillow 時不載入 Playwright，直接走 Pillow。"""
+    monkeypatch.setenv("RECIPE_POSTER_RENDERER", "pillow")
+    png = render_recipe_poster_png_html(SAMPLE_RECIPE)
+    assert isinstance(png, bytes)
+    assert png[:4] == b"\x89PNG"
+
+
 def test_parse_ingredients_dict_format():
     raw = [{"name": "醬油", "price": "NT$10", "qty": "1湯匙"}]
     result = _parse_ingredients(raw)
@@ -155,6 +164,22 @@ def test_parse_steps_strips_numbering():
     result = _parse_steps(raw)
     assert result[0] == "先備料"
     assert result[1] == "再下鍋"
+
+
+def test_parse_steps_dict_with_title_and_description():
+    raw = [
+        {"title": "洗切", "description": "白蘿蔔去皮。"},
+        {"title": "調滷汁", "description": "醬油與糖煮滾。"},
+    ]
+    result = _parse_steps(raw)
+    assert len(result) == 2
+    assert "洗切" in result[0] and "去皮" in result[0]
+    assert "醬油" in result[1] and "調滷汁" in result[1]
+
+
+def test_embedded_noto_css_empty_or_shorthand_runs_on_ci():
+    css = _embedded_noto_file_face_css()
+    assert "ChefNotoSans" in css or css == ""
 
 
 def test_parse_steps_limits_to_6():

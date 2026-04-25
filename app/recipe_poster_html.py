@@ -18,8 +18,10 @@ import re
 import urllib.error
 import urllib.request
 import base64
+from pathlib import Path
 from typing import Any
 
+from app.config import RECIPE_POSTER_RENDERER
 from app.helpers import _parse_to_list, _safe_str
 from app.recipe_poster import _derive_cook_time, _derive_quick_tips
 
@@ -45,6 +47,40 @@ COLOR_STEP_BADGE   = "#2A6049"   # 深森綠徽章
 COLOR_TIP_STAR     = "#C8922A"   # 琥珀金星號
 
 
+def _cjk_ttc_file_font_face(*, family: str, candidate_paths: tuple[str, ...]) -> str:
+    """Emit @font-face with file: URL so headless Chromium loads Noto on Linux/Docker."""
+    for p in candidate_paths:
+        if os.path.isfile(p):
+            uri = Path(p).as_uri()
+            return (
+                f"  @font-face {{\n"
+                f"    font-family: '{family}';\n"
+                f"    src: url('{uri}') format('opentype');\n"
+                f"    font-weight: 100 900;\n"
+                f"  }}\n"
+            )
+    return ""
+
+
+def _embedded_noto_file_face_css() -> str:
+    return (
+        _cjk_ttc_file_font_face(
+            family="ChefNotoSans",
+            candidate_paths=(
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            ),
+        )
+        + _cjk_ttc_file_font_face(
+            family="ChefNotoSerif",
+            candidate_paths=(
+                "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc",
+            ),
+        )
+    )
+
+
 def _esc(text: object, max_len: int = 200) -> str:
     """HTML-escape 並截斷。"""
     return html.escape(str(text or "")[:max_len])
@@ -67,9 +103,19 @@ def _parse_ingredients(raw: Any) -> list[dict]:
 
 def _parse_steps(raw: Any) -> list[str]:
     items = _parse_to_list(raw)
-    results = []
+    results: list[str] = []
     for item in items:
-        s = str(item).strip()
+        if isinstance(item, dict):
+            text = (item.get("description") or item.get("content") or item.get("text") or "").strip()
+            title = (item.get("title") or item.get("name") or "").strip()
+            if not text and title:
+                s = title
+            elif text and title:
+                s = f"{title}：{text}" if len(title) <= 20 else f"{title} {text}"
+            else:
+                s = text or title
+        else:
+            s = str(item).strip()
         if s:
             results.append(s.lstrip("0123456789. 、"))
     return results[:6]
@@ -216,13 +262,14 @@ def build_poster_html(recipe_data: dict) -> str:
         tagline_parts.append("食材易取")
     tagline = "・".join(tagline_parts)
 
+    noto_file_css = _embedded_noto_file_face_css()
     html_content = f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
-  @font-face {{
+{noto_file_css}  @font-face {{
     font-family: 'Noto Sans TC';
     src: local('Noto Sans CJK TC'), local('Noto Sans TC'), local('NotoSansCJKtc');
     font-weight: 100 900;
@@ -238,7 +285,7 @@ def build_poster_html(recipe_data: dict) -> str:
   body {{
     width: {POSTER_WIDTH}px;
     background: {COLOR_BODY_BG};
-    font-family: 'Noto Sans TC', 'Noto Sans CJK TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    font-family: 'ChefNotoSans', 'Noto Sans TC', 'Noto Sans CJK TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
     color: {COLOR_BODY_TEXT};
     -webkit-font-smoothing: antialiased;
   }}
@@ -276,7 +323,7 @@ def build_poster_html(recipe_data: dict) -> str:
     letter-spacing: 3px; text-transform: uppercase;
   }}
   .header-title {{
-    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', 'PingFang TC', serif;
+    font-family: 'ChefNotoSerif', 'Noto Serif TC', 'Noto Serif CJK TC', 'PingFang TC', serif;
     font-size: 72px; font-weight: 700; color: #F5F0E6;
     line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,0.3);
     margin-bottom: 20px; letter-spacing: 2px;
@@ -318,7 +365,7 @@ def build_poster_html(recipe_data: dict) -> str:
     display: flex; align-items: center; gap: 16px; margin-bottom: 22px;
   }}
   .section-label {{
-    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', serif;
+    font-family: 'ChefNotoSerif', 'Noto Serif TC', 'Noto Serif CJK TC', serif;
     font-size: 28px; font-weight: 700; color: {COLOR_TITLE_TEXT};
     letter-spacing: 2px;
     position: relative; padding-bottom: 6px;
@@ -425,7 +472,7 @@ def build_poster_html(recipe_data: dict) -> str:
     border: 1px solid {COLOR_BORDER};
   }}
   .season-title {{
-    font-family: 'Noto Serif TC', 'Noto Serif CJK TC', serif;
+    font-family: 'ChefNotoSerif', 'Noto Serif TC', 'Noto Serif CJK TC', serif;
     font-size: 22px; font-weight: 700; color: {COLOR_TITLE_TEXT};
     margin-bottom: 6px; letter-spacing: 1px;
   }}
@@ -553,8 +600,14 @@ def build_poster_html(recipe_data: dict) -> str:
 def render_recipe_poster_png_html(recipe_data: dict) -> bytes:
     """同步介面：用 Playwright headless Chromium 截圖，輸出 PNG bytes。
 
-    若 Playwright 無法載入，自動退回舊版 Pillow 方法。
+    若 Playwright 無法載入，或 ``RECIPE_POSTER_RENDERER=pillow``，則用 Pillow 方法。
     """
+    _mode = (os.getenv("RECIPE_POSTER_RENDERER") or RECIPE_POSTER_RENDERER or "html").strip().lower()
+    if _mode in ("pillow", "pil", "p"):
+        from app.recipe_poster import render_recipe_poster_png  # noqa: PLC0415
+
+        return render_recipe_poster_png(recipe_data)
+
     try:
         from playwright.sync_api import sync_playwright  # noqa: PLC0415
     except ImportError:
@@ -574,9 +627,13 @@ def render_recipe_poster_png_html(recipe_data: dict) -> bytes:
                 viewport={"width": POSTER_WIDTH, "height": POSTER_HEIGHT},
                 device_scale_factor=1,
             )
-            page.set_content(html_str, wait_until="networkidle")
-            # 等待字型載入
-            page.wait_for_timeout(800)
+            page.set_content(html_str, wait_until="domcontentloaded", timeout=60_000)
+            # 讓本機/容器內 CJK 字型在截圖前就緒
+            try:
+                page.evaluate("() => document.fonts.ready")
+            except Exception as font_exc:
+                logger.debug("document.fonts.ready: %s", font_exc)
+            page.wait_for_timeout(400)
             element = page.query_selector(".poster")
             if element:
                 png_bytes = element.screenshot(type="png")

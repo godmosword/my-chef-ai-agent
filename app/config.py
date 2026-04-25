@@ -200,6 +200,28 @@ else:
     OPENAI_API_KEY = _require_env("OPENAI_API_KEY")
     GEMINI_API_KEY = None
 
+
+def resolve_openai_image_api_key() -> str:
+    """OpenAI key for image APIs (hero, two-stage recipe card base).
+
+    Re-reads environment at call time so tests and late env changes work.
+    Order matches ``_get_recipe_image_client``: dedicated image key, then
+    ``OPENAI_API_KEY`` from the environment, then (non-Gemini) the chat key.
+    """
+    for candidate in (
+        (os.getenv("IMAGE_OPENAI_API_KEY") or "").strip(),
+        (os.getenv("OPENAI_API_KEY") or "").strip(),
+    ):
+        if candidate:
+            return candidate
+    if not USE_GEMINI_DIRECT and OPENAI_API_KEY:
+        return str(OPENAI_API_KEY).strip()
+    return ""
+
+
+# 食譜海報：html（預設 Playwright 截圖）或 pillow 強制走純 Pillow 渲染
+RECIPE_POSTER_RENDERER = (os.getenv("RECIPE_POSTER_RENDERER") or "html").strip().lower()
+
 # ─── Constants ──────────────────────────────────────────────────────────────────
 
 MAX_MESSAGE_LENGTH    = 500

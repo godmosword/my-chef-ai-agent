@@ -9,10 +9,11 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+import httpx
 from openai import AsyncOpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from app.config import IMAGE_OPENAI_API_KEY, OPENAI_API_KEY, OPENAI_GPT_IMAGE_MODEL_ID
+from app.config import OPENAI_GPT_IMAGE_MODEL_ID, resolve_openai_image_api_key
 from app.helpers import _parse_to_list
 
 CANVAS_W = 1200
@@ -190,7 +191,7 @@ async def generate_base_image(
     model: str | None = None,
 ) -> str:
     """Stage A: generate visual base image via OpenAI image API."""
-    api_key = (IMAGE_OPENAI_API_KEY or OPENAI_API_KEY or "").strip()
+    api_key = resolve_openai_image_api_key()
     if not api_key:
         raise RuntimeError("Missing IMAGE_OPENAI_API_KEY/OPENAI_API_KEY for base image generation")
     resolved_model = (model or OPENAI_GPT_IMAGE_MODEL_ID).strip() or OPENAI_GPT_IMAGE_MODEL_ID
@@ -200,10 +201,18 @@ async def generate_base_image(
     data = getattr(result, "data", None) or []
     if not data:
         raise RuntimeError("Image API returned empty data")
-    b64 = getattr(data[0], "b64_json", None)
-    if not b64:
-        raise RuntimeError("Image API response missing b64_json")
-    payload = base64.b64decode(b64)
+    first = data[0]
+    b64 = getattr(first, "b64_json", None)
+    if b64:
+        payload = base64.b64decode(b64)
+    else:
+        url = getattr(first, "url", None) or (first.get("url") if isinstance(first, dict) else None)
+        if not isinstance(url, str) or not (url.startswith("https://") or url.startswith("http://")):
+            raise RuntimeError("Image API response missing b64_json and retrievable url")
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as http_client:
+            resp = await http_client.get(url)
+            resp.raise_for_status()
+            payload = resp.content
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
