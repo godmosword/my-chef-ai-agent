@@ -1,6 +1,6 @@
 ---
 version: "alpha"
-name: 米其林職人大腦 — 溫暖明亮食譜主題
+name: 職人料理大腦 — 溫暖明亮食譜主題
 description: >
   LINE Bot 食譜助理的視覺設計系統。
   涵蓋 LINE Flex Message、HTML/CSS 食譜海報（Playwright）與 Pillow fallback 三個渲染層，
@@ -106,7 +106,7 @@ components:
 
 ## Overview
 
-**溫暖明亮食譜主題**（Warm Bright Recipe Theme）— 以米白為底、琥珀金為主調，搭配深森綠作為強調色，傳遞台灣家常料理的溫度感與米其林廚房的精緻感。
+**溫暖明亮食譜主題**（Warm Bright Recipe Theme）— 以米白為底、琥珀金為主調，搭配深森綠作為強調色，傳遞台灣家常料理的溫度感與職人廚房的精緻感。
 
 整體視覺定位：**溫暖雜誌風** — 乾淨、明亮、不刺眼，適合長時閱讀的食譜內容，並與 LINE 對話環境的高頻率使用場景相容。
 

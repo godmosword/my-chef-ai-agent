@@ -1,15 +1,15 @@
-"""LINE Flex design tokens — 溫暖明亮食譜主題。"""
+"""LINE Flex design tokens — MUJI minimal theme."""
 
 from __future__ import annotations
 
 # ── 核心色板 ────────────────────────────────────────────────────────────────────
-PRIMARY_BG     = "#FFFAF5"   # 溫暖米白底色
-SURFACE_BG     = "#FFFFFF"   # 卡片白
-SECONDARY_TEXT = "#9C8F84"   # 暖灰輔助文字
-ACCENT_ORANGE  = "#C8922A"   # 琥珀金主色（取代橙紅）
-NEUTRAL_TEXT   = "#1C1917"   # 深棕黑主文字
-SURFACE_ALT    = "#F5EFE6"   # 淡金底（次要區塊）
-SURFACE_MUTED  = "#F9F4EE"   # 更淡的米色
+PRIMARY_BG     = "#F8F5F0"   # 無印米白
+SURFACE_BG     = "#FFFCF8"   # 卡片底
+SECONDARY_TEXT = "#8C857B"   # 暖灰輔助
+ACCENT_ORANGE  = "#A78A67"   # 木質棕
+NEUTRAL_TEXT   = "#3A3631"   # 深棕灰主文字
+SURFACE_ALT    = "#F2ECE2"   # 次要底
+SURFACE_MUTED  = "#EEE7DC"   # 帶暖中性
 
 # ── 三廚角色標籤色 ──────────────────────────────────────────────────────────────
 ROLE_COLORS: dict[str, str] = {
@@ -25,34 +25,34 @@ TEXT_MUTED  = SECONDARY_TEXT
 TEXT_STRONG = NEUTRAL_TEXT
 
 # ── 無主圖時文字 hero ───────────────────────────────────────────────────────────
-HERO_BLOCK_BG = "#2A6049"    # 深森綠 hero 底色
-HERO_KICKER   = "#C8922A"    # 琥珀金標語
-HERO_SUB      = "#EBF5F0"    # 淡綠輔助文字
-HERO_TITLE    = "#F5F0E6"    # 米白標題
+HERO_BLOCK_BG = "#EDE6DA"    # 無印暖灰 hero 底色
+HERO_KICKER   = "#8F7758"    # 深木色標語
+HERO_SUB      = "#8C857B"    # 暖灰輔助文字
+HERO_TITLE    = "#3A3631"    # 深棕灰標題
 
 # ── 主選單 ──────────────────────────────────────────────────────────────────────
-MENU_HEADER_BG       = "#2A6049"
-MENU_HEADER_TEXT     = "#F5F0E6"
+MENU_HEADER_BG       = "#6B7A6B"  # 沉穩鼠尾草綠
+MENU_HEADER_TEXT     = "#F7F4EE"
 MENU_BODY_BG         = PRIMARY_BG
-MENU_BTN_CUISINE     = ACCENT_ORANGE
-MENU_BTN_FRIDGE      = ACCENT_ORANGE
-MENU_BTN_BUDGET      = ACCENT_ORANGE
-MENU_BTN_MOOD        = ACCENT_ORANGE
-MENU_BTN_SECONDARY   = "#2A6049"
-MENU_BTN_TERTIARY    = SECONDARY_TEXT
+MENU_BTN_CUISINE     = "#B89450"
+MENU_BTN_FRIDGE      = "#B89450"
+MENU_BTN_BUDGET      = "#B89450"
+MENU_BTN_MOOD        = "#B89450"
+MENU_BTN_SECONDARY   = "#6B7A6B"
+MENU_BTN_TERTIARY    = "#9E9589"
 
 # ── 菜系輪播 ────────────────────────────────────────────────────────────────────
-CUISINE_HERO_TAIWANESE = "#6B3A2A"
-CUISINE_HERO_THAI      = "#2A5C3F"
-CUISINE_HERO_JAPANESE  = "#3A2A4A"
-CUISINE_HERO_EU        = "#2A3A4A"
-CUISINE_HERO_KIDS      = "#6B5A2A"
+CUISINE_HERO_TAIWANESE = "#8D7760"
+CUISINE_HERO_THAI      = "#6E8A74"
+CUISINE_HERO_JAPANESE  = "#7A748A"
+CUISINE_HERO_EU        = "#6E7F8E"
+CUISINE_HERO_KIDS      = "#8D8571"
 
-CUISINE_HERO_LABEL  = "#F5F0E6"
-CUISINE_HERO_TITLE  = "#F5F0E6"
+CUISINE_HERO_LABEL  = "#F6F1E9"
+CUISINE_HERO_TITLE  = "#FFFDF9"
 CUISINE_BODY_TITLE  = TEXT_INK
 CUISINE_BODY_DESC   = TEXT_MUTED
-CUISINE_FOOTER_BTN  = ACCENT_ORANGE
+CUISINE_FOOTER_BTN  = "#A78A67"
 
 # ── 食譜主卡 ────────────────────────────────────────────────────────────────────
 SURFACE_CARD        = SURFACE_BG
@@ -64,15 +64,15 @@ TALK_CONTENT        = TEXT_BODY
 PANEL_CONFERENCE_BG    = SURFACE_ALT
 PANEL_CONFERENCE_LABEL = SECONDARY_TEXT
 
-SECTION_LABEL = "#2A6049"    # 深森綠區塊標題
+SECTION_LABEL = "#6B7A6B"    # 沉穩綠
 SHOP_BULLET   = TEXT_BODY
 
 ING_NAME  = TEXT_BODY
-ING_PRICE = ACCENT_ORANGE
+ING_PRICE = "#8F7758"
 
 PANEL_COST_OUTER_BG = SURFACE_ALT
-PANEL_COST_BORDER   = "#EAE4DC"
-SEP_COLOR           = "#EAE4DC"
+PANEL_COST_BORDER   = "#E1D8CB"
+SEP_COLOR           = "#E1D8CB"
 TOTAL_BAND_BG       = SURFACE_MUTED
 TOTAL_LABEL         = SECONDARY_TEXT
 
@@ -83,8 +83,8 @@ FOOTER_BTN_SECONDARY = SECONDARY_TEXT
 FOOTER_BTN_FAVORITE  = ACCENT_ORANGE
 FOOTER_DISCLAIMER    = SECONDARY_TEXT
 
-VIDEO_BTN      = ACCENT_ORANGE
-EXPAND_BTN_BG  = SECONDARY_TEXT
+VIDEO_BTN      = "#A78A67"
+EXPAND_BTN_BG  = "#9E9589"
 
 ROLE_FALLBACK = TEXT_MUTED
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 from fastapi import Depends, Header, HTTPException, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from app.config import (
@@ -82,7 +82,7 @@ async def health_check():
     return {
         "status": "ok",
         "model": AI_MODEL_FOR_CALL,
-        "message": "米其林職人大腦 (Gemini 3.1 Flash Lite 驅動中)",
+        "message": "職人料理大腦 (Gemini 3.1 Flash Lite 驅動中)",
     }
 
 
@@ -272,15 +272,67 @@ async def checkout(
 
 @app.get("/legal/disclaimer")
 async def legal_disclaimer(_rate_limit: None = Depends(enforce_public_rate_limit)):
-    return {
-        "message": "本服務提供 AI 食譜建議，僅供參考；請自行評估過敏原、飲食限制與食品安全條件。",
-    }
+    return HTMLResponse(
+        content="""<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>完整免責聲明</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; margin: 0; background: #fffaf5; color: #1c1917; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; line-height: 1.7; }
+    h1 { margin: 0 0 16px; font-size: 28px; }
+    .card { background: #fff; border: 1px solid #eae4dc; border-radius: 14px; padding: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>完整免責聲明</h1>
+    <div class="card">
+      本服務提供 AI 食譜建議，內容僅供參考。請自行評估過敏原、飲食限制、
+      烹調設備與食品安全條件，並依個人健康狀況審慎調整。
+    </div>
+  </div>
+</body>
+</html>""",
+        media_type="text/html; charset=utf-8",
+    )
 
 
 @app.get("/legal/privacy")
 async def legal_privacy(_rate_limit: None = Depends(enforce_public_rate_limit)):
-    return {
-        "data_collected": ["對話內容", "圖片訊息（若上傳）", "收藏食譜", "用量與訂閱狀態"],
-        "retention": "依營運需求保存，使用者可透過「刪除我的資料」提出刪除要求。",
-        "contact": "請由營運方客服管道受理個資請求。",
-    }
+    return HTMLResponse(
+        content="""<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>隱私政策</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; margin: 0; background: #fffaf5; color: #1c1917; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; line-height: 1.7; }
+    h1 { margin: 0 0 16px; font-size: 28px; }
+    .card { background: #fff; border: 1px solid #eae4dc; border-radius: 14px; padding: 16px; }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>隱私政策</h1>
+    <div class="card">
+      <strong>蒐集資料：</strong>
+      <ul>
+        <li>對話內容</li>
+        <li>圖片訊息（若上傳）</li>
+        <li>收藏食譜</li>
+        <li>用量與訂閱狀態</li>
+      </ul>
+      <p><strong>保存：</strong>依營運需求保存；可透過「刪除我的資料」提出刪除要求。</p>
+      <p><strong>聯絡：</strong>請由營運方客服管道受理個資請求。</p>
+    </div>
+  </div>
+</body>
+</html>""",
+        media_type="text/html; charset=utf-8",
+    )

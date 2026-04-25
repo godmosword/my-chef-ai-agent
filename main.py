@@ -1,5 +1,5 @@
 """
-米其林職人大腦 — LINE Bot entrypoint.
+職人料理大腦 — LINE Bot entrypoint.
 
 Thin entrypoint that imports the FastAPI app and registers routes.
 All logic lives in the `app/` package.

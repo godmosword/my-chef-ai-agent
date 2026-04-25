@@ -1,6 +1,6 @@
 # GCP Cloud Run 部署教學
 
-將「米其林職人大腦」LINE Bot 部署到 GCP Cloud Run 的逐步教學。
+將「職人料理大腦」LINE Bot 部署到 GCP Cloud Run 的逐步教學。
 
 ---
 
@@ -128,7 +128,7 @@ git push origin main
 **驗證**：在瀏覽器開啟 `https://你的URL/`，應看到：
 
 ```json
-{"status":"ok","message":"米其林職人大腦 (Gemini 3.1 Pro Preview 版)"}
+{"status":"ok","message":"職人料理大腦 (Gemini 3.1 Pro Preview 版)"}
 ```
 
 ---
@@ -170,7 +170,7 @@ git push origin main
 → 首次請求約 5–15 秒屬正常，可設「最低執行個體數」為 1 減少冷啟動（會產生費用）
 
 **訊息仍顯示舊版模型名稱（如 Claude）**  
-→ 若程式已部署但 LINE 仍顯示舊文字，請檢查 **LINE Developers Console** → **Messaging API** → **Greeting messages**（加入好友的招呼訊息），該處為 LINE 平台設定，需手動更新為「米其林職人大腦，Gemini 3.1 Pro 已就緒」等
+→ 若程式已部署但 LINE 仍顯示舊文字，請檢查 **LINE Developers Console** → **Messaging API** → **Greeting messages**（加入好友的招呼訊息），該處為 LINE 平台設定，需手動更新為「職人料理大腦，Gemini 3.1 Pro 已就緒」等
 
 ---
 

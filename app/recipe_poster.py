@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 from app.helpers import _flex_safe_https_url, _parse_to_list, _safe_str
 
 logger = logging.getLogger(__name__)
+_FONT_DIAGNOSED = False
 
 W = 1200
 H = 1800
@@ -28,7 +29,7 @@ ACCENT_LIGHT = (245, 239, 230) # 淡金底色
 STEP_BADGE = (42, 96, 73)      # 深森綠徽章
 STEP_BADGE_TEXT = (245, 240, 230)  # 米白文字
 
-FONT_PROBE = "米其林職人大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
+FONT_PROBE = "職人料理大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
 LINUX_NOTO_PRIORITIES: list[str] = [
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
@@ -52,6 +53,29 @@ for _path, _max in (
 ):
     if os.path.isfile(_path):
         FONT_CANDIDATES.append((_path, _max))
+
+
+def _log_font_diagnostics_once() -> None:
+    """Emit one-time font diagnostics for Render/Linux troubleshooting."""
+    global _FONT_DIAGNOSED
+    if _FONT_DIAGNOSED:
+        return
+    _FONT_DIAGNOSED = True
+
+    existing_noto = [p for p in LINUX_NOTO_PRIORITIES if os.path.isfile(p)]
+    existing_candidates = [p for p, _ in FONT_CANDIDATES if os.path.isfile(p)]
+    logger.info(
+        "font diagnostics: os=%s noto_found=%d/%d candidates_found=%d sample=%s",
+        os.uname().sysname if hasattr(os, "uname") else os.name,
+        len(existing_noto),
+        len(LINUX_NOTO_PRIORITIES),
+        len(existing_candidates),
+        ", ".join(existing_candidates[:3]) if existing_candidates else "none",
+    )
+    if existing_noto:
+        logger.info("font diagnostics: noto paths=%s", " | ".join(existing_noto))
+    else:
+        logger.warning("font diagnostics: no Linux Noto CJK paths found")
 
 
 @dataclass(frozen=True)
@@ -108,6 +132,7 @@ def _truetype(path: str, idx: int, size: int) -> ImageFont.FreeTypeFont:
 
 
 def _load_fonts() -> Fonts:
+    _log_font_diagnostics_once()
     best = _pick_font_face()
     if best is None:
         logger.warning("no CJK font found; fallback to PIL default font")
@@ -397,7 +422,7 @@ def render_recipe_poster_png(recipe_data: dict) -> bytes:
     draw.text((826, 1556), time_text, font=fonts.section, fill=TITLE)
     draw.text((826, 1632), "預估成本", font=fonts.body_small, fill=MUTED)
     draw.text((826, 1676), cost_text, font=fonts.section, fill=TITLE)
-    footer = "米其林職人大腦・Recipe Poster"
+    footer = "職人料理大腦・Recipe Poster"
     box = draw.textbbox((0, 0), footer, font=fonts.body_small)
     draw.text((W - margin - (box[2] - box[0]), H - margin - 36), footer, font=fonts.body_small, fill=MUTED)
 

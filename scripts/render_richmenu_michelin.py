@@ -2,8 +2,8 @@
 """
 產出 LINE Rich Menu 底圖 richmenu.jpg（2500×1686，小於 1 MB）。
 
-第二版：亮色米其林風（紅＋金＋米白）、高對比深字；
-字型自動挑選可完整顯示「米其林職人大腦」等繁中的 .ttc face，
+第二版：亮色職人料理風（紅＋金＋米白）、高對比深字；
+字型自動挑選可完整顯示「職人料理大腦」等繁中的 .ttc face，
 避免宋體 index 錯誤造成缺字、畫面破碎。
 
     python3 scripts/render_richmenu_michelin.py
@@ -20,26 +20,43 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "richmenu_config.json"
 OUT_PATH = ROOT / "richmenu.jpg"
+STYLE_VERSION = "muji_v1_locked"
 
 W, H = 2500, 1686
 LINE_MAX = 1024 * 1024
 
-# 亮色米其林感：米白底、指南紅條、香檳金線、深咖啡字
-CREAM_TOP = (252, 249, 244)
-CREAM_MID = (245, 238, 228)
-CREAM_BOTTOM = (236, 228, 216)
-MICHELIN_RED = (200, 16, 46)  # 指南系紅（非官方，僅風格）
-MICHELIN_RED_DARK = (142, 10, 32)
-GOLD = (176, 138, 72)
-GOLD_LINE = (200, 165, 100)
-TEXT_MAIN = (38, 22, 28)
-TEXT_HINT = (110, 92, 78)
-CARD = (255, 255, 255)
-CARD_EDGE = (220, 200, 170)
-SHADOW = (0, 0, 0, 28)
+# 無印混搭：米白底 + 木質棕灰 + 墨綠低飽和
+CREAM_TOP = (248, 244, 238)
+CREAM_MID = (244, 239, 232)
+CREAM_BOTTOM = (238, 232, 224)
+MICHELIN_RED = (78, 99, 86)       # header 墨綠
+MICHELIN_RED_DARK = (64, 82, 71)
+GOLD = (164, 132, 96)             # 木質棕
+GOLD_LINE = (184, 156, 122)
+TEXT_MAIN = (52, 46, 40)          # 深棕灰字
+TEXT_HINT = (120, 110, 98)
+CARD = (255, 253, 250)
+CARD_EDGE = (214, 202, 186)
+SHADOW = (0, 0, 0, 36)
+CARD_FILL_SET = [
+    (255, 253, 250),  # 主選單
+    (249, 242, 230),  # 隨機配菜
+    (238, 245, 238),  # 我的最愛
+    (240, 244, 246),  # 清冰箱模式
+    (246, 239, 236),  # 預算方案
+    (243, 241, 236),  # 採買清單
+]
+CARD_EDGE_SET = [
+    (214, 202, 186),
+    (196, 166, 126),
+    (147, 170, 145),
+    (160, 170, 176),
+    (186, 162, 146),
+    (173, 170, 156),
+]
 
 # 用於挑選字型：須完整顯示（寬度過小代表缺字或 fallback）
-FONT_PROBE = "米其林職人大腦主選單隨機配菜愛清冰箱預算採購"
+FONT_PROBE = "職人料理大腦主選單隨機配菜愛清冰箱預算採購"
 
 _FONT_SOURCES: list[tuple[str, int]] = []
 for _p, _mx in (
@@ -91,6 +108,69 @@ def truetype(path: str, idx: int, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(path, size, index=idx)
 
 
+def _emoji_font(size: int) -> ImageFont.ImageFont:
+    """Prefer color emoji font on macOS; fallback safely elsewhere."""
+    candidates = [
+        "/System/Library/Fonts/Apple Color Emoji.ttc",
+        "/System/Library/Fonts/AppleColorEmoji.ttf",
+        "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
+        "/usr/share/fonts/noto/NotoColorEmoji.ttf",
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            try:
+                return ImageFont.truetype(p, size)
+            except OSError:
+                continue
+    # Return a tiny default font as sentinel; caller will fallback to vector badge.
+    return ImageFont.load_default()
+
+
+def _draw_icon_badge(draw: ImageDraw.ImageDraw, *, cx: int, cy: int, icon: str) -> int:
+    """Draw large vector icon badge (no emoji font dependency)."""
+    badge_bg = {
+        "🏠": (89, 133, 196),
+        "🍳": (198, 146, 42),
+        "❤️": (189, 80, 87),
+        "🧊": (98, 154, 201),
+        "💰": (132, 110, 82),
+        "🛒": (77, 144, 120),
+    }.get(icon, (120, 128, 140))
+    r = 44
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=badge_bg)
+    ink = (86, 80, 72)
+    lw = 10
+    if icon == "🏠":
+        draw.polygon([(cx - 24, cy - 4), (cx, cy - 30), (cx + 24, cy - 4)], outline=ink, fill=None, width=lw)
+        draw.rectangle((cx - 18, cy - 4, cx + 18, cy + 24), outline=ink, width=lw)
+        draw.rectangle((cx - 6, cy + 6, cx + 6, cy + 24), outline=ink, width=lw)
+    elif icon == "🍳":
+        draw.ellipse((cx - 24, cy - 8, cx + 24, cy + 24), outline=ink, width=lw)
+        draw.ellipse((cx - 8, cy + 2, cx + 8, cy + 18), fill=ink)
+        draw.line((cx + 24, cy + 8, cx + 34, cy + 8), fill=ink, width=lw)
+    elif icon == "❤️":
+        draw.ellipse((cx - 22, cy - 18, cx - 2, cy + 2), fill=ink)
+        draw.ellipse((cx + 2, cy - 18, cx + 22, cy + 2), fill=ink)
+        draw.polygon([(cx - 24, cy - 2), (cx, cy + 28), (cx + 24, cy - 2)], fill=ink)
+    elif icon == "🧊":
+        draw.polygon([(cx, cy - 26), (cx + 24, cy - 12), (cx + 24, cy + 14), (cx, cy + 28), (cx - 24, cy + 14), (cx - 24, cy - 12)], outline=ink, fill=None, width=lw)
+        draw.line((cx - 24, cy - 12, cx, cy + 2), fill=ink, width=6)
+        draw.line((cx, cy + 2, cx + 24, cy - 12), fill=ink, width=6)
+    elif icon == "💰":
+        draw.ellipse((cx - 22, cy - 22, cx + 22, cy + 22), outline=ink, width=lw)
+        draw.line((cx, cy - 12, cx, cy + 12), fill=ink, width=lw)
+        draw.line((cx - 10, cy - 8, cx + 8, cy - 8), fill=ink, width=lw)
+        draw.line((cx - 8, cy + 8, cx + 10, cy + 8), fill=ink, width=lw)
+    elif icon == "🛒":
+        draw.line((cx - 24, cy - 14, cx - 10, cy - 14), fill=ink, width=lw)
+        draw.polygon([(cx - 10, cy - 14), (cx + 24, cy - 14), (cx + 18, cy + 10), (cx - 4, cy + 10)], outline=ink, fill=None, width=lw)
+        draw.ellipse((cx - 2, cy + 14, cx + 8, cy + 24), fill=ink)
+        draw.ellipse((cx + 14, cy + 14, cx + 24, cy + 24), fill=ink)
+    else:
+        draw.ellipse((cx - 10, cy - 10, cx + 10, cy + 10), fill=ink)
+    return r * 2
+
+
 def paint_cream_gradient(img: Image.Image) -> None:
     px = img.load()
     for y in range(H):
@@ -112,23 +192,23 @@ def draw_header_bar(
     draw.rectangle([0, 0, W, bar_h], fill=MICHELIN_RED)
     draw.line([(0, bar_h), (W, bar_h)], fill=GOLD_LINE, width=3)
 
-    title = "米其林職人大腦"
+    title = "職人料理大腦"
     sub = "MICHELIN CHEF · AI"
-    f_title = truetype(font_path, font_idx, 68)
+    f_title = truetype(font_path, font_idx, 82)
     f_sub = truetype(font_path, font_idx, 26)
 
     tb = draw.textbbox((0, 0), title, font=f_title)
     tw, th = tb[2] - tb[0], tb[3] - tb[1]
     sb = draw.textbbox((0, 0), sub, font=f_sub)
     sh = sb[3] - sb[1]
-    gap = 6
+    gap = 4
     block = th + gap + sh
     y0 = (bar_h - block) // 2
     ty_title = y0 - tb[1]
     draw.text(((W - tw) // 2 - tb[0], ty_title), title, font=f_title, fill=(255, 255, 255))
     sw = sb[2] - sb[0]
     ty_sub = y0 + th + gap - sb[1]
-    draw.text(((W - sw) // 2 - sb[0], ty_sub), sub, font=f_sub, fill=(255, 220, 190))
+    draw.text(((W - sw) // 2 - sb[0], ty_sub), sub, font=f_sub, fill=(233, 223, 202))
 
 
 def draw_card(
@@ -137,59 +217,65 @@ def draw_card(
     y: int,
     cw: int,
     ch: int,
-    radius: int = 22,
+    fill: tuple[int, int, int],
+    edge: tuple[int, int, int],
+    radius: int = 16,
 ) -> None:
     inset = 10
     box = [x + inset, y + inset, x + cw - inset, y + ch - inset]
-    # 極淡投影
-    for dx, dy in ((4, 5), (2, 3)):
-        layer.rounded_rectangle(
-            [box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy],
-            radius=radius,
-            fill=(235, 228, 218),
-        )
-    layer.rounded_rectangle(box, radius=radius, fill=CARD, outline=GOLD_LINE, width=2)
+    # 扁平風：極輕微投影
+    layer.rounded_rectangle(
+        [box[0] + 1, box[1] + 1, box[2] + 1, box[3] + 1],
+        radius=radius,
+        fill=(236, 232, 226),
+    )
+    layer.rounded_rectangle(box, radius=radius, fill=fill, outline=edge, width=3)
 
 
 def draw_cell_label(
     draw: ImageDraw.ImageDraw,
     b: dict,
+    icon: str,
     main: str,
-    hint: str,
     font_path: str,
     font_idx: int,
 ) -> None:
     x, y, cw, ch = b["x"], b["y"], b["width"], b["height"]
-    pad_x, pad_y = 28, 32
-    hint_h = 40
+    pad_x, pad_y = 10, 10
     max_w = cw - pad_x * 2
-    max_h = ch - pad_y * 2 - hint_h
+    max_h = ch - pad_y * 2
 
-    font_main = None
-    for size in range(60, 30, -2):
-        f = truetype(font_path, font_idx, size)
-        bb = draw.textbbox((0, 0), main, font=f)
-        w, h = bb[2] - bb[0], bb[3] - bb[1]
+    font_main: ImageFont.ImageFont | None = None
+    icon_w = 104
+    for size in range(106, 56, -2):
+        f_text = truetype(font_path, font_idx, size)
+        bb_text = draw.textbbox((0, 0), main, font=f_text)
+        w = icon_w + 18 + (bb_text[2] - bb_text[0])
+        h = max(icon_w, bb_text[3] - bb_text[1])
         if w <= max_w and h <= max_h:
-            font_main = f
+            font_main = f_text
             break
     if font_main is None:
-        font_main = truetype(font_path, font_idx, 30)
+        font_main = truetype(font_path, font_idx, 56)
 
-    mb = draw.textbbox((0, 0), main, font=font_main)
-    tw, th = mb[2] - mb[0], mb[3] - mb[1]
-    tx = x + (cw - tw) // 2 - mb[0]
-    ty = y + (ch - th - hint_h) // 2 - mb[1]
-    # 淺底用淡陰影即可
-    draw.text((tx + 1, ty + 1), main, font=font_main, fill=(230, 225, 218))
-    draw.text((tx, ty), main, font=font_main, fill=TEXT_MAIN)
+    bb_text = draw.textbbox((0, 0), main, font=font_main)
+    w_text = bb_text[2] - bb_text[0]
+    h_text = bb_text[3] - bb_text[1]
+    badge_w = icon_w
+    total_w = badge_w + 18 + w_text
+    total_h = max(badge_w, h_text)
+    start_x = x + (cw - total_w) // 2
+    cy = y + (ch - total_h) // 2
 
-    f_hint = truetype(font_path, font_idx, 22)
-    hb = draw.textbbox((0, 0), hint, font=f_hint)
-    hw = hb[2] - hb[0]
-    hx = x + (cw - hw) // 2 - hb[0]
-    hy = y + ch - pad_y - (hb[3] - hb[1]) - hb[1]
-    draw.text((hx, hy), hint, font=f_hint, fill=TEXT_HINT)
+    _draw_icon_badge(
+        draw,
+        cx=start_x + badge_w // 2,
+        cy=cy + max(h_text, badge_w) // 2 - 2,
+        icon=icon,
+    )
+    tx = start_x + badge_w + 18
+    draw.text((tx + 1, cy - bb_text[1] + 1), main, font=font_main, fill=(224, 230, 238))
+    draw.text((tx, cy - bb_text[1]), main, font=font_main, fill=TEXT_MAIN)
 
 
 def main() -> None:
@@ -207,22 +293,30 @@ def main() -> None:
 
     draw_header_bar(draw, font_path, font_idx)
 
-    # 六格白卡片（在熱區內）
-    for a in areas:
+    # 六格卡片（在熱區內）- 每格不同色，提升鑑別度
+    for idx, a in enumerate(areas):
         b = a["bounds"]
-        draw_card(draw, b["x"], b["y"], b["width"], b["height"])
+        draw_card(
+            draw,
+            b["x"],
+            b["y"],
+            b["width"],
+            b["height"],
+            fill=CARD_FILL_SET[idx % len(CARD_FILL_SET)],
+            edge=CARD_EDGE_SET[idx % len(CARD_EDGE_SET)],
+        )
 
     # 與 JSON label 對齊的完整中文
     rows = [
-        ("主選單", "MENU"),
-        ("隨機配菜", "SURPRISE"),
-        ("我的最愛", "FAVORITES"),
-        ("清冰箱模式", "FRIDGE"),
-        ("預算方案", "BUDGET"),
-        ("採買清單", "GROCERY"),
+        ("🏠", "主選單"),
+        ("🍳", "隨機配菜"),
+        ("❤️", "我的最愛"),
+        ("🧊", "清冰箱模式"),
+        ("💰", "預算方案"),
+        ("🛒", "採買清單"),
     ]
-    for a, (zh, en) in zip(areas, rows):
-        draw_cell_label(draw, a["bounds"], zh, en, font_path, font_idx)
+    for a, (icon, zh) in zip(areas, rows):
+        draw_cell_label(draw, a["bounds"], icon, zh, font_path, font_idx)
 
     rgb = base.convert("RGB")
     for q in (93, 88, 82, 76):
@@ -233,7 +327,7 @@ def main() -> None:
             OUT_PATH.unlink(missing_ok=True)
             buf.rename(OUT_PATH)
             print(
-                f"✅ 已寫入 {OUT_PATH}（quality={q}，約 {sz // 1024} KB；字型 {font_path} index={font_idx}）"
+                f"✅ 已寫入 {OUT_PATH}（style={STYLE_VERSION}, quality={q}，約 {sz // 1024} KB；字型 {font_path} index={font_idx}）"
             )
             return
         buf.unlink(missing_ok=True)

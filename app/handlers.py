@@ -383,7 +383,7 @@ async def process_postback_reply(event: WebhookPostbackEvent) -> None:
         elif await save_favorite_recipe(event.user_id, recipe_name, recipe_data, tenant_id=event.tenant_id):
             await _reply_line(
                 event.reply_token,
-                TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬米其林收藏庫！"),
+                TextMessage(text=f"✅ 食譜『{recipe_name}』已成功收入您的專屬收藏庫！"),
                 user_id=event.user_id,
             )
         else:

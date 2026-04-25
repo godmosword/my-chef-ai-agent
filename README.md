@@ -1,4 +1,4 @@
-## 米其林職人大腦（LINE Bot × FastAPI）
+## 職人料理大腦（LINE Bot × FastAPI）
 
 以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，可改走 OpenAI）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
 
@@ -9,7 +9,7 @@
 ## 開源、商標與第三方服務
 
 - **授權**：MIT，全文見根目錄 [`LICENSE`](LICENSE)。第三方 Python 套件摘要見 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)（更新依賴後請執行 `python3 scripts/generate_third_party_licenses.py` 並一併提交）。
-- **商標**：專案展示名稱中的「米其林」為產品行銷用語，**與米其林指南（MICHELIN Guide）或其權利人無關**；若你 fork 或對外發布，請自行評估中性品牌名稱與當地商標法。
+- **商標**：請使用中性品牌名稱並自行評估當地商標法與命名風險。
 - **外部 API**：部署者須自備並遵守 **LINE**、**Google／Gemini**、**OpenAI**、**YouTube** 等條款；本倉庫僅提供程式碼。
 - **開源前檢查**：[`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)
 

@@ -35,7 +35,7 @@ def _deep_research_timeout_sec() -> float:
 
 def _build_research_prompt(recipe_intent: str) -> str:
     return (
-        "你是米其林研發主廚，為 LINE 食譜助理做深度研究。"
+        "你是資深研發主廚，為 LINE 食譜助理做深度研究。"
         f"主題：{recipe_intent}\n\n"
         "請優先覆蓋：\n"
         "1. 黃金比例：香料、醬汁的具體公克數與比例。\n"

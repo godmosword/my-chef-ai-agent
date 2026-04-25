@@ -123,20 +123,20 @@ CUISINE_SELECTOR_MSG = _build_cuisine_selector()
 
 
 def get_main_menu_flex() -> FlexMessage:
-    """Main menu with Dark Michelin action buttons."""
+    """Main menu with compact premium action buttons."""
     menu_dict = {
         "type": "bubble",
         "header": {
             "type": "box",
             "layout": "vertical",
-            "paddingAll": "lg",
+            "paddingAll": "md",
             "contents": [
-                {"type": "text", "text": "👨‍🍳 米其林職人服務", "weight": "bold", "size": "lg", "color": fx.MENU_HEADER_TEXT}
+                {"type": "text", "text": "👨‍🍳 職人料理大腦", "weight": "bold", "size": "lg", "color": fx.MENU_HEADER_TEXT}
             ],
             "backgroundColor": fx.MENU_HEADER_BG,
         },
         "body": {
-            "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "lg", "backgroundColor": fx.MENU_BODY_BG,
+            "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "md", "backgroundColor": fx.MENU_BODY_BG,
             "contents": [
                 {
                     "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_CUISINE,
@@ -170,7 +170,7 @@ def get_main_menu_flex() -> FlexMessage:
         },
     }
     return FlexMessage(
-        alt_text="開啟米其林職人菜單",
+        alt_text="開啟職人料理菜單",
         contents=FlexContainer.from_dict(menu_dict),
     )
 

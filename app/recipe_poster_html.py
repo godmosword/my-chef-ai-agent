@@ -587,7 +587,7 @@ def build_poster_html(recipe_data: dict) -> str:
 
   <!-- ══ 底部署名 ══ -->
   <div class="footer">
-    <span class="footer-brand">米其林職人大腦</span>
+    <span class="footer-brand">職人料理大腦</span>
     <span class="footer-tag">✦ Recipe Poster</span>
   </div>
 

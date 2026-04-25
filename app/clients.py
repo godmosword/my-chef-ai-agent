@@ -28,7 +28,7 @@ async def _lifespan(_: FastAPI):
     await stop_queue_workers()
 
 
-app = FastAPI(title="米其林職人大腦", version="2.0.0", lifespan=_lifespan)
+app = FastAPI(title="職人料理大腦", version="2.0.0", lifespan=_lifespan)
 setup_otel(app)
 
 # ─── LINE ───────────────────────────────────────────────────────────────────────

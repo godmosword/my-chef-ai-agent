@@ -4,7 +4,7 @@
 
 ### Overview
 
-This is a modular Python FastAPI LINE Bot called **米其林職人大腦** (Michelin Chef AI Brain).
+This is a modular Python FastAPI LINE Bot called **職人料理大腦** (Chef AI Brain).
 `main.py` 是薄入口，核心邏輯在 `app/`：`routes`（webhook／健康檢查）、`handlers`（文字／圖片／postback）、`ai_service`（食譜與圖片辨識）、`db`（**Render Postgres**，可優雅降級）。
 
 預設以 Gemini 系列走 OpenAI 相容端點；亦可依 `MODEL_NAME` 改走 OpenAI API。
