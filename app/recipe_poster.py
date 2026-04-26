@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
+from app import design_tokens as dt
 from app.helpers import _flex_safe_https_url, _parse_to_list, _safe_str
 
 logger = logging.getLogger(__name__)
@@ -17,17 +18,17 @@ _FONT_DIAGNOSED = False
 
 W = 1200
 H = 1800
-BG = (249, 247, 244)          # 溫暖米白底色
-CARD = (255, 255, 255)         # 白色卡片
-CARD_BORDER = (234, 228, 220)  # 米色邊框
-TITLE = (28, 25, 23)           # 深棕黑標題
-SUBTITLE = (156, 143, 132)     # 暖灰輔助
-BODY = (61, 53, 48)            # 溫暖深棕內文
-MUTED = (156, 143, 132)        # 暖灰
-ACCENT = (200, 146, 42)        # 琥珀金
-ACCENT_LIGHT = (245, 239, 230) # 淡金底色
-STEP_BADGE = (42, 96, 73)      # 深森綠徽章
-STEP_BADGE_TEXT = (245, 240, 230)  # 米白文字
+BG = dt.hex_to_rgb(dt.BACKGROUND_ALT)
+CARD = dt.hex_to_rgb(dt.SURFACE)
+CARD_BORDER = dt.hex_to_rgb(dt.BORDER)
+TITLE = dt.hex_to_rgb(dt.TEXT_INK)
+SUBTITLE = dt.hex_to_rgb(dt.TEXT_MUTED)
+BODY = dt.hex_to_rgb(dt.TEXT_BODY)
+MUTED = dt.hex_to_rgb(dt.TEXT_MUTED)
+ACCENT = dt.hex_to_rgb(dt.PRIMARY)
+ACCENT_LIGHT = dt.hex_to_rgb(dt.PRIMARY_LIGHT)
+STEP_BADGE = dt.hex_to_rgb(dt.GREEN)
+STEP_BADGE_TEXT = dt.hex_to_rgb(dt.GREEN_TEXT)
 
 FONT_PROBE = "職人料理大腦辣炒杏鮑菇高麗菜食材步驟小撇步調味比例"
 LINUX_NOTO_PRIORITIES: list[str] = [

@@ -2,57 +2,59 @@
 
 from __future__ import annotations
 
+from app import design_tokens as dt
+
 # ── 核心色板 ────────────────────────────────────────────────────────────────────
-PRIMARY_BG     = "#F8F5F0"   # 無印米白
-SURFACE_BG     = "#FFFCF8"   # 卡片底
-SECONDARY_TEXT = "#8C857B"   # 暖灰輔助
-ACCENT_ORANGE  = "#A78A67"   # 木質棕
-NEUTRAL_TEXT   = "#3A3631"   # 深棕灰主文字
-SURFACE_ALT    = "#F2ECE2"   # 次要底
-SURFACE_MUTED  = "#EEE7DC"   # 帶暖中性
+PRIMARY_BG = dt.BACKGROUND
+SURFACE_BG = dt.SURFACE
+SECONDARY_TEXT = dt.TEXT_MUTED
+ACCENT_ORANGE = dt.PRIMARY
+NEUTRAL_TEXT = dt.TEXT_INK
+SURFACE_ALT = dt.SURFACE_ALT
+SURFACE_MUTED = dt.SURFACE_MUTED
 
 # ── 三廚角色標籤色 ──────────────────────────────────────────────────────────────
 ROLE_COLORS: dict[str, str] = {
-    "行政主廚": "#C8922A",
-    "副主廚":   "#2A6049",
-    "食材總管": "#7B5EA7",
+    "行政主廚": dt.ROLE_EXECUTIVE_CHEF,
+    "副主廚": dt.ROLE_SOUS_CHEF,
+    "食材總管": dt.ROLE_INGREDIENT_MANAGER,
 }
 
 # ── 文字階層 ────────────────────────────────────────────────────────────────────
 TEXT_INK    = NEUTRAL_TEXT
-TEXT_BODY   = "#3D3530"      # 溫暖深棕內文
+TEXT_BODY = dt.TEXT_BODY
 TEXT_MUTED  = SECONDARY_TEXT
 TEXT_STRONG = NEUTRAL_TEXT
 
 # ── 無主圖時文字 hero ───────────────────────────────────────────────────────────
-HERO_BLOCK_BG = "#EDE6DA"    # 無印暖灰 hero 底色
-HERO_KICKER   = "#8F7758"    # 深木色標語
-HERO_SUB      = "#8C857B"    # 暖灰輔助文字
-HERO_TITLE    = "#3A3631"    # 深棕灰標題
+HERO_BLOCK_BG = dt.GREEN
+HERO_KICKER = dt.PRIMARY
+HERO_SUB = dt.GREEN_TEXT
+HERO_TITLE = dt.GREEN_TEXT
 
 # ── 主選單 ──────────────────────────────────────────────────────────────────────
-MENU_HEADER_BG       = "#6B7A6B"  # 沉穩鼠尾草綠
-MENU_HEADER_TEXT     = "#F7F4EE"
+MENU_HEADER_BG = dt.GREEN
+MENU_HEADER_TEXT = dt.GREEN_TEXT
 MENU_BODY_BG         = PRIMARY_BG
-MENU_BTN_CUISINE     = "#B89450"
-MENU_BTN_FRIDGE      = "#B89450"
-MENU_BTN_BUDGET      = "#B89450"
-MENU_BTN_MOOD        = "#B89450"
-MENU_BTN_SECONDARY   = "#6B7A6B"
-MENU_BTN_TERTIARY    = "#9E9589"
+MENU_BTN_CUISINE = dt.PRIMARY
+MENU_BTN_FRIDGE = dt.PRIMARY
+MENU_BTN_BUDGET = dt.PRIMARY
+MENU_BTN_MOOD = dt.PRIMARY
+MENU_BTN_SECONDARY = dt.GREEN
+MENU_BTN_TERTIARY = dt.TEXT_MUTED
 
 # ── 菜系輪播 ────────────────────────────────────────────────────────────────────
-CUISINE_HERO_TAIWANESE = "#8D7760"
-CUISINE_HERO_THAI      = "#6E8A74"
-CUISINE_HERO_JAPANESE  = "#7A748A"
-CUISINE_HERO_EU        = "#6E7F8E"
-CUISINE_HERO_KIDS      = "#8D8571"
+CUISINE_HERO_TAIWANESE = dt.CUISINE_TAIWANESE
+CUISINE_HERO_THAI = dt.CUISINE_THAI
+CUISINE_HERO_JAPANESE = dt.CUISINE_JAPANESE
+CUISINE_HERO_EU = dt.CUISINE_EUROPEAN
+CUISINE_HERO_KIDS = dt.CUISINE_KIDS
 
-CUISINE_HERO_LABEL  = "#F6F1E9"
-CUISINE_HERO_TITLE  = "#FFFDF9"
+CUISINE_HERO_LABEL = dt.GREEN_TEXT
+CUISINE_HERO_TITLE = dt.GREEN_TEXT
 CUISINE_BODY_TITLE  = TEXT_INK
 CUISINE_BODY_DESC   = TEXT_MUTED
-CUISINE_FOOTER_BTN  = "#A78A67"
+CUISINE_FOOTER_BTN = dt.PRIMARY
 
 # ── 食譜主卡 ────────────────────────────────────────────────────────────────────
 SURFACE_CARD        = SURFACE_BG
@@ -64,15 +66,15 @@ TALK_CONTENT        = TEXT_BODY
 PANEL_CONFERENCE_BG    = SURFACE_ALT
 PANEL_CONFERENCE_LABEL = SECONDARY_TEXT
 
-SECTION_LABEL = "#6B7A6B"    # 沉穩綠
+SECTION_LABEL = dt.GREEN
 SHOP_BULLET   = TEXT_BODY
 
 ING_NAME  = TEXT_BODY
-ING_PRICE = "#8F7758"
+ING_PRICE = dt.PRIMARY
 
 PANEL_COST_OUTER_BG = SURFACE_ALT
-PANEL_COST_BORDER   = "#E1D8CB"
-SEP_COLOR           = "#E1D8CB"
+PANEL_COST_BORDER = dt.BORDER
+SEP_COLOR = dt.BORDER
 TOTAL_BAND_BG       = SURFACE_MUTED
 TOTAL_LABEL         = SECONDARY_TEXT
 
@@ -83,8 +85,8 @@ FOOTER_BTN_SECONDARY = SECONDARY_TEXT
 FOOTER_BTN_FAVORITE  = ACCENT_ORANGE
 FOOTER_DISCLAIMER    = SECONDARY_TEXT
 
-VIDEO_BTN      = "#A78A67"
-EXPAND_BTN_BG  = "#9E9589"
+VIDEO_BTN = dt.PRIMARY
+EXPAND_BTN_BG = dt.GREEN
 
 ROLE_FALLBACK = TEXT_MUTED
 

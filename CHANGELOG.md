@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-04-26（全域 UI/UX 視覺一致化）
+
+- **單一 token source**：新增 [`app/design_tokens.py`](app/design_tokens.py)，統一跨層色票（Flex、海報 HTML、Pillow、圖卡、法規頁）。
+- **Flex 視覺收斂**：[`app/flex_theme.py`](app/flex_theme.py) 改由共享 token 驅動；[`app/flex_messages.py`](app/flex_messages.py) 導入 [`app/ui_contracts.py`](app/ui_contracts.py) 的按鈕語義（primary/secondary/link）與一致色階。
+- **海報/圖卡一致化**：[`app/recipe_poster_html.py`](app/recipe_poster_html.py)、[`app/recipe_poster.py`](app/recipe_poster.py)、[`app/recipe_card_generator.py`](app/recipe_card_generator.py) 改為共用 token，對齊背景、邊框、主色、文字層級與角色色。
+- **Web 法規頁一致化**：[`app/routes.py`](app/routes.py) 抽出 `LEGAL_PAGE_STYLE`，移除重複 inline CSS 並改用共享 token。
+- **契約與防漂移**：新增 [`docs/UI_COMPONENT_CONTRACT.md`](docs/UI_COMPONENT_CONTRACT.md) 與 `tests/test_design_token_consistency.py`（4 tests）確保 token 映射不回歸。
+
 ## 2026-04-25（主圖／圖卡／海報穩定性）
 
 - **圖像 API 金鑰**：新增 `resolve_openai_image_api_key()`（[`app/config.py`](app/config.py)），`generate_base_image` 與主圖 client 一致；聊天走 Gemini 時仍可用環境變數 `OPENAI_API_KEY` 或 `IMAGE_OPENAI_API_KEY` 產圖。

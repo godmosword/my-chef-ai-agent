@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import RECIPE_POSTER_RENDERER
+from app import design_tokens as dt
 from app.helpers import _parse_to_list, _safe_str
 from app.recipe_poster import _derive_cook_time, _derive_quick_tips
 
@@ -32,19 +33,19 @@ POSTER_WIDTH  = 1080
 POSTER_HEIGHT = 1920
 
 # ── 調色盤（精緻食譜雜誌風）────────────────────────────────────────────────────
-COLOR_ACCENT       = "#C8922A"   # 琥珀金主色
-COLOR_ACCENT_DARK  = "#A67318"   # 深金
-COLOR_ACCENT_LIGHT = "#FDF6E7"   # 淡金底色
-COLOR_GREEN        = "#2A6049"   # 深森綠（標籤、標題）
-COLOR_GREEN_LIGHT  = "#EBF5F0"   # 淡綠底色
-COLOR_BODY_BG      = "#F9F7F4"   # 溫暖米白底色
-COLOR_CARD_BG      = "#FFFFFF"
-COLOR_TITLE_TEXT   = "#1C1917"   # 深棕黑
-COLOR_BODY_TEXT    = "#3D3530"   # 溫暖深棕
-COLOR_MUTED        = "#9C8F84"   # 溫暖灰
-COLOR_BORDER       = "#EAE4DC"   # 米色邊框
-COLOR_STEP_BADGE   = "#2A6049"   # 深森綠徽章
-COLOR_TIP_STAR     = "#C8922A"   # 琥珀金星號
+COLOR_ACCENT = dt.PRIMARY
+COLOR_ACCENT_DARK = dt.PRIMARY_DARK
+COLOR_ACCENT_LIGHT = dt.PRIMARY_LIGHT
+COLOR_GREEN = dt.GREEN
+COLOR_GREEN_LIGHT = dt.GREEN_LIGHT
+COLOR_BODY_BG = dt.BACKGROUND_ALT
+COLOR_CARD_BG = dt.SURFACE
+COLOR_TITLE_TEXT = dt.TEXT_INK
+COLOR_BODY_TEXT = dt.TEXT_BODY
+COLOR_MUTED = dt.TEXT_MUTED
+COLOR_BORDER = dt.BORDER
+COLOR_STEP_BADGE = dt.GREEN
+COLOR_TIP_STAR = dt.PRIMARY
 
 
 def _cjk_ttc_file_font_face(*, family: str, candidate_paths: tuple[str, ...]) -> str:
@@ -211,7 +212,11 @@ def build_poster_html(recipe_data: dict) -> str:
     talk_html = ""
     if kitchen_talk:
         rows = []
-        role_colors = {"行政主廚": "#E85C2A", "副主廚": "#4A7C59", "食材總管": "#7B5EA7"}
+        role_colors = {
+            "行政主廚": dt.ROLE_EXECUTIVE_CHEF,
+            "副主廚": dt.ROLE_SOUS_CHEF,
+            "食材總管": dt.ROLE_INGREDIENT_MANAGER,
+        }
         for talk in kitchen_talk[:3]:
             if isinstance(talk, dict):
                 role    = _safe_str(talk.get("role", ""), "廚師", max_len=10)

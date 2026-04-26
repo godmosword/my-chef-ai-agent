@@ -7,6 +7,7 @@ from fastapi import Depends, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
+from app import design_tokens as dt
 from app.config import (
     ADMIN_API_TOKEN,
     DATABASE_URL,
@@ -41,6 +42,24 @@ class SubscriptionUpdatePayload(BaseModel):
     plan_key: str = Field(default="free")
     status: str = Field(default="active")
     tenant_id: str = Field(default=DEFAULT_TENANT_ID)
+
+
+LEGAL_PAGE_STYLE = f"""
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    margin: 0;
+    background: {dt.BACKGROUND};
+    color: {dt.TEXT_INK};
+  }}
+  .wrap {{ max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; line-height: 1.7; }}
+  h1 {{ margin: 0 0 16px; font-size: 28px; }}
+  .card {{
+    background: {dt.SURFACE};
+    border: 1px solid {dt.BORDER};
+    border-radius: 14px;
+    padding: 16px;
+  }}
+"""
 
 
 def _build_trace_carrier() -> dict[str, str]:
@@ -280,10 +299,7 @@ async def legal_disclaimer(_rate_limit: None = Depends(enforce_public_rate_limit
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>完整免責聲明</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; margin: 0; background: #fffaf5; color: #1c1917; }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; line-height: 1.7; }
-    h1 { margin: 0 0 16px; font-size: 28px; }
-    .card { background: #fff; border: 1px solid #eae4dc; border-radius: 14px; padding: 16px; }
+    {LEGAL_PAGE_STYLE}
   </style>
 </head>
 <body>
@@ -310,10 +326,7 @@ async def legal_privacy(_rate_limit: None = Depends(enforce_public_rate_limit)):
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>隱私政策</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; margin: 0; background: #fffaf5; color: #1c1917; }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 48px; line-height: 1.7; }
-    h1 { margin: 0 0 16px; font-size: 28px; }
-    .card { background: #fff; border: 1px solid #eae4dc; border-radius: 14px; padding: 16px; }
+    {LEGAL_PAGE_STYLE}
     ul { margin: 8px 0 0 18px; padding: 0; }
   </style>
 </head>

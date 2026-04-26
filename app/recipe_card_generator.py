@@ -14,6 +14,7 @@ import httpx
 from openai import AsyncOpenAI
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from app import design_tokens as dt
 from app.config import OPENAI_GPT_IMAGE_MODEL_ID, resolve_openai_image_api_key
 from app.helpers import _parse_to_list
 
@@ -26,6 +27,14 @@ CANVAS_H = 1500
 _SECTION_RGB = (32, 85, 68)
 _STEP_BADGE_RGB = (200, 95, 40)
 _HERO_BOX = (708, 42, 1148, 292)  # top-right, below full-width title band
+_BG_RGB = dt.hex_to_rgb(dt.BACKGROUND_ALT)
+_SURFACE_RGB = dt.hex_to_rgb(dt.SURFACE)
+_BORDER_RGB = dt.hex_to_rgb(dt.BORDER)
+_SECTION_RGB = dt.hex_to_rgb(dt.GREEN)
+_STEP_BADGE_RGB = dt.hex_to_rgb(dt.PRIMARY)
+_TITLE_RGB = dt.hex_to_rgb(dt.TEXT_INK)
+_BODY_RGB = dt.hex_to_rgb(dt.TEXT_BODY)
+_MUTED_RGB = dt.hex_to_rgb(dt.TEXT_MUTED)
 
 
 @dataclass(frozen=True)
@@ -226,11 +235,11 @@ def create_fallback_base_image(*, output_path: str) -> str:
     """Create a local neutral base image when remote image API is unavailable."""
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    bg = Image.new("RGB", (CANVAS_W, CANVAS_H), (248, 244, 236))
+    bg = Image.new("RGB", (CANVAS_W, CANVAS_H), _BG_RGB)
     draw = ImageDraw.Draw(bg)
-    draw.rectangle((24, 24, CANVAS_W - 24, CANVAS_H - 24), outline=(226, 216, 203), width=3)
-    draw.rounded_rectangle((40, 30, 660, 200), radius=24, fill=(255, 255, 255), outline=(226, 216, 203), width=2)
-    draw.rounded_rectangle((708, 42, 1148, 292), radius=24, fill=(241, 232, 220), outline=(226, 216, 203), width=2)
+    draw.rectangle((24, 24, CANVAS_W - 24, CANVAS_H - 24), outline=_BORDER_RGB, width=3)
+    draw.rounded_rectangle((40, 30, 660, 200), radius=24, fill=_SURFACE_RGB, outline=_BORDER_RGB, width=2)
+    draw.rounded_rectangle((708, 42, 1148, 292), radius=24, fill=dt.hex_to_rgb(dt.SURFACE_ALT), outline=_BORDER_RGB, width=2)
     bg.save(path, format="PNG")
     return str(path)
 
@@ -248,10 +257,10 @@ def compose_recipe_card(
     top-right after all vector/text layers so the finished dish appears on-card.
     """
     base = Image.open(base_image_path).convert("RGB")
-    canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), (248, 244, 236))
+    canvas = Image.new("RGB", (CANVAS_W, CANVAS_H), _BG_RGB)
 
     bg = base.resize((CANVAS_W, CANVAS_H), Image.Resampling.LANCZOS)
-    bg = Image.blend(bg, Image.new("RGB", (CANVAS_W, CANVAS_H), (248, 244, 236)), alpha=0.45)
+    bg = Image.blend(bg, Image.new("RGB", (CANVAS_W, CANVAS_H), _BG_RGB), alpha=0.45)
     canvas.paste(bg, (0, 0))
 
     draw = ImageDraw.Draw(canvas)
@@ -261,12 +270,12 @@ def compose_recipe_card(
     body_font = _load_font(24)
     small_font = _load_font(22)
 
-    def card(box: tuple[int, int, int, int], fill=(255, 255, 255, 220)) -> None:
+    def card(box: tuple[int, int, int, int], fill=(*_SURFACE_RGB, 220)) -> None:
         layer = Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), fill)
         mask = Image.new("L", layer.size, 0)
         ImageDraw.Draw(mask).rounded_rectangle((0, 0, layer.size[0], layer.size[1]), radius=24, fill=255)
         canvas.paste(layer, box[:2], mask)
-        draw.rounded_rectangle(box, radius=24, outline=(226, 216, 203), width=2)
+        draw.rounded_rectangle(box, radius=24, outline=_BORDER_RGB, width=2)
 
     # main blocks
     title_box = (40, 30, 660, 200)
@@ -281,18 +290,18 @@ def compose_recipe_card(
         card(b)
 
     title_w = 580 if hero_image_path else 560
-    _draw_text_block(draw, text=recipe.title, x=60, y=54, width=title_w, font=title_font, fill=(42, 36, 28), max_lines=2)
-    _draw_text_block(draw, text=f"{recipe.subtitle}｜{recipe.serving}", x=60, y=138, width=title_w, font=subtitle_font, fill=(112, 99, 85), max_lines=1)
+    _draw_text_block(draw, text=recipe.title, x=60, y=54, width=title_w, font=title_font, fill=_TITLE_RGB, max_lines=2)
+    _draw_text_block(draw, text=f"{recipe.subtitle}｜{recipe.serving}", x=60, y=138, width=title_w, font=subtitle_font, fill=_MUTED_RGB, max_lines=1)
 
     draw.text((60, 238), "食材", font=section_font, fill=_SECTION_RGB)
     y = 278
     for item in recipe.ingredients[:10]:
-        y = _draw_text_block(draw, text=f"• {item}", x=66, y=y, width=530, font=body_font, fill=(53, 45, 35), max_lines=1)
+        y = _draw_text_block(draw, text=f"• {item}", x=66, y=y, width=530, font=body_font, fill=_BODY_RGB, max_lines=1)
 
     draw.text((60, 488), "前置處理", font=section_font, fill=_SECTION_RGB)
     y = 528
     for p in recipe.prep[:2]:
-        y = _draw_text_block(draw, text=f"• {p.name}：{p.note}", x=66, y=y, width=530, font=small_font, fill=(53, 45, 35), max_lines=2)
+        y = _draw_text_block(draw, text=f"• {p.name}：{p.note}", x=66, y=y, width=530, font=small_font, fill=_BODY_RGB, max_lines=2)
 
     draw.text((60, 778), "料理步驟", font=section_font, fill=_SECTION_RGB)
     step_w = 350
@@ -304,24 +313,24 @@ def compose_recipe_card(
         x1 = start_x + col * (step_w + 18)
         y1 = start_y + row * (step_h + 14)
         x2, y2 = x1 + step_w, y1 + step_h
-        draw.rounded_rectangle((x1, y1, x2, y2), radius=18, fill=(255, 252, 247), outline=(230, 220, 207), width=2)
+        draw.rounded_rectangle((x1, y1, x2, y2), radius=18, fill=dt.hex_to_rgb(dt.SURFACE_MUTED), outline=_BORDER_RGB, width=2)
         draw.ellipse((x1 + 12, y1 + 10, x1 + 52, y1 + 50), fill=_STEP_BADGE_RGB)
         draw.text((x1 + 24, y1 + 17), str(idx + 1), font=_load_font(22, bold=True), fill=(255, 255, 255))
-        _draw_text_block(draw, text=step.title, x=x1 + 60, y=y1 + 14, width=step_w - 76, font=small_font, fill=(59, 45, 30), max_lines=1)
-        _draw_text_block(draw, text=step.description, x=x1 + 16, y=y1 + 56, width=step_w - 28, font=_load_font(20), fill=(74, 58, 39), max_lines=4)
+        _draw_text_block(draw, text=step.title, x=x1 + 60, y=y1 + 14, width=step_w - 76, font=small_font, fill=_TITLE_RGB, max_lines=1)
+        _draw_text_block(draw, text=step.description, x=x1 + 16, y=y1 + 56, width=step_w - 28, font=_load_font(20), fill=_BODY_RGB, max_lines=4)
 
     draw.text((60, 1288), "小撇步", font=section_font, fill=_SECTION_RGB)
     y = 1328
     for tip in recipe.tips[:4]:
-        y = _draw_text_block(draw, text=f"• {tip}", x=66, y=y, width=540, font=_load_font(20), fill=(53, 45, 35), max_lines=2)
+        y = _draw_text_block(draw, text=f"• {tip}", x=66, y=y, width=540, font=_load_font(20), fill=_BODY_RGB, max_lines=2)
 
     draw.text((660, 1288), "調味比例", font=section_font, fill=_SECTION_RGB)
     y = 1328
     for s in recipe.seasoning[:4]:
-        y = _draw_text_block(draw, text=f"• {s}", x=662, y=y, width=250, font=_load_font(20), fill=(53, 45, 35), max_lines=1)
+        y = _draw_text_block(draw, text=f"• {s}", x=662, y=y, width=250, font=_load_font(20), fill=_BODY_RGB, max_lines=1)
 
     draw.text((970, 1288), "時間", font=section_font, fill=_SECTION_RGB)
-    _draw_text_block(draw, text=recipe.cook_time, x=972, y=1338, width=170, font=_load_font(24, bold=True), fill=(53, 45, 35), max_lines=2)
+    _draw_text_block(draw, text=recipe.cook_time, x=972, y=1338, width=170, font=_load_font(24, bold=True), fill=_TITLE_RGB, max_lines=2)
 
     if hero_image_path:
         _paste_rounded_hero(canvas, hero_image_path, _HERO_BOX)

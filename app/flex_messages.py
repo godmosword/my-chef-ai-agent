@@ -12,6 +12,7 @@ from app.config import (
     RECIPE_STEPS_PREVIEW_COUNT,
 )
 from app import flex_theme as fx
+from app import ui_contracts as ui
 from app.helpers import _flex_safe_https_url, _safe_str, _parse_to_list
 
 
@@ -105,7 +106,7 @@ def _build_cuisine_selector() -> FlexMessage:
                 ],
             },
             "footer": {"type": "box", "layout": "vertical", "paddingAll": "lg", "backgroundColor": fx.PRIMARY_BG, "contents": [
-                {"type": "button", "style": "primary", "color": fx.CUISINE_FOOTER_BTN, "action": {
+                {"type": "button", "style": "primary", "color": ui.BUTTON_PRIMARY_BG, "action": {
                     "type": "postback", "label": "選擇此菜系",
                     "data": f"action=change_cuisine&cuisine={c['cuisine']}", "displayText": c["display_text"],
                 }},
@@ -139,31 +140,31 @@ def get_main_menu_flex() -> FlexMessage:
             "type": "box", "layout": "vertical", "spacing": "xs", "paddingAll": "md", "backgroundColor": fx.MENU_BODY_BG,
             "contents": [
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_CUISINE,
+                    "type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG,
                     "action": {"type": "message", "label": "🍱 各式菜色", "text": "換菜單"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_FRIDGE,
+                    "type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG,
                     "action": {"type": "message", "label": "🏠 生活需求", "text": "清冰箱模式"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_BUDGET,
+                    "type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG,
                     "action": {"type": "message", "label": "💰 預算方案", "text": "幫我規劃預算食譜"},
                 },
                 {
-                    "type": "button", "style": "primary", "height": "sm", "color": fx.MENU_BTN_MOOD,
+                    "type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG,
                     "action": {"type": "message", "label": "☁️ 心情點餐", "text": "我想根據心情點餐"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
+                    "type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_SECONDARY_BG,
                     "action": {"type": "message", "label": "❤️ 我的最愛", "text": "我的最愛"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
+                    "type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_SECONDARY_BG,
                     "action": {"type": "message", "label": "🛒 採買食材", "text": "🛒 檢視清單"},
                 },
                 {
-                    "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_TERTIARY,
+                    "type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_TERTIARY_BG,
                     "action": {"type": "message", "label": "🔐 資料政策", "text": "隱私聲明"},
                 },
             ],
@@ -296,8 +297,8 @@ def generate_flex_message(
                 {
                     "type": "box", "layout": "horizontal", "spacing": "md",
                     "contents": [
-                        {"type": "button", "style": "secondary", "height": "sm", "color": fx.FOOTER_BTN_SECONDARY, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                        {"type": "button", "style": "primary", "height": "sm", "color": fx.FOOTER_BTN_FAVORITE, "action": favorite_action},
+                        {"type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_SECONDARY_BG, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                        {"type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG, "action": favorite_action},
                     ],
                 },
                 {
@@ -328,7 +329,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "primary",
                 "height": "sm",
-                "color": fx.VIDEO_BTN,
+                "color": ui.BUTTON_PRIMARY_BG,
                 "action": {
                     "type": "uri",
                     "label": "▶ 教學影片",
@@ -347,7 +348,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "secondary",
                 "height": "sm",
-                "color": fx.EXPAND_BTN_BG,
+                "color": ui.BUTTON_SECONDARY_BG,
                 "action": {
                     "type": "postback",
                     "label": "展開完整步驟",
@@ -370,7 +371,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "secondary",
                 "height": "sm",
-                "color": fx.EXPAND_BTN_BG,
+                "color": ui.BUTTON_SECONDARY_BG,
                 "action": {
                     "type": "postback",
                     "label": "🖼 生成食譜海報",
@@ -392,7 +393,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "secondary",
                 "height": "sm",
-                "color": fx.EXPAND_BTN_BG,
+                "color": ui.BUTTON_SECONDARY_BG,
                 "action": {
                     "type": "postback",
                     "label": "🧾 生成食譜圖卡",
@@ -414,7 +415,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "secondary",
                 "height": "sm",
-                "color": fx.EXPAND_BTN_BG,
+                "color": ui.BUTTON_SECONDARY_BG,
                 "action": {
                     "type": "postback",
                     "label": "🖼 生成主圖",
@@ -432,7 +433,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "link",
                 "height": "sm",
-                "color": fx.SECONDARY_TEXT,
+                "color": ui.BUTTON_LINK_TEXT,
                 "action": {
                     "type": "uri",
                     "label": "完整免責聲明",
@@ -446,7 +447,7 @@ def generate_flex_message(
                 "type": "button",
                 "style": "link",
                 "height": "sm",
-                "color": fx.SECONDARY_TEXT,
+                "color": ui.BUTTON_LINK_TEXT,
                 "action": {
                     "type": "uri",
                     "label": "隱私政策",
@@ -496,7 +497,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
                 "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "md", "backgroundColor": fx.PRIMARY_BG,
                 "contents": [
                     {
-                        "type": "button", "style": "primary", "height": "sm", "color": fx.FAV_REDO_BTN,
+                        "type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG,
                         "action": {
                             "type": "postback",
                             "label": "🔄 再做一次",
@@ -505,7 +506,7 @@ def build_favorites_carousel(favorites: list[dict]) -> FlexMessage:
                         },
                     },
                     {
-                        "type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY,
+                        "type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_SECONDARY_BG,
                         "action": {
                             "type": "postback",
                             "label": "🗑️ 刪除收藏",
@@ -567,8 +568,8 @@ def build_fallback_recipe_flex(raw_text: str) -> FlexMessage:
         "footer": {
             "type": "box", "layout": "horizontal", "spacing": "md", "paddingAll": "lg", "backgroundColor": fx.PRIMARY_BG,
             "contents": [
-                {"type": "button", "style": "secondary", "height": "sm", "color": fx.MENU_BTN_SECONDARY, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
-                {"type": "button", "style": "primary", "height": "sm", "color": fx.FOOTER_BTN_FAVORITE, "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
+                {"type": "button", "style": "secondary", "height": "sm", "color": ui.BUTTON_SECONDARY_BG, "action": {"type": "message", "label": "重新構思", "text": "清除記憶"}},
+                {"type": "button", "style": "primary", "height": "sm", "color": ui.BUTTON_PRIMARY_BG, "action": {"type": "message", "label": "再試一次", "text": "再來一道"}},
             ],
         },
     }

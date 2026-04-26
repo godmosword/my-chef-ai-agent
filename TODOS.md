@@ -10,6 +10,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
 | 2026-04-24 | **主圖與媒體**：fallback 不快取、圖片重試／timeout、`media_storage`（memory/gcs）、兩段式圖卡 postback。 |
 | 2026-04-23 | **程式碼清理與 token 精簡**：移除殭屍函式與重複邏輯；`job_queue` 合併 dispatch；`SYSTEM_PROMPT` 與 Deep Research／vision prompt 去冗餘。 |
