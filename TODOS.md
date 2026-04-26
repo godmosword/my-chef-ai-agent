@@ -10,6 +10,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
 | 2026-04-24 | **主圖與媒體**：fallback 不快取、圖片重試／timeout、`media_storage`（memory/gcs）、兩段式圖卡 postback。 |

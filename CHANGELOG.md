@@ -6,6 +6,15 @@
 
 ---
 
+## 2026-04-26（UX Playbook 補齊）
+
+- 新增 [`docs/UX_PLAYBOOK.md`](docs/UX_PLAYBOOK.md)，補齊四項設計規範：
+  - 互動狀態矩陣（食譜、主圖、海報、圖卡、收藏）
+  - A11y 最小基線（對比、字級、觸控尺寸、語意與焦點）
+  - Loading/Error/Success microcopy 語氣規範
+  - 使用者視角 IA 流程圖（含 fallback 分支）
+- README 新增 UX 規範入口，方便後續實作與驗收對齊。
+
 ## 2026-04-26（全域 UI/UX 視覺一致化）
 
 - **單一 token source**：新增 [`app/design_tokens.py`](app/design_tokens.py)，統一跨層色票（Flex、海報 HTML、Pillow、圖卡、法規頁）。

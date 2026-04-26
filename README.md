@@ -38,6 +38,7 @@
 - **AI**：OpenAI 相容 `chat.completions`（Gemini 端點或 OpenAI API）；**429／逾時／連線**退避；JSON 截斷修復（`AI_MAX_RETRIES`、`MAX_COMPLETION_TOKENS`）。預設偏快：`AI_TRANSPORT_MAX_RETRIES=1`、`AI_CHAT_TIMEOUT_SEC=18` 等。  
 - **Deep Research**（可選）：Google Interactions API **`deep-research-preview-04-2026`**；預設**關閉**（`ENABLE_DEEP_RESEARCH=1` 啟用）；timeout **5–20** 秒、預設 **10**；併入 system 前可依 `DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM` 截斷。  
 - **Flex UI**：`design_tokens.py`（單一 token source）→ `flex_theme.py` / `ui_contracts.py`（元件契約）→ `flex_messages.py`。  
+- **UX 規範**：互動狀態矩陣、A11y 基線、語氣規範與使用者流程圖見 [`docs/UX_PLAYBOOK.md`](docs/UX_PLAYBOOK.md)。
 - **食譜主圖**：按需「🖼 生成主圖」；`IMAGE_PROVIDER=openai_compatible` 時 **GPT-Image-2**；`b64_json` → 本站 `/media/...`。**可重試**；fallback **不快取**。  
 - **食譜海報**：`recipe_poster_html.py` + Playwright；失敗回退 Pillow；需 **Chromium** 與 **CJK 字型**（見 `render.yaml`）。  
 - **兩段式圖卡**：`recipe_card_generator` postback `generate_recipe_card`；`1200×1500` PNG。  
@@ -233,6 +234,7 @@ my-chef-ai-agent/
 │   └── …
 ├── tests/
 ├── docs/
+│   ├── UX_PLAYBOOK.md
 │   └── UI_COMPONENT_CONTRACT.md
 ├── migrations/
 ├── scripts/
