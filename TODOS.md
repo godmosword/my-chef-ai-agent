@@ -10,6 +10,8 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、HTML 海報、legal）；LINE／Render 封存於 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。 |
+| 2026-05-23 | **Vercel 部署修正**：根目錄移除無效 `vercel.json`；`web/vercel.json` 預設 `MODEL_NAME=gemini-3.1-flash-lite`；Dashboard **Root Directory = `web`**。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -43,6 +45,15 @@
 - [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
 - [x] **Phase 2**：主圖 API、HTML 海報下載、菜系選擇 UI（2026-05-23）
 - [x] **Phase 3**：README／AGENTS 以 Web 為主；`docs/LEGACY_LINE_BOT.md` 封存 LINE／Render（2026-05-23）
+
+### Web 後續（未排進 Phase 0–3）
+
+- [ ] **圖片上傳辨識**：瀏覽器上傳食材圖 → vision API（對應舊 LINE image handler）
+- [ ] **兩段式食譜圖卡**：Stage A 底圖 + Stage B 疊字（Web 版，非 Flex）
+- [ ] **海報 PNG**：Playwright 或服務端截圖（現僅 HTML 下載）
+- [ ] **Deep Research**：可選 grounding（預設關，與 Python 路徑一致）
+- [ ] **OAuth 登入**：取代純匿名 `chef_session`（規格 Phase 3+ 可選）
+- [ ] **DB 產品洞察**：[`2026-05-22-db-insights-design.md`](docs/superpowers/specs/2026-05-22-db-insights-design.md) — `scripts/db_product_insights.py`、`GET /admin/insights`（僅規格，未實作）
 
 ## 一、平台與後端（backlog）
 
@@ -85,6 +96,14 @@
 
 ## 四、已知限制
 
+### Web（Vercel）
+
+- 未設 **`DATABASE_URL`** 時：無多輪記憶、收藏、配額、菜系；僅單次聊天與 placeholder 主圖。
+- **Serverless** 函式有執行時間上限；極長 AI 請求可能逾時（見規格風險表）。
+- **主圖**：`IMAGE_PROVIDER=placeholder` 為備援圖；真實生圖需 `openai_compatible` 與對應金鑰。
+- **海報**：下載為 HTML，非 LINE 版 Playwright PNG。
+
+### 封存 LINE／Render
+
 - **reply_token** 短期有效；長任務以 **push** 為主（背景食譜）。
-- 未設 **資料庫** 時，記憶與收藏不持久；上線前請設 `DATABASE_URL`（或相容 Postgres）。
 - **記憶體** 圖快取、rate limit、佇列皆**單進程**語意；多副本時各實例獨立，跨機一致需 Redis 等外掛（見 backlog 與 `IMAGE_CACHE_BACKEND`）。

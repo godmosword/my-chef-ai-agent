@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-05-23（文件同步 — Web Phase 0–3 對齊）
+
+- **README**：補 Web API 表、環境變數摘要、Phase 0–3 交付狀態；Python 測試改標為封存路徑維護（**153** 則，需 `requirements-dev.txt`）。
+- **TODOS**：里程碑表加入 Web 遷移；新增「Web 後續」backlog（節流、圖片上傳、兩段式圖卡、Playwright PNG、DB insights）；驗收清單維持 Web／Vercel 導向。
+- **規格**：[`2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md) Phase 表與本檔一致。
+
 ## 2026-05-23（Web Phase 3 — 封存 LINE／README 以 Web 為主）
 
 - **README** 改為 Web（Vercel）優先；LINE／Render 移至 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。

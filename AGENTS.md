@@ -36,7 +36,7 @@ Webhook：`POST /callback`。其餘見 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_L
 python3 -m pytest tests/ -v
 ```
 
-目前：`python3 -m pytest tests/ -v` 共 **140** 則收集；有可用 `DATABASE_URL`（Postgres）時應 **140 passed**（含 `tests/integration/`）。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
+目前：`python3 -m pytest tests/ -v` 共 **153** 則收集（需 `pip install -r requirements-dev.txt`，否則部分模組收集失敗）；有可用 `DATABASE_URL`（Postgres）時應 **153 passed**（含 `tests/integration/`）。模組匯入時需要環境變數；若本機未設 `.env`，可於指令前加上：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \

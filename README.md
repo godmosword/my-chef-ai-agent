@@ -18,7 +18,40 @@ npm run dev
 **正式部署**：Vercel 專案 **Root Directory = `web`**，設定 `GEMINI_API_KEY`；記憶／收藏／菜系需 **Neon**（`DATABASE_URL`）。  
 完整說明：[`web/README.md`](web/README.md)
 
-設計與分階段規格：[`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)
+設計與分階段規格：[`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)（**Phase 0–3 已交付**）
+
+---
+
+## Web API（需 `chef_session` cookie）
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| `GET` | `/api/health` | 存活與 AI 設定 |
+| `GET` | `/api/quota` | 今日用量（需 `DATABASE_URL`） |
+| `POST` | `/api/recipes` | 聊天生成食譜（body `{ "message": "..." }`） |
+| `POST` | `/api/recipes/hero` | 生成主圖（佔配額） |
+| `POST` | `/api/recipes/poster` | 下載可列印 HTML 海報 |
+| `GET` \| `PUT` | `/api/cuisine` | 讀寫菜系情境 |
+| `DELETE` | `/api/memory` | 清除對話記憶 |
+| `GET` \| `POST` | `/api/favorites` | 收藏列表／新增 |
+| `DELETE` | `/api/favorites/:id` | 刪除收藏 |
+
+頁面：`/` 聊天、`/legal/disclaimer`、`/legal/privacy`。
+
+---
+
+## Web 環境變數（摘要）
+
+| 變數 | 必填 | 說明 |
+|------|------|------|
+| `GEMINI_API_KEY` | 是 | Google AI Studio；本機放 `web/.env.local` |
+| `MODEL_NAME` | 否 | 預設 `gemini-3.1-flash-lite`（[`web/vercel.json`](web/vercel.json)） |
+| `DATABASE_URL` | 否 | Neon；要記憶／收藏／配額／菜系時必填 |
+| `IMAGE_PROVIDER` | 否 | `placeholder`（預設）或 `openai_compatible` |
+| `OPENAI_API_KEY` / `IMAGE_OPENAI_API_KEY` | 條件 | 主圖走 OpenAI 圖像 API 時 |
+| `RECIPE_FALLBACK_HERO_IMAGE_URL` | 否 | 自訂備援 https 主圖 |
+
+Vercel 部署細節與 Dashboard 步驟見 [`web/README.md`](web/README.md)。
 
 ---
 
@@ -81,7 +114,9 @@ my-chef-ai-agent/
 
 ---
 
-## Python 測試（維護共用模組）
+## Python 測試（封存 LINE 路徑與共用模組）
+
+維護 `app/` 與共用 schema 時執行；需先安裝 dev 依賴（含 `Pillow` 等，否則收集會失敗）：
 
 ```bash
 pip install -r requirements-dev.txt
@@ -89,6 +124,8 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 METRICS_TOKEN=test_metrics_token \
   python3 -m pytest tests/ -v
 ```
+
+目前收集 **153** 則；有可用 `DATABASE_URL`（Postgres）時應全數通過（含 `tests/integration/`）。
 
 ---
 
