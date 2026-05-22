@@ -1,0 +1,24 @@
+{
+  "name": "@chef/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx src/build.ts",
+    "lint": "tsc --noEmit -p tsconfig.json"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tokens.json": "./src/tokens.json",
+    "./tokens.css": "./dist/tokens.css",
+    "./tailwind-preset": "./dist/tailwind-preset.js"
+  },
+  "files": ["dist", "src/tokens.json"],
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

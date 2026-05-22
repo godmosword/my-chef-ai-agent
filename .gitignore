@@ -14,7 +14,16 @@ coverage.xml
 
 .env
 
+# Monorepo
+node_modules/
+.pnpm-store/
+.turbo/
+packages/*/dist/
+
 # Next.js web app
 web/node_modules/
 web/.next/
 web/out/
+apps/web/node_modules/
+apps/web/.next/
+apps/web/out/
