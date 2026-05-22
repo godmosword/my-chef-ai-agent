@@ -17,13 +17,15 @@ npm run dev
 ## Vercel 部署
 
 1. Import 此 GitHub repo
-2. **Root Directory** 設為 `web`（或依賴根目錄 `vercel.json` 的 `rootDirectory`）
-3. **只需手動加一個環境變數**（見下方）
+2. **Settings → General → Root Directory** 填 **`web`**（必填；無法寫在 `vercel.json` 裡）
+3. **只需手動加一個環境變數** `GEMINI_API_KEY`（見下方）
 4. Deploy
+
+> 若 Build 報錯 `vercel.json ... additional property rootDirectory`：請拉最新 main／PR，並確認倉庫**根目錄沒有** `vercel.json`，設定在 `web/vercel.json`。
 
 ### 環境變數：你只要設定 `GEMINI_API_KEY`
 
-`MODEL_NAME` **不用**在 Vercel 介面設定。程式預設已是 `gemini-3.1-flash-lite`；根目錄 [`vercel.json`](../vercel.json) 也會在部署時帶入同名變數。
+`MODEL_NAME` **不用**在 Vercel 介面設定。程式預設已是 `gemini-3.1-flash-lite`；[`web/vercel.json`](vercel.json) 也會在部署時帶入同名變數。
 
 | 變數 | 是否必須在 Dashboard 新增 | 說明 |
 |------|-------------------------|------|
@@ -43,7 +45,7 @@ npm run dev
 
 若畫面上只有 Neon 自動產生的變數、沒有「新增」按鈕，通常是權限或視窗寬度問題；可改用 [Vercel CLI](https://vercel.com/docs/cli/env)：`vercel env add GEMINI_API_KEY production`。
 
-若從**倉庫根目錄**匯入，根目錄 `vercel.json` 已指定 `"rootDirectory": "web"`。
+`MODEL_NAME` 等非機密變數由 [`web/vercel.json`](vercel.json) 的 `env` 區塊提供；機密金鑰仍請用 Dashboard 設定。
 
 ## Phase 1（Neon）
 
