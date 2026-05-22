@@ -1,14 +1,4 @@
-:root {
-  --bg: #fffaf5;
-  --surface: #ffffff;
-  --border: #eae4dc;
-  --primary: #c8922a;
-  --primary-dark: #a67318;
-  --green: #2a6049;
-  --text-ink: #1c1917;
-  --text-body: #3d3530;
-  --text-muted: #9c8f84;
-}
+@import "@chef/design-tokens/tokens.css";
 
 * {
   box-sizing: border-box;

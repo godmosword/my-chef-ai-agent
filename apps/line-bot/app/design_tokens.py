@@ -1,44 +1,61 @@
-"""Shared design tokens for cross-surface visual consistency."""
+"""Public design token surface — re-exports from @chef/design-tokens build."""
 
 from __future__ import annotations
 
+from app._generated_tokens import (  # noqa: F401
+    BACKGROUND,
+    BACKGROUND_ALT,
+    BORDER,
+    CUISINE_EUROPEAN,
+    CUISINE_JAPANESE,
+    CUISINE_KIDS,
+    CUISINE_TAIWANESE,
+    CUISINE_THAI,
+    GREEN,
+    GREEN_LIGHT,
+    GREEN_TEXT,
+    PRIMARY,
+    PRIMARY_DARK,
+    PRIMARY_LIGHT,
+    PURPLE,
+    ROLE_EXECUTIVE_CHEF,
+    ROLE_INGREDIENT_MANAGER,
+    ROLE_SOUS_CHEF,
+    SURFACE,
+    SURFACE_ALT,
+    SURFACE_MUTED,
+    TEXT_BODY,
+    TEXT_INK,
+    TEXT_MUTED,
+    TOKENS,
+    hex_to_rgb,
+)
 
-def hex_to_rgb(value: str) -> tuple[int, int, int]:
-    """Convert #RRGGBB to an RGB tuple."""
-    cleaned = value.lstrip("#")
-    return tuple(int(cleaned[i : i + 2], 16) for i in (0, 2, 4))
-
-
-# Base
-BACKGROUND = "#FFFAF5"
-BACKGROUND_ALT = "#F9F7F4"
-SURFACE = "#FFFFFF"
-SURFACE_ALT = "#F5EFE6"
-SURFACE_MUTED = "#F9F4EE"
-BORDER = "#EAE4DC"
-
-# Brand
-PRIMARY = "#C8922A"
-PRIMARY_DARK = "#A67318"
-PRIMARY_LIGHT = "#FDF6E7"
-GREEN = "#2A6049"
-GREEN_LIGHT = "#EBF5F0"
-GREEN_TEXT = "#F5F0E6"
-PURPLE = "#7B5EA7"
-
-# Text
-TEXT_INK = "#1C1917"
-TEXT_BODY = "#3D3530"
-TEXT_MUTED = "#9C8F84"
-
-# Cuisine hero backgrounds
-CUISINE_TAIWANESE = "#6B3A2A"
-CUISINE_THAI = "#2A5C3F"
-CUISINE_JAPANESE = "#3A2A4A"
-CUISINE_EUROPEAN = "#2A3A4A"
-CUISINE_KIDS = "#6B5A2A"
-
-# Role colors
-ROLE_EXECUTIVE_CHEF = PRIMARY
-ROLE_SOUS_CHEF = GREEN
-ROLE_INGREDIENT_MANAGER = PURPLE
+__all__ = [
+    "hex_to_rgb",
+    "BACKGROUND",
+    "BACKGROUND_ALT",
+    "SURFACE",
+    "SURFACE_ALT",
+    "SURFACE_MUTED",
+    "BORDER",
+    "PRIMARY",
+    "PRIMARY_DARK",
+    "PRIMARY_LIGHT",
+    "GREEN",
+    "GREEN_LIGHT",
+    "GREEN_TEXT",
+    "PURPLE",
+    "TEXT_INK",
+    "TEXT_BODY",
+    "TEXT_MUTED",
+    "CUISINE_TAIWANESE",
+    "CUISINE_THAI",
+    "CUISINE_JAPANESE",
+    "CUISINE_EUROPEAN",
+    "CUISINE_KIDS",
+    "ROLE_EXECUTIVE_CHEF",
+    "ROLE_SOUS_CHEF",
+    "ROLE_INGREDIENT_MANAGER",
+    "TOKENS",
+]

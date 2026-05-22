@@ -42,18 +42,28 @@ export function buildRecipePosterHtml(recipe: RecipePayload): string {
   <meta charset="UTF-8" />
   <title>${name} — 食譜海報</title>
   <style>
+    :root {
+      --bg: #FFFAF5;
+      --surface: #FFFFFF;
+      --border: #EAE4DC;
+      --primary-dark: #A67318;
+      --green: #2A6049;
+      --text-ink: #1C1917;
+      --text-body: #3D3530;
+      --text-muted: #9C8F84;
+    }
     * { box-sizing: border-box; }
     body {
       font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-      background: #fffaf5;
-      color: #3d3530;
+      background: var(--bg);
+      color: var(--text-body);
       margin: 0;
       padding: 32px;
       line-height: 1.6;
     }
     .wrap { max-width: 720px; margin: 0 auto; }
-    h1 { color: #1c1917; margin: 0 0 8px; font-size: 2rem; }
-    .theme { color: #9c8f84; margin-bottom: 20px; }
+    h1 { color: var(--text-ink); margin: 0 0 8px; font-size: 2rem; }
+    .theme { color: var(--text-muted); margin-bottom: 20px; }
     .hero-photo {
       width: 100%;
       max-height: 280px;
@@ -62,15 +72,15 @@ export function buildRecipePosterHtml(recipe: RecipePayload): string {
       margin-bottom: 20px;
     }
     section {
-      background: #fff;
-      border: 1px solid #eae4dc;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 16px 20px;
       margin-bottom: 16px;
     }
-    h2 { color: #2a6049; font-size: 1rem; margin: 0 0 10px; }
+    h2 { color: var(--green); font-size: 1rem; margin: 0 0 10px; }
     ol, ul { margin: 0; padding-left: 1.25rem; }
-    .cost { font-weight: 700; color: #a67318; margin-top: 12px; }
+    .cost { font-weight: 700; color: var(--primary-dark); margin-top: 12px; }
     @media print {
       body { padding: 12px; }
       section { break-inside: avoid; }

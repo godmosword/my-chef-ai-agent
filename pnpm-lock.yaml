@@ -17,6 +17,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@chef/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@chef/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
