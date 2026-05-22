@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-05-23（Web Phase 2 — 主圖／海報／菜系）
+
+- **菜系**：`GET|PUT /api/cuisine`、聊天頁菜系 chip（需 `DATABASE_URL`）。
+- **主圖**：`POST /api/recipes/hero`（`IMAGE_PROVIDER=placeholder` 或 `openai_compatible` + OpenAI 圖像金鑰）；食譜卡「生成主圖」。
+- **海報**：`POST /api/recipes/poster` 下載可列印 HTML（無 Playwright）；「下載海報」。
+
 ## 2026-05-23（合併至 main — Web Phase 1 完整線）
 
 - 將 `cursor/web-vercel-mvp-d8b9` 其餘 commit 併入 **`main`**：Phase 1（Neon／記憶／收藏／配額）、Gemini 錯誤處理、`web/vercel.json`、`gemini-3.1-flash-lite` 預設。

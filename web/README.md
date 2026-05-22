@@ -63,7 +63,18 @@ npm run dev
 - `DELETE /api/memory` — 清除對話
 - `GET|POST /api/favorites` — 收藏列表／新增
 - `DELETE /api/favorites/:id` — 刪除收藏
+- `GET|PUT /api/cuisine` — 菜系情境
+- `POST /api/recipes/hero` — 生成主圖（佔用每日配額）
+- `POST /api/recipes/poster` — 下載食譜海報 HTML
 
 皆需瀏覽器 cookie `chef_session`。
+
+### Phase 2 環境變數（主圖）
+
+| 變數 | 說明 |
+|------|------|
+| `IMAGE_PROVIDER` | `placeholder`（預設，備援圖）或 `openai_compatible` |
+| `OPENAI_API_KEY` / `IMAGE_OPENAI_API_KEY` | `openai_compatible` 時用於 GPT Image |
+| `RECIPE_FALLBACK_HERO_IMAGE_URL` | 自訂備援 https 圖 |
 
 設計規格見 [`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](../docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)。

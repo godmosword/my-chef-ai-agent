@@ -31,6 +31,11 @@ export function ChatPanel() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [cuisineKey, setCuisineKey] = useState<string | null>(null);
+  const [cuisineLabelText, setCuisineLabelText] = useState("不拘");
+  const [cuisineOptions, setCuisineOptions] = useState<
+    Array<{ key: string; label: string }>
+  >([]);
 
   const refreshQuota = useCallback(async () => {
     try {
@@ -55,9 +60,24 @@ export function ChatPanel() {
     if (data.ok) setFavorites(data.items || []);
   }, []);
 
+  const loadCuisine = useCallback(async () => {
+    try {
+      const res = await fetch("/api/cuisine");
+      const data = await res.json();
+      if (data.ok) {
+        setCuisineKey(data.active_cuisine ?? null);
+        setCuisineLabelText(data.label || "不拘");
+        setCuisineOptions(data.options || []);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
     refreshQuota();
-  }, [refreshQuota]);
+    loadCuisine();
+  }, [refreshQuota, loadCuisine]);
 
   function flash(msg: string) {
     setToast(msg);
@@ -138,6 +158,72 @@ export function ChatPanel() {
     setShowFavorites(true);
   }
 
+  async function selectCuisine(key: string) {
+    const res = await fetch("/api/cuisine", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cuisine: key }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      flash(data.error || "無法設定菜系");
+      return;
+    }
+    setCuisineKey(data.active_cuisine);
+    setCuisineLabelText(data.label);
+    flash(`已切換：${data.label}`);
+  }
+
+  async function generateHero(recipe: RecipePayload): Promise<string | null> {
+    const res = await fetch("/api/recipes/hero", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipe_name: recipe.recipe_name,
+        recipe_data: recipe,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "主圖生成失敗");
+    }
+    await refreshQuota();
+    flash(data.source === "generated" ? "主圖已生成" : "已使用備援圖");
+    return data.image_url as string;
+  }
+
+  async function downloadPoster(
+    recipe: RecipePayload,
+    photoUrl?: string | null,
+  ) {
+    const res = await fetch("/api/recipes/poster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipe_data: recipe,
+        photo_url: photoUrl || undefined,
+      }),
+    });
+    if (!res.ok) {
+      let err = "海報下載失敗";
+      try {
+        const j = await res.json();
+        err = j.error || err;
+      } catch {
+        /* html error body */
+      }
+      throw new Error(err);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${recipe.recipe_name || "recipe"}-poster.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    flash("海報 HTML 已下載（可用瀏覽器列印為 PDF）");
+  }
+
   async function saveFavorite(recipe: RecipePayload) {
     const res = await fetch("/api/favorites", {
       method: "POST",
@@ -174,6 +260,27 @@ export function ChatPanel() {
           )}
         </div>
         <p>輸入想吃的、手邊的食材，主廚為你研發食譜。</p>
+        {cuisineOptions.length > 0 && (
+          <div className="chat__cuisine">
+            <span className="chat__cuisine-label">
+              菜系：{cuisineLabelText}
+              {!quota?.db_configured && "（需 DB）"}
+            </span>
+            <div className="chat__cuisine-chips">
+              {cuisineOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  className={`chat__chip${cuisineKey === opt.key ? " chat__chip--active" : ""}`}
+                  disabled={!quota?.db_configured}
+                  onClick={() => selectCuisine(opt.key)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="chat__toolbar">
           <button type="button" className="chat__tool" onClick={clearMemory}>
             清除記憶
@@ -250,6 +357,8 @@ export function ChatPanel() {
                 recipe={item.recipe}
                 onFavorite={saveFavorite}
                 favoritesEnabled={favoritesEnabled}
+                onGenerateHero={generateHero}
+                onDownloadPoster={downloadPoster}
               />
             </div>
           );
@@ -307,6 +416,37 @@ export function ChatPanel() {
           margin: 6px 0 10px;
           color: var(--text-muted);
           font-size: 0.95rem;
+        }
+        .chat__cuisine {
+          margin-bottom: 10px;
+        }
+        .chat__cuisine-label {
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          display: block;
+          margin-bottom: 6px;
+        }
+        .chat__cuisine-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .chat__chip {
+          padding: 5px 10px;
+          font-size: 0.8rem;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          background: var(--surface);
+          cursor: pointer;
+        }
+        .chat__chip--active {
+          background: var(--green);
+          color: #f5f0e6;
+          border-color: var(--green);
+        }
+        .chat__chip:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
         }
         .chat__toolbar {
           display: flex;

@@ -6,6 +6,7 @@
     "MAX_COMPLETION_TOKENS": "1024",
     "MAX_HISTORY_TURNS": "2",
     "PLAN_FREE_DAILY_LIMIT": "20",
-    "DEFAULT_TENANT_ID": "default"
+    "DEFAULT_TENANT_ID": "default",
+    "IMAGE_PROVIDER": "placeholder"
   }
 }

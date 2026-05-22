@@ -5,7 +5,7 @@ import {
   AI_TRUNCATION_RECOVERY_PROMPT,
 } from "./prompts";
 
-function formatAiError(err: unknown, model: string): Error {
+export function formatAiError(err: unknown, model: string): Error {
   if (err instanceof OpenAI.APIError) {
     if (err.status === 404) {
       return new Error(
@@ -39,6 +39,7 @@ export type RecipePayload = {
   steps?: string[];
   shopping_list?: string[];
   estimated_total_cost?: string;
+  photo_url?: string;
 };
 
 function getClient(): OpenAI {

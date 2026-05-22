@@ -42,7 +42,7 @@
 
 - [x] **Phase 0**：`web/` Next.js 聊天 + `/api/recipes` + 匿名 session（2026-05-23）
 - [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
-- [ ] **Phase 2**：主圖／海報下載、菜系選擇 UI
+- [x] **Phase 2**：主圖 API、HTML 海報下載、菜系選擇 UI（2026-05-23）
 - [ ] **Phase 3**：封存 LINE webhook 文件與 Render 預設部署說明
 
 ## 一、平台與後端（backlog）

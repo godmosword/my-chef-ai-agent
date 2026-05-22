@@ -23,3 +23,21 @@ export async function getUserCuisineContext(
       ts instanceof Date ? ts.toISOString() : ts ? String(ts) : null,
   };
 }
+
+export async function updateUserCuisineContext(
+  userId: string,
+  tenantId: string,
+  activeCuisine: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+
+  const ts = new Date().toISOString();
+  await sql`
+    INSERT INTO user_cuisine_context (tenant_id, user_id, active_cuisine, context_updated_at)
+    VALUES (${tenantId}, ${userId}, ${activeCuisine}, ${ts})
+    ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+      active_cuisine = EXCLUDED.active_cuisine,
+      context_updated_at = EXCLUDED.context_updated_at
+  `;
+}

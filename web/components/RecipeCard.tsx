@@ -7,15 +7,22 @@ type Props = {
   recipe: RecipePayload;
   onFavorite?: (recipe: RecipePayload) => Promise<void>;
   favoritesEnabled?: boolean;
+  onGenerateHero?: (recipe: RecipePayload) => Promise<string | null>;
+  onDownloadPoster?: (recipe: RecipePayload, photoUrl?: string | null) => Promise<void>;
 };
 
 export function RecipeCard({
   recipe,
   onFavorite,
   favoritesEnabled = false,
+  onGenerateHero,
+  onDownloadPoster,
 }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [heroUrl, setHeroUrl] = useState<string | null>(recipe.photo_url ?? null);
+  const [heroLoading, setHeroLoading] = useState(false);
+  const [posterLoading, setPosterLoading] = useState(false);
 
   const name = recipe.recipe_name || "美味食譜";
   const theme = recipe.theme || "家常";
@@ -55,7 +62,50 @@ export function RecipeCard({
           )}
         </div>
         <p className="recipe-card__theme">{theme}</p>
+        {(onGenerateHero || onDownloadPoster) && (
+          <div className="recipe-card__actions">
+            {onGenerateHero && (
+              <button
+                type="button"
+                className="recipe-card__action"
+                disabled={heroLoading}
+                onClick={async () => {
+                  setHeroLoading(true);
+                  try {
+                    const url = await onGenerateHero(recipe);
+                    if (url) setHeroUrl(url);
+                  } finally {
+                    setHeroLoading(false);
+                  }
+                }}
+              >
+                {heroLoading ? "生成中…" : "🖼 生成主圖"}
+              </button>
+            )}
+            {onDownloadPoster && (
+              <button
+                type="button"
+                className="recipe-card__action"
+                disabled={posterLoading}
+                onClick={async () => {
+                  setPosterLoading(true);
+                  try {
+                    await onDownloadPoster(recipe, heroUrl);
+                  } finally {
+                    setPosterLoading(false);
+                  }
+                }}
+              >
+                {posterLoading ? "排版中…" : "📄 下載海報"}
+              </button>
+            )}
+          </div>
+        )}
       </header>
+
+      {heroUrl && (
+        <img src={heroUrl} alt={name} className="recipe-card__hero" />
+      )}
 
       {talks.length > 0 && (
         <section className="recipe-card__section">
@@ -153,6 +203,32 @@ export function RecipeCard({
           margin: 4px 0 0;
           color: var(--text-muted);
           font-size: 0.9rem;
+        }
+        .recipe-card__actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 10px;
+        }
+        .recipe-card__action {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+          color: var(--green);
+          cursor: pointer;
+        }
+        .recipe-card__action:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+        .recipe-card__hero {
+          width: 100%;
+          max-height: 220px;
+          object-fit: cover;
+          border-radius: 12px;
+          margin-bottom: 12px;
         }
         .recipe-card__section {
           margin-bottom: 14px;
