@@ -182,7 +182,7 @@ web/
 | **0** | Next 殼、session、POST `/api/recipes`、RecipeCard | 已交付 |
 | **1** | Neon + memory／收藏／配額 | 已交付（2026-05-23） |
 | **2** | 主圖、海報下載、菜系選擇 | 已交付（2026-05-23） |
-| **3** | 封存 Python LINE 路徑、README 以 Web 為主 | 待辦 |
+| **3** | 封存 Python LINE 路徑、README 以 Web 為主 | 已交付（2026-05-23） |
 
 ---
 

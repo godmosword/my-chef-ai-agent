@@ -6,6 +6,12 @@
 
 ---
 
+## 2026-05-23（Web Phase 3 — 封存 LINE／README 以 Web 為主）
+
+- **README** 改為 Web（Vercel）優先；LINE／Render 移至 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
+- **`app/README.md`**、`main.py` 註記封存；**`AGENTS.md`** 以 `web/` 為現行開發入口。
+- **`render.yaml`** 標記 LEGACY；**TODOS** 部署驗收改為 Web 清單。
+
 ## 2026-05-23（Web Phase 2 — 主圖／海報／菜系）
 
 - **菜系**：`GET|PUT /api/cuisine`、聊天頁菜系 chip（需 `DATABASE_URL`）。

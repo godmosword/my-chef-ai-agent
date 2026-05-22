@@ -4,25 +4,31 @@
 
 ### Overview
 
-This is a modular Python FastAPI LINE Bot called **職人料理大腦** (Chef AI Brain).
-`main.py` 是薄入口，核心邏輯在 `app/`：`routes`（webhook／健康檢查）、`handlers`（文字／圖片／postback）、`ai_service`（食譜與圖片辨識）、`db`（**Render Postgres**，可優雅降級）。
+**職人料理大腦**（Chef AI Brain）現行產品為 **`web/`**（Next.js on Vercel）：瀏覽器聊天、食譜卡、Neon 記憶／收藏／配額。見 [`web/README.md`](web/README.md)。
 
-預設以 Gemini 系列走 OpenAI 相容端點；亦可依 `MODEL_NAME` 改走 OpenAI API。
+**封存路徑**：`main.py` + `app/` 為歷史 **LINE Bot + FastAPI**（Render／GCP webhook）。新功能預設只改 `web/`；Python 路徑見 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
 
-### Running the dev server
+### Running the Web dev server（現行）
 
-The app requires three environment variables at module import time. For local dev without real credentials:
+```bash
+cd web && cp .env.example .env.local  # GEMINI_API_KEY
+npm install && npm run dev
+```
+
+- 首頁聊天：`http://localhost:3000`
+- 健康檢查：`GET /api/health`
+- Vercel：**Root Directory = `web`**；只需手動設 `GEMINI_API_KEY`（`MODEL_NAME` 等有預設）
+
+### Running the legacy LINE server（封存）
+
+僅在維護舊 LINE 部署時需要。匯入時需 `LINE_CHANNEL_*` 與 `GEMINI_API_KEY`：
 
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
   python3 -m uvicorn main:app --reload --port 8000
 ```
 
-Health check: `GET /` returns `{"status":"ok","message":"..."}` (liveness，不檢查外部依賴)。
-
-Readiness: `GET /ready` 在已設定 `DATABASE_URL` 時會做輕量 DB ping；失敗回 **503**（見 `docs/SCHEMA_MIGRATIONS.md`）。
-
-Webhook endpoint: `POST /callback` (requires valid `X-Line-Signature` header). 對外 `POST /callback`、`GET /billing/checkout`、`GET /legal/*` 有每 IP 每分鐘速率限制（`RATE_LIMIT_*`，0 關閉）。
+Webhook：`POST /callback`。其餘見 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
 
 ### Running tests
 

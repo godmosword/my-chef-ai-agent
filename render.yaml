@@ -1,3 +1,4 @@
+# LEGACY: LINE Bot on Render. 現行產品為 web/（Vercel）。見 docs/LEGACY_LINE_BOT.md
 services:
   - type: web
     name: my-chef-ai-agent

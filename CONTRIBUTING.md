@@ -2,7 +2,9 @@
 
 ## 開發與測試
 
-- 本機啟動、環境變數、pytest 與 webhook 模擬：見根目錄 [`AGENTS.md`](AGENTS.md)。
+- **現行產品**：[`web/README.md`](web/README.md)（Vercel）；Agent 改動完直推 `main`。
+- **封存 LINE Bot**：[`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
+- pytest 與環境變數：根目錄 [`AGENTS.md`](AGENTS.md)。
 - 執行測試（CI 與本專案測試會讀取 `METRICS_TOKEN`；未設時 `/metrics` 相關測試會失敗）：
 
 ```bash

@@ -1,6 +1,6 @@
 # 職人料理大腦 — Web（Vercel）
 
-Next.js 網頁版，取代 LINE webhook + Render 作為主要使用入口。
+**本倉庫現行產品。** Next.js 網頁版為主要入口；LINE Bot（`app/`）已封存，見 [`docs/LEGACY_LINE_BOT.md`](../docs/LEGACY_LINE_BOT.md)。
 
 ## 本機開發
 

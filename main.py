@@ -1,10 +1,10 @@
 """
-職人料理大腦 — LINE Bot entrypoint.
+職人料理大腦 — 封存：LINE Bot FastAPI 入口。
 
-Thin entrypoint that imports the FastAPI app and registers routes.
-All logic lives in the `app/` package.
+現行產品為 web/（Next.js on Vercel）。本檔僅供舊部署與 pytest 使用。
+見 docs/LEGACY_LINE_BOT.md
 
-Run with: uvicorn main:app --host 0.0.0.0 --port 8000
+Run: uvicorn main:app --host 0.0.0.0 --port 8000
 """
 from __future__ import annotations
 

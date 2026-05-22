@@ -23,16 +23,15 @@
 
 ---
 
-## 零、部署後建議手動驗收（可重複執行）
+## 零、部署後建議手動驗收（Web · Vercel）
 
-> 以下無法單靠 CI 覆蓋，需在 **Render（或等價環境）+ 真實 LINE** 各驗一次。
+> 現行產品為 **Web**；LINE／Render 驗收見 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
 
-- [ ] **健康檢查**：`GET /` 回 `{"status":"ok"}`；有設 `DATABASE_URL` 時 `GET /ready` 應 200（否則依設計可能 503）。
-- [ ] **海報圖**（LINE）：產生任一食譜 →「🖼 生成食譜海報」→ 圖中**中文可讀、無豆腐塊**；版面為溫暖雜誌風（非舊版深色大塊）。
-- [ ] **換菜單**（LINE）：觸發菜系輪播／換菜單關鍵字，確認 Bot **有回應**（歷史問題曾為 Flex 顏色格式錯誤遭 API 拒絕）。
-- [ ] **主圖 + 海報**（可選）：先「🖼 生成主圖」再海報，確認主圖可嵌入海報（若服務有設定公開 URL 與快取）。
-
-若正式環境仍出現海報亂字：確認該次 build 日誌是否成功執行 `fonts-noto-cjk` 與 `playwright install`（見 `render.yaml`）。
+- [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
+- [ ] **聊天**：輸入菜名 → 食譜卡顯示
+- [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
+- [ ] **主圖**：「生成主圖」有圖（placeholder 或 OpenAI）
+- [ ] **海報**：「下載海報」取得 HTML 且可列印
 
 ---
 
@@ -43,13 +42,14 @@
 - [x] **Phase 0**：`web/` Next.js 聊天 + `/api/recipes` + 匿名 session（2026-05-23）
 - [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
 - [x] **Phase 2**：主圖 API、HTML 海報下載、菜系選擇 UI（2026-05-23）
-- [ ] **Phase 3**：封存 LINE webhook 文件與 Render 預設部署說明
+- [x] **Phase 3**：README／AGENTS 以 Web 為主；`docs/LEGACY_LINE_BOT.md` 封存 LINE／Render（2026-05-23）
 
 ## 一、平台與後端（backlog）
 
 ### 建議優先
 
-- [ ] **Webhook 每使用者節流**（僅 LINE 路徑）：佇列前依 LINE `userId` 限流；Web 改 session + API rate limit。
+- [ ] **Web API 每 session 節流**（取代 LINE webhook 節流）
+- [ ] ~~Webhook 每使用者節流（LINE）~~ — 封存路徑，僅在續用 LINE 時見 LEGACY 文件
 
 ### 可排期
 
