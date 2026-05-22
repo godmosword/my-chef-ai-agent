@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       DEFAULT_TENANT_ID,
       1,
       "image_recipe_generation",
+      "image",
     );
     if (!quota.allowed) {
       return NextResponse.json(

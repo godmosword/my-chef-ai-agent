@@ -6,6 +6,23 @@
 
 ---
 
+## [Unreleased] — Recipe Library（Prompt 2）
+
+### Added
+
+- **Recipe Library（Web）**：`recipes`、`recipe_versions`、`recipe_tags`、`favorites_v2`；migration `apps/web/migrations/0003_recipe_library.sql`；`pnpm -F @chef/web db:migrate`
+- **Drizzle ORM**（`neon-http`）與 `@chef/shared-types` Zod schema（`RecipePayload`、`GenerateRecipeRequest` 等）
+- **API**：`GET /api/recipes`（列表＋cursor）、`GET|DELETE /api/recipes/[id]`、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`；`POST /api/recipes` 在 `DATABASE_URL` 設定時持久化並回傳 `recipe.id`
+- **配額**：`usage_daily.text_requests_count`／`image_requests_count`；`GET /api/quota` 回傳 `text`／`image` bucket；主圖走 **image** 配額
+- **收藏**：支援 `{ recipe_id }` 寫入 `favorites_v2` 並雙寫 legacy `favorite_recipes`
+
+### Migration notes
+
+- 部署 Web 後請執行：`DATABASE_URL=... pnpm -F @chef/web db:migrate`
+- `POST /api/recipes` 回應仍為 `{ ok, recipe, quota }`；`recipe` 可含 `id`／`version_no`
+
+---
+
 ## [Unreleased] — Monorepo + Design Tokens（Phase 3 起點）
 
 ### Changed

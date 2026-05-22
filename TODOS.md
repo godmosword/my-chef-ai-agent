@@ -53,8 +53,8 @@
 > 規格（待撰寫）：`docs/superpowers/specs/2026-05-XX-recipe-library-data-model.md`  
 > 依賴：`@chef/shared-types` 空殼已就緒。
 
-- [ ] **Recipe Library 資料模型 spec** 撰寫與核准
-- [ ] **實作**（Prompt 2）
+- [x] **Recipe Library 實作**（Drizzle + `recipes`／`recipe_versions`／`recipe_tags`／`favorites_v2`；`usage_daily` text/image 配額拆分；Web API 持久化與列表）（2026-05-22）
+- [ ] **Recipe Library 資料模型 spec** 正式文件化（`docs/superpowers/specs/2026-05-XX-recipe-library-data-model.md`）
 
 ### Web 後續（未排進 Phase 0–3）
 

@@ -28,17 +28,27 @@ pnpm dev:web
 
 ## API
 
-- `GET /api/health`、`GET /api/quota`
-- `POST /api/recipes`、`POST /api/recipes/hero`、`POST /api/recipes/poster`
+- `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）
+- `GET|POST /api/recipes`（POST 產生食譜並可持久化；GET 列表）
+- `GET|DELETE /api/recipes/[id]`、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
+- `POST /api/recipes/hero`（**image** 配額）、`POST /api/recipes/poster`
 - `GET|PUT /api/cuisine`、`DELETE /api/memory`
-- `GET|POST /api/favorites`、`DELETE /api/favorites/:id`
+- `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
 
 需 cookie `chef_session`。
 
 ## 資料庫
 
 ```bash
-cd apps/line-bot && python3 init_db.py   # 與 Web 共用 schema
+# 初次或升級（Recipe Library）
+DATABASE_URL=... pnpm -F @chef/web db:migrate
+
+# LINE 路徑仍可用 init_db.py 建立基底 schema
+cd apps/line-bot && python3 init_db.py
+```
+
+```bash
+pnpm -F @chef/web test   # Vitest
 ```
 
 ## 設計 token
