@@ -80,7 +80,18 @@ export function ChatPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: { ok?: boolean; error?: string; recipe?: RecipePayload; quota?: QuotaState };
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
+      if (res.status === 404) {
+        throw new Error(
+          "找不到 /api/recipes。請確認 Vercel 專案 Root Directory 為 web，或已部署最新 Web 版。",
+        );
+      }
       if (!res.ok || !data.ok) {
         throw new Error(data.error || `HTTP ${res.status}`);
       }

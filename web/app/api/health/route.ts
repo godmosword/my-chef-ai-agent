@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveModelName } from "@/lib/config";
 import { isDatabaseConfigured } from "@/lib/db/client";
 
 export async function GET() {
@@ -7,6 +8,7 @@ export async function GET() {
     status: "ok",
     message: "職人料理大腦 Web",
     ai_configured: hasKey,
+    model: resolveModelName(),
     db_configured: isDatabaseConfigured(),
   });
 }
