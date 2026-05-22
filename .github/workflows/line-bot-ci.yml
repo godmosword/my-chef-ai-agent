@@ -98,6 +98,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Build and sync design tokens
+        run: |
+          pnpm install --frozen-lockfile
+          bash apps/line-bot/scripts/sync_tokens.sh
+
       - name: Validate Secrets
         run: |
           if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
@@ -116,7 +128,6 @@ jobs:
           region: ${{ secrets.CLOUD_RUN_REGION }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           source: .
-          dockerfile: apps/line-bot/Dockerfile
           flags: --allow-unauthenticated --no-cpu-throttling
           env_vars: |
             LINE_CHANNEL_ACCESS_TOKEN=${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
