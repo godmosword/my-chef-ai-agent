@@ -27,3 +27,6 @@ web/out/
 apps/web/node_modules/
 apps/web/.next/
 apps/web/out/
+
+# design-tokens dist is gitignored; LINE _generated_tokens.py is committed (Render fallback)
+packages/design-tokens/dist/

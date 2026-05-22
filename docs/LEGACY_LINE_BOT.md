@@ -1,7 +1,7 @@
 # 封存：LINE Bot + Render／GCP（Python FastAPI）
 
-> **現行產品**為 [`web/`](../web/) 網頁版（Vercel）。本文件僅供維護舊部署、對照實作或執行 Python 測試時參考。  
-> **新功能預設只加在 `web/`**；`app/` 與 `main.py` 進入封存維護，不建議新開 LINE webhook 上線。
+> **現行產品**為 [`apps/web/`](../apps/web/) 網頁版（Vercel）。本文件僅供維護舊部署、對照實作或執行 Python 測試時參考。  
+> **新功能預設只加在 `apps/web/`**；`apps/line-bot/` 封存維護，不建議新開 LINE webhook 上線。
 
 ---
 
@@ -9,17 +9,18 @@
 
 - 既有 LINE 官方帳號仍指向 Render `POST /callback`
 - 需要 Playwright 海報 PNG、兩段式圖卡、圖片上傳辨識等 **尚未移植到 Web** 的能力
-- 執行 `python3 -m pytest tests/` 驗證共用模組
+- 執行 `pnpm line:test` 或 `cd apps/line-bot && python3 -m pytest tests/` 驗證共用模組
 
 ---
 
 ## 本機啟動（Python）
 
 ```bash
+cd apps/line-bot
 pip install -r requirements.txt
-cp .env.example .env
+cp ../../.env.example .env
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
-  python3 -m uvicorn main:app --reload --port 8000
+  uvicorn main:app --reload --port 8000
 ```
 
 - Liveness：`GET /`
@@ -30,7 +31,7 @@ LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_
 
 ## Render 部署
 
-1. Web Service + [`render.yaml`](../render.yaml)
+1. Web Service + [`apps/line-bot/render.yaml`](../apps/line-bot/render.yaml)（`rootDir: apps/line-bot`）
 2. 環境變數：LINE、Gemini、可選 `DATABASE_URL`、Vertex 等（見根目錄 [`.env.example`](../.env.example)）
 3. Webhook URL：`https://<服務>.onrender.com/callback`
 4. Build 需 **Playwright + Noto CJK**（`render.yaml` 已含）

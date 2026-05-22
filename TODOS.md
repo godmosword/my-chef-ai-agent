@@ -10,6 +10,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`apps/web`、`apps/line-bot`、`@chef/design-tokens`）；CI 拆分；LINE `design_tokens` 薄包裝；規格已核准並實作。 |
 | 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、HTML 海報、legal）；LINE／Render 封存於 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。 |
 | 2026-05-23 | **Vercel 部署修正**：根目錄移除無效 `vercel.json`；`web/vercel.json` 預設 `MODEL_NAME=gemini-3.1-flash-lite`；Dashboard **Root Directory = `web`**。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
@@ -45,6 +46,15 @@
 - [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
 - [x] **Phase 2**：主圖 API、HTML 海報下載、菜系選擇 UI（2026-05-23）
 - [x] **Phase 3**：README／AGENTS 以 Web 為主；`docs/LEGACY_LINE_BOT.md` 封存 LINE／Render（2026-05-23）
+- [x] **Monorepo 重構**：`apps/*` + `@chef/design-tokens` + 分離 CI（2026-05-22）
+
+## 三點五、Phase 3+ — Recipe Library（Prompt 2）
+
+> 規格（待撰寫）：`docs/superpowers/specs/2026-05-XX-recipe-library-data-model.md`  
+> 依賴：`@chef/shared-types` 空殼已就緒。
+
+- [ ] **Recipe Library 資料模型 spec** 撰寫與核准
+- [ ] **實作**（Prompt 2）
 
 ### Web 後續（未排進 Phase 0–3）
 
@@ -72,7 +82,7 @@
 
 ### 低優先
 
-- [ ] **README 內大段手動 SQL**：以 migration／`init_db.py` 為單一來源，避免雙份敘述。
+- [x] ~~**README 內大段手動 SQL**~~：migration／`apps/line-bot/init_db.py` 為單一來源（monorepo 後）
 - [ ] **兩段式圖卡主題模板**：`recipe_card_generator.py` 增加 warm／minimal／premium 等 preset，共用同一 recipe schema。
 - [ ] **Deep Research 啟用策略**：只對高價值查詢啟用或加 memoization，避免延遲與成本回彈。
 - [ ] **GPT-Image-2 prompt 微調**：若底圖仍偶發問題，針對菜名長度與版面做 A/B。

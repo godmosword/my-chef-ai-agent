@@ -6,6 +6,24 @@
 
 ---
 
+## [Unreleased] — Monorepo + Design Tokens（Phase 3 起點）
+
+### Changed
+
+- 重構為 **pnpm workspace monorepo**：`apps/web`、`apps/line-bot`、`packages/design-tokens`、`packages/shared-types`
+- 新增 **`@chef/design-tokens`**：`tokens.json` → `tokens.css`、`tokens.py`、`tailwind-preset.js`；LINE `design_tokens.py` 改薄包裝 + `_generated_tokens.py`
+- CI 拆分：**`web-ci.yml`** / **`line-bot-ci.yml`**（path filter）；Cloud Run deploy 僅 LINE 路徑變更時觸發
+- Docker：**build context = repo 根**，`docker build -f apps/line-bot/Dockerfile .`
+
+### Migration notes
+
+- **Vercel** Root Directory：`web` → **`apps/web`**；Install/Build 見 [`apps/web/README.md`](apps/web/README.md)
+- **Render**：`apps/line-bot/render.yaml`；build 前需 `pnpm tokens:build`
+- 本機需 **pnpm ≥ 9**；Web：`pnpm dev:web`；LINE：`pnpm line:test` / `pnpm line:dev`
+- 設計 token 變更：`pnpm tokens:build` → `apps/line-bot/scripts/sync_tokens.sh`
+
+---
+
 ## 2026-05-23（文件同步 — Web Phase 0–3 對齊）
 
 - **README**：補 Web API 表、環境變數摘要、Phase 0–3 交付狀態；Python 測試改標為封存路徑維護（**153** 則，需 `requirements-dev.txt`）。

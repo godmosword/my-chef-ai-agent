@@ -10,7 +10,8 @@
 ```bash
 LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
 METRICS_TOKEN=test_metrics_token \
-python3 -m pytest tests/ -v
+pnpm line:test
+# 或 cd apps/line-bot && python3 -m pytest tests/ -v
 ```
 
 - 更新 `requirements*.txt` 後，可執行 `python3 scripts/generate_third_party_licenses.py` 並提交 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)。
