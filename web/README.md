@@ -17,13 +17,33 @@ npm run dev
 ## Vercel 部署
 
 1. Import 此 GitHub repo
-2. **Root Directory** 設為 `web`
-3. Environment Variables：
-   - `GEMINI_API_KEY`（**必填**）
-   - `MODEL_NAME`（建議 `gemini-3.1-flash-lite`；錯誤模型會出現 `404 status code (no body)`）
+2. **Root Directory** 設為 `web`（或依賴根目錄 `vercel.json` 的 `rootDirectory`）
+3. **只需手動加一個環境變數**（見下方）
 4. Deploy
 
-若從**倉庫根目錄**匯入 Vercel，根目錄已含 `vercel.json` 的 `"rootDirectory": "web"`；亦可於 Dashboard 手動將 Root Directory 設為 `web`。
+### 環境變數：你只要設定 `GEMINI_API_KEY`
+
+`MODEL_NAME` **不用**在 Vercel 介面設定。程式預設已是 `gemini-3.1-flash-lite`；根目錄 [`vercel.json`](../vercel.json) 也會在部署時帶入同名變數。
+
+| 變數 | 是否必須在 Dashboard 新增 | 說明 |
+|------|-------------------------|------|
+| `GEMINI_API_KEY` | **是** | Google AI Studio 金鑰 |
+| `MODEL_NAME` | 否 | 預設 `gemini-3.1-flash-lite` |
+| `DATABASE_URL` | 否（要記憶／收藏才要） | 連 Neon 後自動注入 |
+
+**在 Vercel 新增 `GEMINI_API_KEY` 的步驟：**
+
+1. 打開專案 → 上方 **Settings**
+2. 左側 **Environment Variables**
+3. 點 **Add Environment Variable**（或 **Add New**）
+4. **Key**：`GEMINI_API_KEY`
+5. **Value**：貼上你的金鑰
+6. 勾選 **Production**（建議 Preview、Development 一併勾選）
+7. **Save** → 到 **Deployments** 對最新部署選 **Redeploy**
+
+若畫面上只有 Neon 自動產生的變數、沒有「新增」按鈕，通常是權限或視窗寬度問題；可改用 [Vercel CLI](https://vercel.com/docs/cli/env)：`vercel env add GEMINI_API_KEY production`。
+
+若從**倉庫根目錄**匯入，根目錄 `vercel.json` 已指定 `"rootDirectory": "web"`。
 
 ## Phase 1（Neon）
 
