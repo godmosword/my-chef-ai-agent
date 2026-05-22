@@ -6,6 +6,21 @@
 
 ---
 
+## [Unreleased] — Today + Library UI（Prompt 3）
+
+### Added
+
+- **新 UI shell**（`NEXT_PUBLIC_NEW_UI=1`）：Marketing `/`、App `/app`（Today）、`/app/library`、`/app/library/[id]`、`/app/me`；經典聊天保留於 `/legacy` 與 flag 關閉時的 `/`
+- **設計系統落地**：Tailwind + `@chef/design-tokens`；`web/components/primitives/*`、`patterns/*`、`layout/*`
+- **Client API**：`web/lib/api/{client,recipes,streaming}.ts`；`fakeRecipeStream` 模擬漸進顯示（真 SSE 留待後續）
+- **開發**：`/showcase` primitives 頁
+
+### Changed
+
+- **根 layout**：`next/font`（Noto Sans／Serif TC）、`ThemeProvider`、`ToastProvider`
+
+---
+
 ## [Unreleased] — 移除 LINE Bot 與 Render
 
 ### Removed

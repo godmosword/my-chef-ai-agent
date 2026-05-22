@@ -14,6 +14,7 @@
 | 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、 HTML 海報、legal）。 |
 | 2026-05-23 | **移除 LINE Bot 與 Render**：刪除 `apps/line-bot/`、`line-bot-ci.yml`、相關部署文件；產品僅 Web。 |
 | 2026-05-23 | **Vercel 部署修正**：`web/vercel.json`；Dashboard **Root Directory = `web`**（實體目錄；`apps/web` 已搬遷）。 |
+| 2026-05-23 | **Prompt 3 — Today + Library UI**：Tailwind、primitives、App shell、`/app/*` 頁面；`NEXT_PUBLIC_NEW_UI=1` 啟用；規格 [`2026-05-23-today-library-ui.md`](docs/superpowers/specs/2026-05-23-today-library-ui.md)。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -47,6 +48,17 @@
 - [x] **Phase 3**：README／AGENTS 以 Web 為主（2026-05-23）
 - [x] **移除 LINE／Render 程式與 CI**（2026-05-23）
 - [x] **Monorepo 重構**：`apps/*` + `@chef/design-tokens` + 分離 CI（2026-05-22）
+- [x] **Prompt 3 — Today + Library UI**（Tailwind、primitives、patterns、`/app` 路由；flag `NEXT_PUBLIC_NEW_UI`）（2026-05-23）
+
+### Prompt 3 後續（UI）
+
+> 規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](docs/superpowers/specs/2026-05-23-today-library-ui.md)
+
+- [ ] **真 SSE 串流**：`POST /api/recipes?stream=1`（Prompt 2.5）
+- [ ] **⌘K CommandBar**、Plan／Shopping 頁
+- [ ] **Library 收藏切換** UI 接 `POST/DELETE /api/favorites`
+- [ ] **菜系篩選計數** 由 API 提供 aggregate
+- [ ] **E2E**：Today 生成、Library 列表（Playwright）
 
 ## 三點五、Phase 3+ — Recipe Library（Prompt 2）
 

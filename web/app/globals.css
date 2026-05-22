@@ -1,43 +1,41 @@
 @import "@chef/design-tokens/tokens.css";
 
-* {
-  box-sizing: border-box;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text-body);
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei",
+/* Bridge: typography / spacing from tokens.json (components use var() only) */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei",
     sans-serif;
-  line-height: 1.6;
+  --font-serif: "Noto Serif TC", ui-serif, serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 1.75rem;
+  --spacing-btn-sm: 2.25rem;
+  --spacing-btn-md: 2.75rem;
+  --spacing-btn-lg: 3.25rem;
+  --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
+  --motion-duration-normal: 200ms;
 }
 
-a {
-  color: var(--green);
-}
+@layer base {
+  * {
+    @apply box-border;
+  }
 
-.legal {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 28px 20px 48px;
-  line-height: 1.7;
-}
+  html {
+    @apply min-h-screen;
+  }
 
-.legal h1 {
-  margin: 16px 0;
-  color: var(--text-ink);
-}
+  body {
+    @apply min-h-screen bg-canvas font-sans text-base text-text-body antialiased;
+  }
 
-.legal__card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-}
-
-.legal ul {
-  margin: 8px 0 16px 18px;
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-primary;
+  }
 }

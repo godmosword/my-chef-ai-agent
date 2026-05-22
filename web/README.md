@@ -15,6 +15,15 @@ pnpm dev:web
 
 開啟 http://localhost:3000
 
+### 新 UI（Prompt 3）
+
+| 變數 | 說明 |
+|------|------|
+| `NEXT_PUBLIC_NEW_UI=1` | `/` 為 Landing；`/app` 為 Today／Library／Me |
+| （未設或 `0`） | `/` 為經典 `ChatPanel`；`/legacy` 永遠可用 |
+
+規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)
+
 ## Vercel 部署
 
 1. Import repo
@@ -23,6 +32,7 @@ pnpm dev:web
 4. **Install Command**（建議）：`cd .. && pnpm install --frozen-lockfile`
 5. **Build Command**（建議）：`cd .. && pnpm tokens:build && pnpm -F @chef/web build`
 6. 設定 `GEMINI_API_KEY`；Neon 連結後有 `DATABASE_URL`
+7. （可選）`NEXT_PUBLIC_NEW_UI=1` 啟用新 App shell
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 

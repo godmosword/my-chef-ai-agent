@@ -25,6 +25,8 @@ pnpm dev:web
 
 → http://localhost:3000
 
+**新 UI（Prompt 3）**：在 `web/.env.local` 設 `NEXT_PUBLIC_NEW_UI=1` 後重啟 dev，造訪 `/`（Landing）與 `/app`（Today）。未設時根路徑仍為經典聊天；`/legacy` 永遠可用。
+
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更
@@ -55,7 +57,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test   # Vitest（recipe payload + migration SQL）
+pnpm -F @chef/web test   # Vitest（5 tests：recipe payload + migration SQL）
 ```
 
 ---
