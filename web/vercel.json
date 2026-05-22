@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "installCommand": "cd .. && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build",
   "env": {
     "MODEL_NAME": "gemini-3.1-flash-lite",
     "MAX_COMPLETION_TOKENS": "1024",

@@ -20,6 +20,7 @@
 - **README**、**AGENTS**、**CONTRIBUTING**、**TODOS** 改為僅 Web（Vercel）
 - **Schema 文件**：migration 來源改為 `web/migrations/`
 - **目錄**：`apps/web` 搬至根目錄 **`web/`**（Vercel 不接受符號連結作 Root Directory）
+- **Vercel build**：`web` 的 `build` 腳本先跑 `@chef/design-tokens build`；`vercel.json` 註明 monorepo install
 
 ---
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsx src/build.ts",
+    "prepare": "tsx src/build.ts",
     "lint": "tsc --noEmit -p tsconfig.json"
   },
   "exports": {
