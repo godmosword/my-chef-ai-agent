@@ -1,12 +1,23 @@
 import { resolvePlanLimit } from "@/lib/config";
 import { asRows, getSql, isDatabaseConfigured } from "./client";
 
+export type QuotaKind = "text" | "image";
+
+export type QuotaBucket = {
+  used: number;
+  limit: number;
+  remaining: number;
+};
+
 export type QuotaDecision = {
   allowed: boolean;
   plan_key: string;
+  /** Legacy: text recipe generations used today */
   limit: number;
   used: number;
   remaining: number;
+  text: QuotaBucket;
+  image: QuotaBucket;
 };
 
 function utcToday(): string {
@@ -33,21 +44,54 @@ async function getSubscription(
   };
 }
 
-async function getDailyUsage(
+type DailyUsageRow = {
+  requests_count?: number;
+  text_requests_count?: number;
+  image_requests_count?: number;
+};
+
+async function getDailyUsageBreakdown(
   userId: string,
   tenantId: string,
   usageDate: string,
-): Promise<number> {
+): Promise<{ text: number; image: number; legacy: number }> {
   const sql = getSql();
-  if (!sql) return 0;
+  if (!sql) return { text: 0, image: 0, legacy: 0 };
 
   const rows = await sql`
-    SELECT requests_count FROM usage_daily
+    SELECT requests_count, text_requests_count, image_requests_count
+    FROM usage_daily
     WHERE tenant_id = ${tenantId} AND user_id = ${userId} AND usage_date = ${usageDate}
     LIMIT 1
   `;
-  const row = asRows<{ requests_count?: number }>(rows)[0];
-  return row?.requests_count ? Number(row.requests_count) : 0;
+  const row = asRows<DailyUsageRow>(rows)[0];
+  const legacy = row?.requests_count ? Number(row.requests_count) : 0;
+  const text = row?.text_requests_count
+    ? Number(row.text_requests_count)
+    : legacy;
+  const image = row?.image_requests_count
+    ? Number(row.image_requests_count)
+    : 0;
+  return { text, image, legacy };
+}
+
+function buildDecision(
+  planKey: string,
+  limit: number,
+  textUsed: number,
+  imageUsed: number,
+): QuotaDecision {
+  const textRemaining = Math.max(limit - textUsed, 0);
+  const imageRemaining = Math.max(limit - imageUsed, 0);
+  return {
+    allowed: textUsed < limit,
+    plan_key: planKey,
+    limit,
+    used: textUsed,
+    remaining: textRemaining,
+    text: { used: textUsed, limit, remaining: textRemaining },
+    image: { used: imageUsed, limit, remaining: imageRemaining },
+  };
 }
 
 async function incrementDailyUsage(
@@ -55,21 +99,60 @@ async function incrementDailyUsage(
   tenantId: string,
   usageDate: string,
   units: number,
-): Promise<number | null> {
+  kind: QuotaKind,
+): Promise<{ text: number; image: number } | null> {
   const sql = getSql();
   if (!sql) return null;
 
+  if (kind === "text") {
+    const rows = await sql`
+      INSERT INTO usage_daily (
+        tenant_id, user_id, usage_date,
+        requests_count, text_requests_count, updated_at
+      )
+      VALUES (
+        ${tenantId}, ${userId}, ${usageDate},
+        ${units}, ${units}, now()
+      )
+      ON CONFLICT (tenant_id, user_id, usage_date)
+      DO UPDATE SET
+        requests_count = usage_daily.requests_count + EXCLUDED.requests_count,
+        text_requests_count = usage_daily.text_requests_count + EXCLUDED.text_requests_count,
+        updated_at = now()
+      RETURNING text_requests_count, image_requests_count
+    `;
+    const row = asRows<{
+      text_requests_count?: number;
+      image_requests_count?: number;
+    }>(rows)[0];
+    if (row?.text_requests_count == null) return null;
+    return {
+      text: Number(row.text_requests_count),
+      image: Number(row.image_requests_count ?? 0),
+    };
+  }
+
   const rows = await sql`
-    INSERT INTO usage_daily (tenant_id, user_id, usage_date, requests_count, updated_at)
+    INSERT INTO usage_daily (
+      tenant_id, user_id, usage_date,
+      image_requests_count, updated_at
+    )
     VALUES (${tenantId}, ${userId}, ${usageDate}, ${units}, now())
     ON CONFLICT (tenant_id, user_id, usage_date)
     DO UPDATE SET
-      requests_count = usage_daily.requests_count + EXCLUDED.requests_count,
+      image_requests_count = usage_daily.image_requests_count + EXCLUDED.image_requests_count,
       updated_at = now()
-    RETURNING requests_count
+    RETURNING text_requests_count, image_requests_count
   `;
-  const row = asRows<{ requests_count?: number }>(rows)[0];
-  return row?.requests_count != null ? Number(row.requests_count) : null;
+  const row = asRows<{
+    text_requests_count?: number;
+    image_requests_count?: number;
+  }>(rows)[0];
+  if (row?.image_requests_count == null) return null;
+  return {
+    text: Number(row.text_requests_count ?? 0),
+    image: Number(row.image_requests_count),
+  };
 }
 
 async function appendUsageLedger(
@@ -92,30 +175,27 @@ async function appendUsageLedger(
 export async function checkQuota(
   userId: string,
   tenantId: string,
+  kind: QuotaKind = "text",
 ): Promise<QuotaDecision> {
+  const limit = resolvePlanLimit("free");
   if (!isDatabaseConfigured()) {
-    const limit = resolvePlanLimit("free");
-    return {
-      allowed: true,
-      plan_key: "free",
-      limit,
-      used: 0,
-      remaining: limit,
-    };
+    return buildDecision("free", limit, 0, 0);
   }
 
   const sub = await getSubscription(userId, tenantId);
   const planKey = sub.status === "active" ? sub.plan_key : "free";
-  const used = await getDailyUsage(userId, tenantId, utcToday());
-  const limit = resolvePlanLimit(planKey);
-  const remaining = Math.max(limit - used, 0);
-  return {
-    allowed: used < limit,
-    plan_key: planKey,
-    limit,
-    used,
-    remaining,
-  };
+  const planLimit = resolvePlanLimit(planKey);
+  const usage = await getDailyUsageBreakdown(userId, tenantId, utcToday());
+  const decision = buildDecision(
+    planKey,
+    planLimit,
+    usage.text,
+    usage.image,
+  );
+  if (kind === "image") {
+    decision.allowed = usage.image < planLimit;
+  }
+  return decision;
 }
 
 export async function consumeQuota(
@@ -123,37 +203,36 @@ export async function consumeQuota(
   tenantId: string,
   units = 1,
   eventType = "text_recipe_generation",
+  kind: QuotaKind = "text",
 ): Promise<QuotaDecision> {
-  const decision = await checkQuota(userId, tenantId);
-  if (!decision.allowed) return decision;
+  const decision = await checkQuota(userId, tenantId, kind);
+  const bucket = kind === "image" ? decision.image : decision.text;
+  if (!bucket.remaining || bucket.used >= bucket.limit) {
+    return { ...decision, allowed: false };
+  }
   if (!isDatabaseConfigured()) return decision;
 
-  const usedAfter = await incrementDailyUsage(
+  const before = kind === "image" ? decision.image.used : decision.text.used;
+  const after = await incrementDailyUsage(
     userId,
     tenantId,
     utcToday(),
     units,
+    kind,
   );
-  const minimumExpected = decision.used + units;
-  if (usedAfter == null || usedAfter < minimumExpected) {
-    return {
-      allowed: false,
-      plan_key: decision.plan_key,
-      limit: decision.limit,
-      used: decision.used,
-      remaining: Math.max(decision.limit - decision.used, 0),
-    };
+  if (!after) {
+    return { ...decision, allowed: false };
+  }
+
+  const usedAfter = kind === "image" ? after.image : after.text;
+  if (usedAfter < before + units) {
+    return { ...decision, allowed: false };
   }
 
   await appendUsageLedger(userId, tenantId, units, eventType, {
+    kind,
     used_after: usedAfter,
   });
 
-  return {
-    allowed: true,
-    plan_key: decision.plan_key,
-    limit: decision.limit,
-    used: usedAfter,
-    remaining: Math.max(decision.limit - usedAfter, 0),
-  };
+  return checkQuota(userId, tenantId, kind);
 }

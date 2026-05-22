@@ -56,7 +56,7 @@ my-chef-ai-agent/
 │   └── line-bot/         # FastAPI LINE（Render / Cloud Run）
 ├── packages/
 │   ├── design-tokens/    # tokens.json → css / py / tailwind-preset
-│   └── shared-types/     # Recipe 型別空殼（Prompt 2）
+│   └── shared-types/     # Zod Recipe Library 型別（@chef/shared-types）
 ├── docs/
 ├── pnpm-workspace.yaml
 └── package.json
@@ -71,6 +71,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
+pnpm -F @chef/web test   # Vitest（recipe payload + migration SQL）
 pnpm line:test    # 151 passed, 2 skipped（153 collected）
 ```
 

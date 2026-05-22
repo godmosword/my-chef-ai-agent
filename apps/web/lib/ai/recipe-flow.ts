@@ -16,6 +16,8 @@ import {
 } from "./prompt-helpers";
 import { generateRecipe, type RecipePayload } from "./generate-recipe";
 
+import type { QuotaBucket } from "@/lib/db/quota";
+
 export type RecipeFlowResult = {
   recipe: RecipePayload;
   raw: string;
@@ -24,19 +26,27 @@ export type RecipeFlowResult = {
     limit: number;
     used: number;
     remaining: number;
+    text: QuotaBucket;
+    image: QuotaBucket;
   };
+};
+
+export type RecipeFlowOptions = {
+  deepResearch?: boolean;
 };
 
 export async function runRecipeFlow(
   userId: string,
   userMessage: string,
   tenantId: string = DEFAULT_TENANT_ID,
+  _options?: RecipeFlowOptions,
 ): Promise<RecipeFlowResult> {
   const quota = await consumeQuota(
     userId,
     tenantId,
     1,
     "text_recipe_generation",
+    "text",
   );
   if (!quota.allowed) {
     throw new QuotaExceededError(quota);
@@ -113,24 +123,16 @@ export async function runRecipeFlow(
       limit: quota.limit,
       used: quota.used,
       remaining: quota.remaining,
+      text: quota.text,
+      image: quota.image,
     },
   };
 }
 
 export class QuotaExceededError extends Error {
-  readonly quota: {
-    plan_key: string;
-    limit: number;
-    used: number;
-    remaining: number;
-  };
+  readonly quota: RecipeFlowResult["quota"];
 
-  constructor(quota: {
-    plan_key: string;
-    limit: number;
-    used: number;
-    remaining: number;
-  }) {
+  constructor(quota: RecipeFlowResult["quota"]) {
     super("Daily quota exceeded");
     this.name = "QuotaExceededError";
     this.quota = quota;
