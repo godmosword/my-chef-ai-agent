@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import type { RecipePayload } from "@/lib/ai/generate-recipe";
 
 type Props = {
   recipe: RecipePayload;
+  onFavorite?: (recipe: RecipePayload) => Promise<void>;
+  favoritesEnabled?: boolean;
 };
 
-export function RecipeCard({ recipe }: Props) {
+export function RecipeCard({
+  recipe,
+  onFavorite,
+  favoritesEnabled = false,
+}: Props) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   const name = recipe.recipe_name || "美味食譜";
   const theme = recipe.theme || "家常";
   const talks = recipe.kitchen_talk || [];
@@ -15,10 +25,35 @@ export function RecipeCard({ recipe }: Props) {
   const shopping = recipe.shopping_list || [];
   const cost = recipe.estimated_total_cost;
 
+  async function handleFavorite() {
+    if (!onFavorite || saving || saved) return;
+    setSaving(true);
+    try {
+      await onFavorite(recipe);
+      setSaved(true);
+    } catch {
+      /* parent shows error */
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <article className="recipe-card">
       <header className="recipe-card__header">
-        <h2 className="recipe-card__title">{name}</h2>
+        <div className="recipe-card__title-row">
+          <h2 className="recipe-card__title">{name}</h2>
+          {favoritesEnabled && onFavorite && (
+            <button
+              type="button"
+              className="recipe-card__fav"
+              onClick={handleFavorite}
+              disabled={saving || saved}
+            >
+              {saved ? "已收藏" : saving ? "…" : "♥ 收藏"}
+            </button>
+          )}
+        </div>
         <p className="recipe-card__theme">{theme}</p>
       </header>
 
@@ -88,10 +123,31 @@ export function RecipeCard({ recipe }: Props) {
           padding-bottom: 12px;
           margin-bottom: 12px;
         }
+        .recipe-card__title-row {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 8px;
+        }
         .recipe-card__title {
           margin: 0;
           font-size: 1.35rem;
           color: var(--text-ink);
+          flex: 1;
+        }
+        .recipe-card__fav {
+          flex-shrink: 0;
+          padding: 6px 10px;
+          font-size: 0.8rem;
+          border: 1px solid var(--primary);
+          border-radius: 8px;
+          background: var(--surface);
+          color: var(--primary-dark);
+          cursor: pointer;
+        }
+        .recipe-card__fav:disabled {
+          opacity: 0.7;
+          cursor: default;
         }
         .recipe-card__theme {
           margin: 4px 0 0;

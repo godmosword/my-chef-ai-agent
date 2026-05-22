@@ -21,11 +21,23 @@ npm run dev
 3. Environment Variables：`GEMINI_API_KEY`（必填）、可選 `MODEL_NAME`、`MAX_COMPLETION_TOKENS`
 4. Deploy
 
-Phase 1 起可再加 Neon 的 `DATABASE_URL`（對話記憶／收藏）。
+## Phase 1（Neon）
+
+1. Vercel → Storage → **Neon Postgres** → 連結專案（自動注入 `DATABASE_URL`）
+2. 首次可於本機對 DB 執行：`python3 init_db.py`（根目錄 migration 與 Python 版相同 schema）
+3. 重新 Deploy
+
+功能：多輪對話記憶、每日配額、收藏、清除記憶。
 
 ## API
 
 - `GET /api/health` — 存活檢查
-- `POST /api/recipes` — body `{ "message": "..." }`，需瀏覽器 cookie `chef_session`
+- `GET /api/quota` — 今日用量
+- `POST /api/recipes` — body `{ "message": "..." }`（含記憶與配額）
+- `DELETE /api/memory` — 清除對話
+- `GET|POST /api/favorites` — 收藏列表／新增
+- `DELETE /api/favorites/:id` — 刪除收藏
+
+皆需瀏覽器 cookie `chef_session`。
 
 設計規格見 [`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](../docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)。

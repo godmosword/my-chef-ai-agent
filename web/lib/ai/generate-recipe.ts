@@ -2,7 +2,6 @@ import OpenAI from "openai";
 import {
   AI_RETRY_EXTRA_PROMPT,
   AI_TRUNCATION_RECOVERY_PROMPT,
-  SYSTEM_PROMPT,
 } from "./prompts";
 
 export type KitchenTalk = { role: string; content: string };
@@ -45,7 +44,7 @@ function parseRecipeJson(raw: string): RecipePayload {
 }
 
 export async function generateRecipe(
-  userMessage: string,
+  apiMessages: OpenAI.Chat.ChatCompletionMessageParam[],
   userId: string,
 ): Promise<{ raw: string; recipe: RecipePayload }> {
   const model = process.env.MODEL_NAME?.trim() || "gemini-2.0-flash";
@@ -56,10 +55,7 @@ export async function generateRecipe(
   const maxRetries = 1;
   const client = getClient();
 
-  const baseMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: userMessage },
-  ];
+  const baseMessages = apiMessages;
 
   const extraUser: OpenAI.Chat.ChatCompletionMessageParam[] = [];
   let lastRaw = "";

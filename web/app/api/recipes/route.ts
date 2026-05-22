@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { generateRecipe } from "@/lib/ai/generate-recipe";
+import { DEFAULT_TENANT_ID } from "@/lib/config";
+import { QuotaExceededError, runRecipeFlow } from "@/lib/ai/recipe-flow";
 import { getSessionUserId } from "@/lib/session";
 
 export const maxDuration = 60;
@@ -32,9 +33,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { recipe, raw } = await generateRecipe(message, userId);
-    return NextResponse.json({ ok: true, recipe, raw });
+    const result = await runRecipeFlow(userId, message, DEFAULT_TENANT_ID);
+    return NextResponse.json({
+      ok: true,
+      recipe: result.recipe,
+      quota: result.quota,
+    });
   } catch (err) {
+    if (err instanceof QuotaExceededError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "今日免費額度已用完，請明天再試。",
+          quota: err.quota,
+        },
+        { status: 429 },
+      );
+    }
     const msg = err instanceof Error ? err.message : "AI request failed";
     console.error("recipe generation failed:", msg);
     return NextResponse.json({ ok: false, error: msg }, { status: 502 });

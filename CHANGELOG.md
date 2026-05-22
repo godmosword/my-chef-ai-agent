@@ -6,6 +6,13 @@
 
 ---
 
+## 2026-05-23（Web 版 Phase 1 — Neon）
+
+- **`@neondatabase/serverless`**：`lib/db/*` 對接既有 Postgres schema（`user_memory`、`favorite_recipes`、`usage_daily` 等）。
+- **食譜流程**：`runRecipeFlow` — 多輪記憶、情境 prompt、每日配額、`usage_ledger`。
+- **API**：`GET /api/quota`、`DELETE /api/memory`、`GET|POST /api/favorites`、`DELETE /api/favorites/:id`。
+- **UI**：今日剩餘次數、清除記憶、我的最愛、食譜卡收藏、免責／隱私頁。
+
 ## 2026-05-23（Web 版 Phase 0 — Vercel）
 
 - **新產品入口**：`web/` Next.js 15 應用 — 瀏覽器聊天、結構化食譜卡、匿名 `chef_session` cookie（取代 LINE `userId` 初版）。

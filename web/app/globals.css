@@ -28,3 +28,26 @@ body {
 a {
   color: var(--green);
 }
+
+.legal {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+  line-height: 1.7;
+}
+
+.legal h1 {
+  margin: 16px 0;
+  color: var(--text-ink);
+}
+
+.legal__card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.legal ul {
+  margin: 8px 0 16px 18px;
+}

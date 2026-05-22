@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { RecipeCard } from "./RecipeCard";
 import type { RecipePayload } from "@/lib/ai/generate-recipe";
 
@@ -9,10 +9,60 @@ type ChatItem =
   | { id: string; role: "assistant"; recipe: RecipePayload }
   | { id: string; role: "error"; text: string };
 
+type QuotaState = {
+  remaining: number;
+  limit: number;
+  used: number;
+  db_configured: boolean;
+};
+
+type FavoriteItem = {
+  id: number;
+  recipe_name: string;
+  recipe_data: RecipePayload;
+  created_at: string;
+};
+
 export function ChatPanel() {
   const [items, setItems] = useState<ChatItem[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quota, setQuota] = useState<QuotaState | null>(null);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const refreshQuota = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quota");
+      const data = await res.json();
+      if (data.ok) {
+        setQuota({
+          remaining: data.remaining,
+          limit: data.limit,
+          used: data.used,
+          db_configured: data.db_configured,
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const loadFavorites = useCallback(async () => {
+    const res = await fetch("/api/favorites");
+    const data = await res.json();
+    if (data.ok) setFavorites(data.items || []);
+  }, []);
+
+  useEffect(() => {
+    refreshQuota();
+  }, [refreshQuota]);
+
+  function flash(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2800);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,6 +92,16 @@ export function ChatPanel() {
           recipe: data.recipe as RecipePayload,
         },
       ]);
+      if (data.quota) {
+        setQuota({
+          remaining: data.quota.remaining,
+          limit: data.quota.limit,
+          used: data.quota.used,
+          db_configured: quota?.db_configured ?? true,
+        });
+      } else {
+        await refreshQuota();
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "請求失敗";
       setItems((prev) => [
@@ -53,12 +113,106 @@ export function ChatPanel() {
     }
   }
 
+  async function clearMemory() {
+    const res = await fetch("/api/memory", { method: "DELETE" });
+    const data = await res.json();
+    if (data.ok) {
+      setItems([]);
+      flash(data.cleared ? "已清除對話記憶" : (data.message || "完成"));
+    }
+  }
+
+  async function openFavorites() {
+    await loadFavorites();
+    setShowFavorites(true);
+  }
+
+  async function saveFavorite(recipe: RecipePayload) {
+    const res = await fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipe_name: recipe.recipe_name,
+        recipe_data: recipe,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "收藏失敗");
+    }
+    flash(`已收藏「${recipe.recipe_name}」`);
+  }
+
+  async function removeFavorite(id: number) {
+    await fetch(`/api/favorites/${id}`, { method: "DELETE" });
+    await loadFavorites();
+  }
+
+  const favoritesEnabled = quota?.db_configured ?? false;
+
   return (
     <div className="chat">
       <header className="chat__header">
-        <h1>職人料理大腦</h1>
+        <div className="chat__header-top">
+          <h1>職人料理大腦</h1>
+          {quota && (
+            <span className="chat__quota">
+              今日剩餘 {quota.remaining}/{quota.limit}
+              {!quota.db_configured && "（未連 DB）"}
+            </span>
+          )}
+        </div>
         <p>輸入想吃的、手邊的食材，主廚為你研發食譜。</p>
+        <div className="chat__toolbar">
+          <button type="button" className="chat__tool" onClick={clearMemory}>
+            清除記憶
+          </button>
+          <button
+            type="button"
+            className="chat__tool"
+            onClick={openFavorites}
+            disabled={!favoritesEnabled}
+            title={favoritesEnabled ? "" : "需設定 DATABASE_URL"}
+          >
+            我的最愛
+          </button>
+          <a className="chat__tool chat__tool--link" href="/legal/disclaimer">
+            免責
+          </a>
+          <a className="chat__tool chat__tool--link" href="/legal/privacy">
+            隱私
+          </a>
+        </div>
       </header>
+
+      {toast && <div className="chat__toast">{toast}</div>}
+
+      {showFavorites && (
+        <div className="chat__overlay" role="dialog" aria-label="我的最愛">
+          <div className="chat__drawer">
+            <div className="chat__drawer-head">
+              <h2>我的最愛</h2>
+              <button type="button" onClick={() => setShowFavorites(false)}>
+                關閉
+              </button>
+            </div>
+            {favorites.length === 0 ? (
+              <p className="chat__drawer-empty">尚無收藏食譜</p>
+            ) : (
+              <ul className="chat__fav-list">
+                {favorites.map((f) => (
+                  <li key={f.id}>
+                    <span>{f.recipe_name}</span>
+                    <button type="button" onClick={() => removeFavorite(f.id)}>
+                      刪除
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="chat__messages" aria-live="polite">
         {items.length === 0 && (
@@ -81,7 +235,11 @@ export function ChatPanel() {
           }
           return (
             <div key={item.id} className="bubble bubble--assistant">
-              <RecipeCard recipe={item.recipe} />
+              <RecipeCard
+                recipe={item.recipe}
+                onFavorite={saveFavorite}
+                favoritesEnabled={favoritesEnabled}
+              />
             </div>
           );
         })}
@@ -115,16 +273,107 @@ export function ChatPanel() {
           max-width: 720px;
           margin: 0 auto;
           padding: 20px 16px 24px;
+          position: relative;
+        }
+        .chat__header-top {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
         }
         .chat__header h1 {
           margin: 0;
           font-size: 1.5rem;
           color: var(--text-ink);
         }
+        .chat__quota {
+          font-size: 0.85rem;
+          color: var(--green);
+          font-weight: 600;
+        }
         .chat__header p {
-          margin: 6px 0 0;
+          margin: 6px 0 10px;
           color: var(--text-muted);
           font-size: 0.95rem;
+        }
+        .chat__toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .chat__tool {
+          padding: 6px 12px;
+          font-size: 0.85rem;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          background: var(--surface);
+          color: var(--text-body);
+          cursor: pointer;
+        }
+        .chat__tool:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+        .chat__tool--link {
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+        }
+        .chat__toast {
+          position: fixed;
+          top: 16px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: var(--green);
+          color: #f5f0e6;
+          padding: 10px 18px;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          z-index: 100;
+        }
+        .chat__overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(28, 25, 23, 0.35);
+          z-index: 50;
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+        }
+        .chat__drawer {
+          background: var(--surface);
+          width: 100%;
+          max-width: 720px;
+          max-height: 70vh;
+          border-radius: 16px 16px 0 0;
+          padding: 16px 20px 24px;
+          overflow-y: auto;
+        }
+        .chat__drawer-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+        .chat__drawer-head h2 {
+          margin: 0;
+          font-size: 1.1rem;
+        }
+        .chat__drawer-empty {
+          color: var(--text-muted);
+        }
+        .chat__fav-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .chat__fav-list li {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 0;
+          border-bottom: 1px solid var(--border);
         }
         .chat__messages {
           flex: 1;
@@ -182,7 +431,7 @@ export function ChatPanel() {
           font-size: 1rem;
           background: var(--surface);
         }
-        .chat__form button {
+        .chat__form button[type="submit"] {
           padding: 12px 20px;
           border: none;
           border-radius: 12px;
