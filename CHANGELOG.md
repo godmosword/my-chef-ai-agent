@@ -6,6 +6,14 @@
 
 ---
 
+## 2026-05-23（Web 版 Phase 0 — Vercel）
+
+- **新產品入口**：`web/` Next.js 15 應用 — 瀏覽器聊天、結構化食譜卡、匿名 `chef_session` cookie（取代 LINE `userId` 初版）。
+- **API**：`POST /api/recipes`（Gemini OpenAI-compatible）、`GET /api/health`。
+- **部署**：Vercel Project Root Directory 設為 `web`；見 [`web/README.md`](web/README.md)。
+- **設計規格**：[`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)。
+- **Python LINE / Render**：仍保留於 repo，標記為過渡；Phase 1 起 Web 接 Neon 後可關閉 webhook。
+
 ## 2026-04-26（UX Playbook 補齊）
 
 - 新增 [`docs/UX_PLAYBOOK.md`](docs/UX_PLAYBOOK.md)，補齊四項設計規範：
