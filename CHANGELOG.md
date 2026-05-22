@@ -6,6 +6,22 @@
 
 ---
 
+## [Unreleased] — 移除 LINE Bot 與 Render
+
+### Removed
+
+- **`apps/line-bot/`** 整包（FastAPI LINE webhook、pytest、Dockerfile、Rich Menu）
+- **Render**：`render.yaml`、[`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)、[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)、[`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/RICH_MENU.md`](docs/RICH_MENU.md)
+- **CI／部署**：`line-bot-ci.yml`、根目錄 `Dockerfile`、Cloud Run source deploy
+- **`@chef/design-tokens`** 不再產出 `tokens.py`（僅 CSS + Tailwind preset）
+
+### Changed
+
+- **README**、**AGENTS**、**CONTRIBUTING**、**TODOS** 改為僅 Web（Vercel）
+- **Schema 文件**：migration 來源改為 `apps/web/migrations/`
+
+---
+
 ## [Unreleased] — Recipe Library（Prompt 2）
 
 ### Added

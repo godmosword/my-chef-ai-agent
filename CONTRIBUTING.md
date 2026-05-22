@@ -2,19 +2,16 @@
 
 ## 開發與測試
 
-- **現行產品**：[`web/README.md`](web/README.md)（Vercel）；Agent 改動完直推 `main`。
-- **封存 LINE Bot**：[`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
-- pytest 與環境變數：根目錄 [`AGENTS.md`](AGENTS.md)。
-- 執行測試（CI 與本專案測試會讀取 `METRICS_TOKEN`；未設時 `/metrics` 相關測試會失敗）：
+- **產品**：[`apps/web/README.md`](apps/web/README.md)（Vercel）；Agent 改動完直推 `main`。
+- 環境與指令：根目錄 [`AGENTS.md`](AGENTS.md)。
 
 ```bash
-LINE_CHANNEL_ACCESS_TOKEN=test_token LINE_CHANNEL_SECRET=test_secret GEMINI_API_KEY=test_key \
-METRICS_TOKEN=test_metrics_token \
-pnpm line:test
-# 或 cd apps/line-bot && python3 -m pytest tests/ -v
+pnpm install
+pnpm tokens:build
+pnpm -F @chef/web test
+pnpm -F @chef/web build
 ```
 
-- 更新 `requirements*.txt` 後，可執行 `python3 scripts/generate_third_party_licenses.py` 並提交 [`docs/THIRD_PARTY_LICENSES.md`](docs/THIRD_PARTY_LICENSES.md)。
 - 開源前自查：[`docs/OPEN_SOURCE_CHECKLIST.md`](docs/OPEN_SOURCE_CHECKLIST.md)。
 
 ## Plan／里程碑收尾（必做）

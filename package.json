@@ -12,8 +12,7 @@
     "dev:web": "pnpm -F @chef/web dev",
     "lint": "pnpm -r lint",
     "tokens:build": "pnpm -F @chef/design-tokens build",
-    "tokens:watch": "pnpm -F @chef/design-tokens build --watch",
-    "line:test": "cd apps/line-bot && python3 -m pytest tests/ -v"
+    "tokens:watch": "pnpm -F @chef/design-tokens build --watch"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

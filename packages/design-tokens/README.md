@@ -1,6 +1,6 @@
 # @chef/design-tokens
 
-單一設計語彙來源（W3C DTCG `tokens.json`）→ CSS、Python、Tailwind preset。
+單一設計語彙來源（W3C DTCG `tokens.json`）→ CSS、Tailwind preset。
 
 ```bash
 pnpm tokens:build   # from repo root

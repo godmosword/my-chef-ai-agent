@@ -1,1 +1,0 @@
-apps/line-bot/Dockerfile

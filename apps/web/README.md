@@ -1,6 +1,6 @@
 # 職人料理大腦 — Web（Vercel）
 
-**Monorepo 現行產品。** 從 repo 根目錄以 pnpm 開發；LINE Bot 見 [`apps/line-bot`](../line-bot/)。
+**Monorepo 唯一產品。** 從 repo 根目錄以 pnpm 開發。
 
 ## 本機開發
 
@@ -42,9 +42,6 @@ pnpm dev:web
 ```bash
 # 初次或升級（Recipe Library）
 DATABASE_URL=... pnpm -F @chef/web db:migrate
-
-# LINE 路徑仍可用 init_db.py 建立基底 schema
-cd apps/line-bot && python3 init_db.py
 ```
 
 ```bash

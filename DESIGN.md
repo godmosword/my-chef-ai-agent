@@ -2,9 +2,8 @@
 version: "alpha"
 name: 職人料理大腦 — 溫暖明亮食譜主題
 description: >
-  LINE Bot 食譜助理的視覺設計系統。
-  涵蓋 LINE Flex Message、HTML/CSS 食譜海報（Playwright）與 Pillow fallback 三個渲染層，
-  以相同 token 保持跨輸出一致的暖系質感。
+  職人料理大腦 Web 的視覺設計系統。
+  以 @chef/design-tokens 產出 CSS 變數，供 Next.js 與可列印 HTML 海報共用暖系質感。
 colors:
   # ── 基礎底色 ──────────────────────────────────────────────────────────────────
   background:       "#FFFAF5"   # 溫暖米白底色（Flex 主畫布）
@@ -149,7 +148,7 @@ components:
 
 以 **Noto CJK** 系列為主體，海報標題使用 **Noto Serif TC**（宋體），正文與標籤使用 **Noto Sans TC**（黑體）。系統字型依序 fallback 至 PingFang TC（macOS）、Microsoft JhengHei（Windows）。
 
-Render（Linux）部署環境需透過 `buildCommand` 安裝 `fonts-noto-cjk`，並以 CSS `@font-face` + `local()` 橋接，**不依賴 Google Fonts CDN**（headless 截圖環境下不可靠）。
+Web 海報（`apps/web`）以 CSS `@font-face` + `local()` 橋接系統字型，**不依賴 Google Fonts CDN**（headless／列印環境下較可靠）。
 
 字型選用邏輯：
 - **標題**（食譜名稱）：Noto Serif TC — 提升高級質感

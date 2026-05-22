@@ -10,8 +10,9 @@
 
 | 時間 | 內容 |
 |------|------|
-| 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`apps/web`、`apps/line-bot`、`@chef/design-tokens`）；CI 拆分；LINE `design_tokens` 薄包裝；規格已核准並實作。 |
-| 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、HTML 海報、legal）；LINE／Render 封存於 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。 |
+| 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`apps/web`、`@chef/design-tokens`、`@chef/shared-types`）；`web-ci.yml`；規格已核准並實作。 |
+| 2026-05-23 | **Web 遷移 Phase 0–3**：`apps/web` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、HTML 海報、legal）。 |
+| 2026-05-23 | **移除 LINE Bot 與 Render**：刪除 `apps/line-bot/`、`line-bot-ci.yml`、相關部署文件；產品僅 Web。 |
 | 2026-05-23 | **Vercel 部署修正**：根目錄移除無效 `vercel.json`；`web/vercel.json` 預設 `MODEL_NAME=gemini-3.1-flash-lite`；Dashboard **Root Directory = `web`**。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
@@ -28,8 +29,6 @@
 
 ## 零、部署後建議手動驗收（Web · Vercel）
 
-> 現行產品為 **Web**；LINE／Render 驗收見 [`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)。
-
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
 - [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
@@ -45,7 +44,8 @@
 - [x] **Phase 0**：`web/` Next.js 聊天 + `/api/recipes` + 匿名 session（2026-05-23）
 - [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
 - [x] **Phase 2**：主圖 API、HTML 海報下載、菜系選擇 UI（2026-05-23）
-- [x] **Phase 3**：README／AGENTS 以 Web 為主；`docs/LEGACY_LINE_BOT.md` 封存 LINE／Render（2026-05-23）
+- [x] **Phase 3**：README／AGENTS 以 Web 為主（2026-05-23）
+- [x] **移除 LINE／Render 程式與 CI**（2026-05-23）
 - [x] **Monorepo 重構**：`apps/*` + `@chef/design-tokens` + 分離 CI（2026-05-22）
 
 ## 三點五、Phase 3+ — Recipe Library（Prompt 2）
@@ -58,10 +58,10 @@
 
 ### Web 後續（未排進 Phase 0–3）
 
-- [ ] **圖片上傳辨識**：瀏覽器上傳食材圖 → vision API（對應舊 LINE image handler）
+- [ ] **圖片上傳辨識**：瀏覽器上傳食材圖 → vision API
 - [ ] **兩段式食譜圖卡**：Stage A 底圖 + Stage B 疊字（Web 版，非 Flex）
 - [ ] **海報 PNG**：Playwright 或服務端截圖（現僅 HTML 下載）
-- [ ] **Deep Research**：可選 grounding（預設關，與 Python 路徑一致）
+- [ ] **Deep Research**：可選 grounding（預設關）
 - [ ] **OAuth 登入**：取代純匿名 `chef_session`（規格 Phase 3+ 可選）
 - [ ] **DB 產品洞察**：[`2026-05-22-db-insights-design.md`](docs/superpowers/specs/2026-05-22-db-insights-design.md) — `scripts/db_product_insights.py`、`GET /admin/insights`（僅規格，未實作）
 
@@ -69,21 +69,18 @@
 
 ### 建議優先
 
-- [ ] **Web API 每 session 節流**（取代 LINE webhook 節流）
-- [ ] ~~Webhook 每使用者節流（LINE）~~ — 封存路徑，僅在續用 LINE 時見 LEGACY 文件
+- [ ] **Web API 每 session 節流**
 
 ### 可排期
 
 - [ ] **可觀測性加強**：結構化 log 已有 request id；可補匯出或儀表板化。
 - [ ] **多租戶嚴格化**：`user_memory` 等與 HTTP `tenant_id` 需 migration、欄位與查詢一致時再補。
 - [ ] **整合測試**：testcontainers 或 CI 內嵌 Postgres 覆寫 `DATABASE_URL` 路徑（現以 mock／無 DB 為主）。
-- [ ] **handlers 模組化**：`process_*` 依指令／食譜流程拆檔，降低合併衝突。
-- [ ] **延遲初始化**：評估 AI／DB client 非 import 即連線（見 [`AGENTS.md`](AGENTS.md) 說明現狀）。
 
 ### 低優先
 
-- [x] ~~**README 內大段手動 SQL**~~：migration／`apps/line-bot/init_db.py` 為單一來源（monorepo 後）
-- [ ] **兩段式圖卡主題模板**：`recipe_card_generator.py` 增加 warm／minimal／premium 等 preset，共用同一 recipe schema。
+- [x] ~~**README 內大段手動 SQL**~~：migration 以 `apps/web/migrations/` 為單一來源
+- [ ] **兩段式圖卡主題模板**（Web 版）
 - [ ] **Deep Research 啟用策略**：只對高價值查詢啟用或加 memoization，避免延遲與成本回彈。
 - [ ] **GPT-Image-2 prompt 微調**：若底圖仍偶發問題，針對菜名長度與版面做 A/B。
 - [ ] **圖片配額策略**：按需出圖成本偏高時，評估綁付費方案或每日圖片額度。
@@ -111,9 +108,4 @@
 - 未設 **`DATABASE_URL`** 時：無多輪記憶、收藏、配額、菜系；僅單次聊天與 placeholder 主圖。
 - **Serverless** 函式有執行時間上限；極長 AI 請求可能逾時（見規格風險表）。
 - **主圖**：`IMAGE_PROVIDER=placeholder` 為備援圖；真實生圖需 `openai_compatible` 與對應金鑰。
-- **海報**：下載為 HTML，非 LINE 版 Playwright PNG。
-
-### 封存 LINE／Render
-
-- **reply_token** 短期有效；長任務以 **push** 為主（背景食譜）。
-- **記憶體** 圖快取、rate limit、佇列皆**單進程**語意；多副本時各實例獨立，跨機一致需 Redis 等外掛（見 backlog 與 `IMAGE_CACHE_BACKEND`）。
+- **海報**：下載為 HTML（尚無伺服端 PNG 截圖）。
