@@ -41,7 +41,7 @@
 > 規格：[`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)
 
 - [x] **Phase 0**：`web/` Next.js 聊天 + `/api/recipes` + 匿名 session（2026-05-23）
-- [ ] **Phase 1**：Neon `DATABASE_URL` — 對話記憶、收藏、每日配額
+- [x] **Phase 1**：Neon — 對話記憶、收藏、每日配額、legal 頁（2026-05-23）
 - [ ] **Phase 2**：主圖／海報下載、菜系選擇 UI
 - [ ] **Phase 3**：封存 LINE webhook 文件與 Render 預設部署說明
 

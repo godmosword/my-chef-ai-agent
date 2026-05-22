@@ -113,7 +113,7 @@ def _require_env(name: str) -> str:
 
 LINE_CHANNEL_ACCESS_TOKEN = _require_env("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_CHANNEL_SECRET       = _require_env("LINE_CHANNEL_SECRET")
-MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite-preview")
+MODEL_NAME                = os.getenv("MODEL_NAME", "gemini-3.1-flash-lite")
 # Render Postgres（或任何 PostgreSQL）連線字串
 DATABASE_URL              = (os.getenv("DATABASE_URL") or "").strip() or None
 DEFAULT_TENANT_ID         = os.getenv("DEFAULT_TENANT_ID", "default")

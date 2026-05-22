@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "env": {
+    "MODEL_NAME": "gemini-3.1-flash-lite",
+    "MAX_COMPLETION_TOKENS": "1024",
+    "MAX_HISTORY_TURNS": "2",
+    "PLAN_FREE_DAILY_LIMIT": "20",
+    "DEFAULT_TENANT_ID": "default"
+  }
+}
