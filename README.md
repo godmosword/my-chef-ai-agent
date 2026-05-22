@@ -1,6 +1,21 @@
-## 職人料理大腦（LINE Bot × FastAPI）
+## 職人料理大腦
 
-以 **Gemini** 系列（預設 `MODEL_NAME=gemini-3.1-flash-lite-preview`，可改走 OpenAI）為核心的食譜助理：多輪對話、結構化 JSON 食譜、**Flex Message** 卡片、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化（未設定時優雅降級）。
+以 **Gemini** 為核心的 AI 食譜助理。
+
+### Web 版（建議 · Vercel）
+
+瀏覽器直接使用，部署簡單。程式在 [`web/`](web/)，本機：
+
+```bash
+cd web && cp .env.example .env.local  # 填入 GEMINI_API_KEY
+npm install && npm run dev
+```
+
+Vercel：**Root Directory = `web`**。詳見 [`web/README.md`](web/README.md) 與設計規格 [`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)。
+
+### LINE Bot 版（過渡 · FastAPI + Render）
+
+多輪對話、**Flex Message**、可選 **Vertex Imagen** 主圖、**Render Postgres** 持久化。入口 `main.py` + `app/`。
 
 更完整的維運與測試環境變數見 [`AGENTS.md`](AGENTS.md)；貢獻與里程碑收尾流程見 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 

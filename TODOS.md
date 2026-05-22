@@ -36,11 +36,20 @@
 
 ---
 
+## 零點五、Web（Vercel）— 現行主線
+
+> 規格：[`docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md`](docs/superpowers/specs/2026-05-23-line-to-web-vercel-design.md)
+
+- [x] **Phase 0**：`web/` Next.js 聊天 + `/api/recipes` + 匿名 session（2026-05-23）
+- [ ] **Phase 1**：Neon `DATABASE_URL` — 對話記憶、收藏、每日配額
+- [ ] **Phase 2**：主圖／海報下載、菜系選擇 UI
+- [ ] **Phase 3**：封存 LINE webhook 文件與 Render 預設部署說明
+
 ## 一、平台與後端（backlog）
 
 ### 建議優先
 
-- [ ] **Webhook 每使用者節流**：佇列前依 LINE `userId`（＋`tenant_id`）限流，補齊僅 per-IP 未涵蓋的濫用情境（與 `app/rate_limit.py` 並存）。
+- [ ] **Webhook 每使用者節流**（僅 LINE 路徑）：佇列前依 LINE `userId` 限流；Web 改 session + API rate limit。
 
 ### 可排期
 
