@@ -18,7 +18,7 @@ pnpm dev:web
 ## Vercel 部署
 
 1. Import repo
-2. **Root Directory** = **`apps/web`**
+2. **Root Directory** = **`apps/web`**（若 Dashboard 仍為舊值 **`web`** 亦可：repo 根目錄有 `web` → `apps/web` 符號連結）
 3. 啟用 **Include source files outside of the Root Directory in the Build Step**
 4. **Install Command**（建議）：`cd ../.. && pnpm install --frozen-lockfile`
 5. **Build Command**（建議）：`cd ../.. && pnpm tokens:build && pnpm -F @chef/web build`

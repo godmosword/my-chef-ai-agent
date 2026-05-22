@@ -25,7 +25,7 @@ pnpm dev:web
 
 → http://localhost:3000
 
-部署：**Vercel Root Directory = `apps/web`**，並啟用 **Include files outside Root Directory**。詳見 [`apps/web/README.md`](apps/web/README.md)。
+部署：**Vercel Root Directory = `apps/web`**（或 **`web`**，為相容舊設定的符號連結），並啟用 **Include files outside Root Directory**。詳見 [`apps/web/README.md`](apps/web/README.md)。
 
 ### Design tokens 變更
 
