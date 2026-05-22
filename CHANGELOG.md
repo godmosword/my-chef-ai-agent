@@ -6,6 +6,11 @@
 
 ---
 
+## 2026-05-23（合併至 main — Web Phase 1 完整線）
+
+- 將 `cursor/web-vercel-mvp-d8b9` 其餘 commit 併入 **`main`**：Phase 1（Neon／記憶／收藏／配額）、Gemini 錯誤處理、`web/vercel.json`、`gemini-3.1-flash-lite` 預設。
+- **`AGENTS.md`**：Agent 改動完直接 push `main`，不以 PR 為出貨方式。
+
 ## 2026-05-23（Vercel 設定修正）
 
 - 移除倉庫根目錄 `vercel.json` 的無效欄位 `rootDirectory`（Vercel schema 不允許）；改為 `web/vercel.json` 提供 `MODEL_NAME` 等預設 `env`。

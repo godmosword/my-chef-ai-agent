@@ -26,6 +26,11 @@ python3 -m pytest tests/ -v
 
 完整說明與維護者偏好（含 deploy 流程）：[`AGENTS.md`](AGENTS.md) 的「Plan／里程碑收尾」與「Git／部署流程」。
 
+## 維護者出貨（本倉庫預設）
+
+- 改動直接在 **`main`** commit 並 `git push origin main`，**不開 PR**。
+- 對外協作者若無 `main` 寫入權，再改用 fork + PR；與 Agent／維護者日常流程分開。
+
 ## Cursor 規則
 
 本倉庫在 [`.cursor/rules/plan-ship-docs.mdc`](.cursor/rules/plan-ship-docs.mdc) 設有對應規則，提醒 agent 收尾時同步上述三份文件。

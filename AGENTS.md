@@ -78,12 +78,13 @@ The webhook will return `"OK"`. A **queue worker** will call Gemini AI and gener
 
 避免只改程式而文件仍描述舊架構。對外貢獻的精簡版見根目錄 **`CONTRIBUTING.md`**；Cursor 內建提醒見 **`.cursor/rules/plan-ship-docs.mdc`**。
 
-### Git／部署流程（維護者偏好）
+### Git／部署流程（維護者／Agent 必遵守）
 
-- **出貨與觸發 deploy：一律在 `main` 上 commit 並 `git push origin main`，不手動開 PR、不把收尾留在 feature branch。**
-- 建議流程：`git checkout main` → `git pull origin main` → 修改 → `git commit` → `git push origin main`（CI 監聽 `main` 跑測試並部署）。
-- Agent 收到「ship」或同等指令時：應合併／rebase 到最新 `main`、跑測試通過後，於 `main` 提交並推送，而非 push 到遠端 feature branch 再請使用者開 PR。
-- 直推 `main` 會跳過 GitHub PR 審查；若儲存庫啟用 branch protection 禁止直推，須在 GitHub 設定允許維護者推 `main`，或暫時改回 feature branch + PR。
+- **所有改動完成後：直接在 `main` 上 commit 並 `git push origin main`。不要開 PR、不要只 push 到 `cursor/*` feature branch 就結束。**
+- **不要**為交付開新 branch 再等合併；若誤在 branch 上工作，合併或 cherry-pick 到 `main` 後立刻 push，並刪除多餘遠端 branch（可選）。
+- 建議流程：`git checkout main` → `git pull origin main` → 修改 → 測試 → `git commit` → `git push origin main`（CI 監聽 `main` 跑測試並部署）。
+- Cloud Agent／本機 Agent 皆同：收尾時確保 `origin/main` 含本次變更，**勿**建立或更新 Draft PR 作為主要出貨方式。
+- 直推 `main` 會跳過 GitHub PR 審查；若 branch protection 禁止直推，須在 GitHub 允許維護者推 `main`。
 
 ### Gotchas
 
