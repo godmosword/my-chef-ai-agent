@@ -121,7 +121,7 @@ python3 scripts/generate_recipe_card_example.py --recipe examples/sample-recipe.
 | `OPENAI_API_KEY` | ✅\* | 改走非 gemini 模型時。**若聊天走 Gemini 仍要 GPT Image（主圖、兩段式食譜圖卡 Stage A）**，請在環境變數保留 `OPENAI_API_KEY`，或改設專用 `IMAGE_OPENAI_API_KEY`（解析順序與 `resolve_openai_image_api_key()` 一致） |
 | `IMAGE_OPENAI_API_KEY` |  | 專用於圖像 API，優先於環境變數 `OPENAI_API_KEY`；`IMAGE_PROVIDER=openai_compatible` 主圖、食譜圖卡底圖皆用同一解析 |
 | `RECIPE_POSTER_RENDERER` |  | 預設 `html`（Playwright 截圖）。設為 `pillow` 可強制走純 Pillow 海報（不中經 Playwright，利於畫面除錯或環境缺字型時） |
-| `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite-preview` |
+| `MODEL_NAME` |  | 預設 `gemini-3.1-flash-lite` |
 | `MAX_COMPLETION_TOKENS` |  | 預設 **1024**（下限 512）；可下調省輸出，步驟多時易觸發截斷修復 |
 | `MAX_HISTORY_TURNS` |  | 預設 **2** |
 | `AI_MAX_RETRIES` |  | JSON 修復輪數，預設 **1** |

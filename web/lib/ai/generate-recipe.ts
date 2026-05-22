@@ -9,7 +9,7 @@ function formatAiError(err: unknown, model: string): Error {
   if (err instanceof OpenAI.APIError) {
     if (err.status === 404) {
       return new Error(
-        `AI 模型「${model}」不存在或無法使用，請在 Vercel 將 MODEL_NAME 設為 gemini-3.1-flash-lite-preview（或有效 Gemini 模型）。`,
+        `AI 模型「${model}」不存在或無法使用，請在 Vercel 將 MODEL_NAME 設為 gemini-3.1-flash-lite（或有效 Gemini 模型）。`,
       );
     }
     if (err.status === 401 || err.status === 403) {

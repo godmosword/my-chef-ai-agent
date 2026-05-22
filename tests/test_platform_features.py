@@ -96,11 +96,11 @@ def test_build_ai_client_uses_gemini_openai_compatible_endpoint(monkeypatch):
     monkeypatch.setattr(clients, "AsyncOpenAI", FakeAsyncOpenAI)
     monkeypatch.setattr(clients, "USE_GEMINI_DIRECT", True)
     monkeypatch.setattr(clients, "GEMINI_API_KEY", "gemini-key")
-    monkeypatch.setattr(clients, "_mn", "gemini-3.1-flash-lite-preview")
+    monkeypatch.setattr(clients, "_mn", "gemini-3.1-flash-lite")
 
     _client, model = clients._build_ai_client()
 
-    assert model == "gemini-3.1-flash-lite-preview"
+    assert model == "gemini-3.1-flash-lite"
     assert calls[0]["api_key"] == "gemini-key"
     assert calls[0]["base_url"] == "https://generativelanguage.googleapis.com/v1beta/openai/"
 

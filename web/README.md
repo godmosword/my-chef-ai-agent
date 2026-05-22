@@ -20,7 +20,7 @@ npm run dev
 2. **Root Directory** 設為 `web`
 3. Environment Variables：
    - `GEMINI_API_KEY`（**必填**）
-   - `MODEL_NAME`（建議 `gemini-3.1-flash-lite-preview`，與 Python 版一致；錯誤模型會出現 `404 status code (no body)`）
+   - `MODEL_NAME`（建議 `gemini-3.1-flash-lite`；錯誤模型會出現 `404 status code (no body)`）
 4. Deploy
 
 若從**倉庫根目錄**匯入 Vercel，根目錄已含 `vercel.json` 的 `"rootDirectory": "web"`；亦可於 Dashboard 手動將 Root Directory 設為 `web`。

@@ -1,6 +1,6 @@
 /** Runtime config from environment (mirrors app/config.py defaults). */
 
-export const DEFAULT_MODEL_NAME = "gemini-3.1-flash-lite-preview";
+export const DEFAULT_MODEL_NAME = "gemini-3.1-flash-lite";
 
 export function resolveModelName(): string {
   const raw = process.env.MODEL_NAME?.trim() || DEFAULT_MODEL_NAME;
