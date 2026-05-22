@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Apply SQL migrations under apps/web/migrations/ in filename order.
+ * Apply SQL migrations under web/migrations/ in filename order.
  * Usage: DATABASE_URL=... pnpm -F @chef/web db:migrate
  */
 import fs from "node:fs/promises";

@@ -10,10 +10,10 @@
 
 | 時間 | 內容 |
 |------|------|
-| 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`apps/web`、`@chef/design-tokens`、`@chef/shared-types`）；`web-ci.yml`；規格已核准並實作。 |
-| 2026-05-23 | **Web 遷移 Phase 0–3**：`apps/web` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、HTML 海報、legal）。 |
+| 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`web`、`@chef/design-tokens`、`@chef/shared-types`）；`web-ci.yml`；規格已核准並實作。 |
+| 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、 HTML 海報、legal）。 |
 | 2026-05-23 | **移除 LINE Bot 與 Render**：刪除 `apps/line-bot/`、`line-bot-ci.yml`、相關部署文件；產品僅 Web。 |
-| 2026-05-23 | **Vercel 部署修正**：根目錄移除無效 `vercel.json`；`apps/web/vercel.json` 預設 `MODEL_NAME=gemini-3.1-flash-lite`；Dashboard **Root Directory = `apps/web`**（或根目錄符號連結 `web`）。 |
+| 2026-05-23 | **Vercel 部署修正**：`web/vercel.json`；Dashboard **Root Directory = `web`**（實體目錄；`apps/web` 已搬遷）。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -79,7 +79,7 @@
 
 ### 低優先
 
-- [x] ~~**README 內大段手動 SQL**~~：migration 以 `apps/web/migrations/` 為單一來源
+- [x] ~~**README 內大段手動 SQL**~~：migration 以 `web/migrations/` 為單一來源
 - [ ] **兩段式圖卡主題模板**（Web 版）
 - [ ] **Deep Research 啟用策略**：只對高價值查詢啟用或加 memoization，避免延遲與成本回彈。
 - [ ] **GPT-Image-2 prompt 微調**：若底圖仍偶發問題，針對菜名長度與版面做 A/B。

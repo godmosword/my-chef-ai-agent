@@ -11,7 +11,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "."),
       "@chef/shared-types": path.resolve(
         __dirname,
-        "../../packages/shared-types/src/index.ts",
+        "../packages/shared-types/src/index.ts",
       ),
     },
   },

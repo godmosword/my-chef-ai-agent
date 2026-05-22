@@ -1,6 +1,6 @@
 # 資料庫 schema 與 migration 策略
 
-本專案採 **Postgres-only**（`DATABASE_URL`）資料層，schema 來源為 **`apps/web/migrations/*.sql`** 與 `pnpm -F @chef/web db:migrate`。
+本專案採 **Postgres-only**（`DATABASE_URL`）資料層，schema 來源為 **`web/migrations/*.sql`** 與 `pnpm -F @chef/web db:migrate`。
 
 ## 原則
 

@@ -148,7 +148,7 @@ components:
 
 以 **Noto CJK** 系列為主體，海報標題使用 **Noto Serif TC**（宋體），正文與標籤使用 **Noto Sans TC**（黑體）。系統字型依序 fallback 至 PingFang TC（macOS）、Microsoft JhengHei（Windows）。
 
-Web 海報（`apps/web`）以 CSS `@font-face` + `local()` 橋接系統字型，**不依賴 Google Fonts CDN**（headless／列印環境下較可靠）。
+Web 海報（`web`）以 CSS `@font-face` + `local()` 橋接系統字型，**不依賴 Google Fonts CDN**（headless／列印環境下較可靠）。
 
 字型選用邏輯：
 - **標題**（食譜名稱）：Noto Serif TC — 提升高級質感

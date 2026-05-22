@@ -1,6 +1,6 @@
 # 職人料理大腦
 
-以 **Gemini** 為核心的 AI 食譜助理。**pnpm monorepo**：產品為 **Web**（[`apps/web/`](apps/web/) → Vercel）。
+以 **Gemini** 為核心的 AI 食譜助理。**pnpm monorepo**：產品為 **Web**（[`web/`](web/) → Vercel）。
 
 設計語彙單一來源：[`@chef/design-tokens`](packages/design-tokens/)（Next.js CSS + Tailwind preset）。
 
@@ -19,13 +19,13 @@ pnpm install
 ### Web
 
 ```bash
-cp apps/web/.env.example apps/web/.env.local   # GEMINI_API_KEY
+cp web/.env.example web/.env.local   # GEMINI_API_KEY
 pnpm dev:web
 ```
 
 → http://localhost:3000
 
-部署：**Vercel Root Directory = `apps/web`**（或 **`web`**，為相容舊設定的符號連結），並啟用 **Include files outside Root Directory**。詳見 [`apps/web/README.md`](apps/web/README.md)。
+部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更
 
@@ -39,8 +39,7 @@ pnpm tokens:build
 
 ```text
 my-chef-ai-agent/
-├── apps/
-│   └── web/              # Next.js（Vercel）
+├── web/                  # Next.js（Vercel）
 ├── packages/
 │   ├── design-tokens/    # tokens.json → css / tailwind-preset
 │   └── shared-types/     # Zod Recipe Library 型別（@chef/shared-types）
@@ -65,7 +64,7 @@ pnpm -F @chef/web test   # Vitest（recipe payload + migration SQL）
 
 | 檔案 | 用途 |
 |------|------|
-| [`apps/web/README.md`](apps/web/README.md) | Web API、Vercel、資料庫 |
+| [`web/README.md`](web/README.md) | Web API、Vercel、資料庫 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 變更紀錄 |
 | [`TODOS.md`](TODOS.md) | Backlog |
 | [`AGENTS.md`](AGENTS.md) | Agent 維運 |

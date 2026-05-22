@@ -2,7 +2,7 @@
 
 ## 開發與測試
 
-- **產品**：[`apps/web/README.md`](apps/web/README.md)（Vercel）；Agent 改動完直推 `main`。
+- **產品**：[`web/README.md`](web/README.md)（Vercel）；Agent 改動完直推 `main`。
 - 環境與指令：根目錄 [`AGENTS.md`](AGENTS.md)。
 
 ```bash
