@@ -1,21 +1,25 @@
-# LEGACY: LINE Bot on Render. 現行產品為 web/（Vercel）。見 docs/LEGACY_LINE_BOT.md
+# LEGACY: LINE Bot on Render. Web 產品為 apps/web（Vercel）。見 docs/LEGACY_LINE_BOT.md
 services:
   - type: web
     name: my-chef-ai-agent
     env: python
-    buildCommand: "pip install -r requirements.txt && python -m playwright install --with-deps chromium && apt-get install -y --no-install-recommends fonts-noto-cjk"
-    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    rootDir: apps/line-bot
+    buildCommand: >-
+      cd ../.. && corepack enable && pnpm install && pnpm tokens:build
+      && cp packages/design-tokens/dist/tokens.py apps/line-bot/app/_generated_tokens.py
+      && cd apps/line-bot && pip install -r requirements.txt
+      && python -m playwright install --with-deps chromium
+      && apt-get update && apt-get install -y --no-install-recommends fonts-noto-cjk
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PORT
         value: "8000"
       - key: MODEL_NAME
         value: "gemini-3.1-flash-lite"
-      # 以下為敏感變數，請在 Render Dashboard 中手動輸入，不要寫死在這裡
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
       - key: LINE_CHANNEL_SECRET
         sync: false
-      # Render Postgres：在 Dashboard Link Database 後會自動帶入 DATABASE_URL；亦可手動貼 Internal URL
       - key: DATABASE_URL
         sync: false
       - key: GEMINI_API_KEY

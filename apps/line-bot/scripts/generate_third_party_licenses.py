@@ -13,10 +13,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+_LINE_BOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "THIRD_PARTY_LICENSES.md"
-REQ_MAIN = ROOT / "requirements.txt"
-REQ_DEV = ROOT / "requirements-dev.txt"
+REQ_MAIN = _LINE_BOT / "requirements.txt"
+REQ_DEV = _LINE_BOT / "requirements-dev.txt"
 
 _HEADER = """# 第三方套件授權摘要
 
