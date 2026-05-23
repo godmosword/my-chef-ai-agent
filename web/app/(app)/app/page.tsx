@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { GreetingHeader } from "@/components/patterns/GreetingHeader";
-import { HeroInput } from "@/components/patterns/HeroInput";
+import { PrefillHeroInput } from "@/components/patterns/PrefillHeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
@@ -45,10 +46,12 @@ export default function TodayPage() {
       <GreetingHeader />
 
       <section aria-label="生成食譜">
-        <HeroInput
-          disabled={streaming}
-          onSubmit={(message) => generate({ message })}
-        />
+        <Suspense fallback={null}>
+          <PrefillHeroInput
+            disabled={streaming}
+            onSubmit={(message) => generate({ message })}
+          />
+        </Suspense>
         {(recipe || streaming || error) && (
           <div className="mt-4 space-y-3">
             <StreamingRecipe recipe={recipe} streaming={streaming} error={error} />

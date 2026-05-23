@@ -6,6 +6,21 @@
 
 ---
 
+## [Unreleased] — Marketing Landing（Prompt 9）
+
+### Added
+
+- **Landing 改版**：五段式行銷頁（Hero + 手機框食譜卡、情境範例、Library／廚房模式、差異化、Footer）
+- **Prefill**：`/app?prefill=…` 預填今晚輸入框
+- **OG**：`app/opengraph-image.tsx`（1200×630）；首頁 `metadata` 完整 SEO
+
+### Changed
+
+- 移除顯眼「經典聊天」CTA 與「配額透明」feature；經典介面改 footer 小字連結
+- `public/marketing/README.md` 說明可選靜態圖資產
+
+---
+
 ## [Unreleased] — 食譜主圖自動化（Prompt 8）
 
 ### Added

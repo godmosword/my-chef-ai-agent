@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { Textarea } from "@/components/primitives/Textarea";
@@ -11,6 +11,8 @@ export type HeroInputProps = {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  /** From landing ?prefill=… */
+  defaultValue?: string;
 };
 
 export function HeroInput({
@@ -18,8 +20,13 @@ export function HeroInput({
   disabled,
   placeholder = "今晚想吃什麼？例如：清淡、30 分鐘內、兩人份…",
   className,
+  defaultValue = "",
 }: HeroInputProps) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(defaultValue);
+
+  useEffect(() => {
+    if (defaultValue) setText(defaultValue);
+  }, [defaultValue]);
 
   return (
     <form
