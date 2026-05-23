@@ -9,6 +9,7 @@ const DEFAULTS: UserSettings = {
   locale: "zh-Hant-TW",
   voice_enabled: false,
   analytics_opt: true,
+  hero_auto_generate: true,
 };
 
 export async function getUserSettings(
@@ -32,6 +33,7 @@ export async function getUserSettings(
     locale: row.locale ?? DEFAULTS.locale,
     voice_enabled: row.voiceEnabled ?? false,
     analytics_opt: row.analyticsOpt ?? true,
+    hero_auto_generate: row.heroAutoGenerate ?? true,
   };
 }
 
@@ -56,6 +58,7 @@ export async function upsertUserSettings(
       locale: next.locale,
       voiceEnabled: next.voice_enabled,
       analyticsOpt: next.analytics_opt,
+      heroAutoGenerate: next.hero_auto_generate,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -66,6 +69,7 @@ export async function upsertUserSettings(
         locale: next.locale,
         voiceEnabled: next.voice_enabled,
         analyticsOpt: next.analytics_opt,
+        heroAutoGenerate: next.hero_auto_generate,
         updatedAt: new Date(),
       },
     });

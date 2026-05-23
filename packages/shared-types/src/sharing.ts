@@ -28,6 +28,7 @@ export const UserSettingsSchema = z.object({
   locale: z.string(),
   voice_enabled: z.boolean(),
   analytics_opt: z.boolean(),
+  hero_auto_generate: z.boolean().default(true),
 });
 export type UserSettings = z.infer<typeof UserSettingsSchema>;
 

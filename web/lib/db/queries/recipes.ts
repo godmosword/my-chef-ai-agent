@@ -7,6 +7,7 @@ import {
   normalizeTag,
 } from "@/lib/recipe-payload";
 import type {
+  HeroStatus,
   ListRecipesQuery,
   RecipePayload,
   RecipeTag,
@@ -52,9 +53,17 @@ function rowToRecipePayload(
   );
   return {
     ...payload,
+    photo_url: row.heroUrl ?? payload.photo_url,
+    hero_status: row.heroStatus as HeroStatus,
+    hero_error: row.heroError ?? null,
     share_token: row.shareToken ?? null,
     published_at: row.publishedAt?.toISOString() ?? null,
   };
+}
+
+function initialHeroStatus(aiRecipe: AiRecipePayload): HeroStatus {
+  if (aiRecipe.photo_url?.trim()) return "ready";
+  return "pending";
 }
 
 function parseKitchenTalk(
@@ -111,6 +120,9 @@ export async function createRecipeFromAi(
         cuisine,
         summary: title,
         heroUrl: input.aiRecipe.photo_url ?? null,
+        heroStatus: initialHeroStatus(input.aiRecipe),
+        heroError: null,
+        heroUpdatedAt: input.aiRecipe.photo_url ? new Date() : null,
       })
       .returning();
 
@@ -272,6 +284,8 @@ export async function listRecipesForUser(
       cuisine: row.cuisine,
       summary: row.summary,
       hero_url: row.heroUrl,
+      hero_status: row.heroStatus as HeroStatus,
+      hero_error: row.heroError,
       poster_url: row.posterUrl,
       latest_version_id: row.latestVersionId,
       rating: row.rating,
@@ -518,6 +532,43 @@ export async function countRecipesForUser(
   return rows.length;
 }
 
+export async function getRecipeHeroStatus(
+  userId: string,
+  tenantId: string,
+  recipeId: string,
+): Promise<{
+  hero_status: HeroStatus;
+  hero_url: string | null;
+  hero_error: string | null;
+} | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const [row] = await db
+    .select({
+      heroStatus: recipes.heroStatus,
+      heroUrl: recipes.heroUrl,
+      heroError: recipes.heroError,
+    })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.id, recipeId),
+        eq(recipes.userId, userId),
+        eq(recipes.tenantId, tenantId),
+        isNull(recipes.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return null;
+  return {
+    hero_status: row.heroStatus as HeroStatus,
+    hero_url: row.heroUrl,
+    hero_error: row.heroError,
+  };
+}
+
 export async function updateRecipeHeroUrl(
   userId: string,
   tenantId: string,
@@ -529,7 +580,12 @@ export async function updateRecipeHeroUrl(
 
   const result = await db
     .update(recipes)
-    .set({ heroUrl })
+    .set({
+      heroUrl,
+      heroStatus: "ready",
+      heroError: null,
+      heroUpdatedAt: new Date(),
+    })
     .where(
       and(
         eq(recipes.id, recipeId),

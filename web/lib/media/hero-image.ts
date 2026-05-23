@@ -1,13 +1,15 @@
 import OpenAI from "openai";
 import { formatAiError } from "@/lib/ai/generate-recipe";
+import { buildHeroPrompt } from "@/lib/hero/build-prompt";
+import type { RecipePayload } from "@chef/shared-types";
 
 const memoryCache = new Map<string, string>();
 
-function imageProvider(): string {
+export function imageProvider(): string {
   return (process.env.IMAGE_PROVIDER || "placeholder").trim().toLowerCase();
 }
 
-function resolveImageApiKey(): string | null {
+export function resolveImageApiKey(): string | null {
   return (
     process.env.IMAGE_OPENAI_API_KEY?.trim() ||
     process.env.OPENAI_API_KEY?.trim() ||
@@ -22,26 +24,25 @@ function placeholderUrl(recipeName: string): string | null {
   return `https://placehold.co/800x600/f5efe6/2a6049/png?text=${q}`;
 }
 
-function buildHeroPrompt(recipeName: string): string {
-  return (
-    "Professional food photography of a finished Taiwanese dish. " +
-    "Tight composition, realistic texture, warm natural lighting, premium cookbook style, " +
-    "minimal background clutter, no people. " +
-    `Dish: ${recipeName}. ` +
-    "No readable text, no logo, no watermark."
-  );
-}
-
 export type HeroImageResult = {
   image_url: string;
   source: "generated" | "cache" | "placeholder";
 };
 
+export type GenerateHeroOptions = {
+  prompt?: string;
+  recipe?: RecipePayload;
+};
+
 export async function generateRecipeHeroImage(
   recipeName: string,
+  options?: GenerateHeroOptions,
 ): Promise<HeroImageResult> {
   const name = recipeName.trim() || "美味食譜";
-  const cacheKey = `${imageProvider()}:${name.toLowerCase()}`;
+  const prompt =
+    options?.prompt ??
+    (options?.recipe ? buildHeroPrompt(options.recipe) : buildHeroPrompt({ recipe_name: name }));
+  const cacheKey = `${imageProvider()}:${prompt.toLowerCase().slice(0, 120)}`;
   const cached = memoryCache.get(cacheKey);
   if (cached) return { image_url: cached, source: "cache" };
 
@@ -70,7 +71,7 @@ export async function generateRecipeHeroImage(
   try {
     const response = await client.images.generate({
       model,
-      prompt: buildHeroPrompt(name),
+      prompt,
       size: "1024x1024",
       quality: "low",
       response_format: "b64_json",
@@ -86,4 +87,11 @@ export async function generateRecipeHeroImage(
   } catch (err) {
     throw formatAiError(err, model);
   }
+}
+
+/** Legacy name-based entry (ChatPanel / POST /api/recipes/hero). */
+export async function generateRecipeHeroImageByName(
+  recipeName: string,
+): Promise<HeroImageResult> {
+  return generateRecipeHeroImage(recipeName);
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/lib/config";
 import type { RecipePayload } from "@/lib/ai/generate-recipe";
-import { generateRecipeHeroImage } from "@/lib/media/hero-image";
+import { generateRecipeHeroImageByName } from "@/lib/media/hero-image";
 import { getLastRecipeFromMemory } from "@/lib/recipe-memory";
 import { consumeQuota } from "@/lib/db/quota";
 import { getSessionUserId } from "@/lib/session";
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { image_url, source } = await generateRecipeHeroImage(recipeName);
+    const { image_url, source } = await generateRecipeHeroImageByName(recipeName);
     return NextResponse.json({
       ok: true,
       recipe_name: recipeName,

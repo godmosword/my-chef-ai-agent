@@ -26,6 +26,9 @@ export const recipes = pgTable(
     cuisine: text("cuisine"),
     summary: text("summary"),
     heroUrl: text("hero_url"),
+    heroStatus: text("hero_status").notNull().default("pending"),
+    heroError: text("hero_error"),
+    heroUpdatedAt: timestamp("hero_updated_at", { withTimezone: true }),
     posterUrl: text("poster_url"),
     latestVersionId: uuid("latest_version_id"),
     rating: smallint("rating"),
@@ -160,6 +163,7 @@ export const userSettings = pgTable("user_settings", {
   locale: text("locale").notNull().default("zh-Hant-TW"),
   voiceEnabled: boolean("voice_enabled").notNull().default(false),
   analyticsOpt: boolean("analytics_opt").notNull().default(true),
+  heroAutoGenerate: boolean("hero_auto_generate").notNull().default(true),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

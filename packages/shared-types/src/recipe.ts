@@ -81,6 +81,15 @@ export const RecipeTagSchema = z.object({
 });
 export type RecipeTag = z.infer<typeof RecipeTagSchema>;
 
+export const HeroStatusSchema = z.enum([
+  "pending",
+  "generating",
+  "ready",
+  "failed",
+  "skipped",
+]);
+export type HeroStatus = z.infer<typeof HeroStatusSchema>;
+
 export const RecipeSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string(),
@@ -88,6 +97,8 @@ export const RecipeSchema = z.object({
   cuisine: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
   hero_url: z.string().nullable().optional(),
+  hero_status: HeroStatusSchema.optional(),
+  hero_error: z.string().nullable().optional(),
   poster_url: z.string().nullable().optional(),
   latest_version_id: z.string().uuid().nullable().optional(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
@@ -117,6 +128,8 @@ export const RecipePayloadSchema = z.object({
   shopping_list: z.array(z.unknown()).optional(),
   estimated_total_cost: z.string().optional(),
   photo_url: z.string().optional(),
+  hero_status: HeroStatusSchema.optional(),
+  hero_error: z.string().nullable().optional(),
   cuisine: z.string().optional(),
   summary: z.string().optional(),
   tags: z.array(RecipeTagSchema).optional(),

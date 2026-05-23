@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { DEFAULT_TENANT_ID } from "@/lib/config";
 import { QuotaExceededError, runRecipeFlow } from "@/lib/ai/recipe-flow";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { createRecipeFromAi, listRecipesForUser } from "@/lib/db/queries/recipes";
+import { isHeroAutoEnabled } from "@/lib/hero/preferences";
+import { markHeroSkipped, triggerHeroGeneration } from "@/lib/hero/trigger";
 import { aiRecipeToPayload } from "@/lib/recipe-payload";
 import { getSessionUserId } from "@/lib/session";
 import type { RecipePayload } from "@chef/shared-types";
@@ -104,6 +107,23 @@ export async function POST(request: Request) {
         deepResearch: enable_deep_research,
       });
       recipe = persisted ?? aiRecipeToPayload(result.recipe);
+
+      const autoHeroEnv = process.env.AUTO_HERO_IMAGE !== "0";
+      if (recipe.id && recipe.hero_status !== "ready") {
+        if (autoHeroEnv && (await isHeroAutoEnabled(userId))) {
+          waitUntil(
+            triggerHeroGeneration({
+              recipeId: recipe.id,
+              userId,
+              tenantId: DEFAULT_TENANT_ID,
+              recipe,
+            }),
+          );
+        } else {
+          await markHeroSkipped(recipe.id);
+          recipe = { ...recipe, hero_status: "skipped" };
+        }
+      }
     } else {
       recipe = aiRecipeToPayload(result.recipe);
     }
