@@ -25,6 +25,7 @@ import {
 } from "@/lib/locale/week";
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
+import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { WeekGrid } from "./_components/WeekGrid";
 import { PickRecipeSheet } from "./_components/PickRecipeSheet";
 import { SlotInspector } from "./_components/SlotInspector";
@@ -175,7 +176,9 @@ export function PlanPageClient() {
       {loading && <p className="text-text-muted">載入週曆…</p>}
 
       {!loading && plan && (
-        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+        <>
+          <SectionHeader title="本週餐點" />
+          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
           <WeekGrid
             slots={plan.slots}
             weekDates={dates}
@@ -184,6 +187,7 @@ export function PlanPageClient() {
             onCellActivate={onCellActivate}
           />
         </DndContext>
+        </>
       )}
 
       {pickTarget && (

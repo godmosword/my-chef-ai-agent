@@ -113,8 +113,8 @@
 > 規格：[`docs/superpowers/specs/2026-05-24-frontend-wave4-design.md`](docs/superpowers/specs/2026-05-24-frontend-wave4-design.md) · 計畫：[`docs/superpowers/plans/2026-05-24-frontend-wave4-plan.md`](docs/superpowers/plans/2026-05-24-frontend-wave4-plan.md)
 
 - [x] **Wave 4a**：暗色 token、Today 結果主圖、`RecipeDetailLayout`（2026-05-24）
-- [ ] **Wave 4b**：烹飪模式 typography、公開 `/r/:token` 版面 parity
-- [ ] **Wave 4c**：`SectionHeader`、Plan／Shopping／Me 視覺 parity、UX_PLAYBOOK §Web App
+- [x] **Wave 4b**：烹飪模式 typography／完成 toast、公開頁版面、`RecipeDetailSections`（2026-05-24）
+- [x] **Wave 4c**：`SectionHeader`、Plan／Shopping／Me 視覺 parity、UX_PLAYBOOK §Web App（2026-05-24）
 
 ## 三點五、Phase 3+ — Recipe Library（Prompt 2）
 

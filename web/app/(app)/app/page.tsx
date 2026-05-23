@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { GreetingHeader } from "@/components/patterns/GreetingHeader";
+import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { PrefillHeroInput } from "@/components/patterns/PrefillHeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
@@ -40,7 +41,7 @@ export default function TodayPage() {
   }, [recipe?.id]);
 
   return (
-    <div className="page-enter space-y-8">
+    <div className="space-y-8">
       <AppOnboardingOverlay />
       <GreetingHeader />
 
@@ -70,15 +71,7 @@ export default function TodayPage() {
       </section>
 
       <section className="mt-7" aria-label="最近食譜">
-        <header className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-sm font-medium text-text-ink">最近做過</h2>
-          <Link
-            href="/app/library"
-            className="text-xs text-brand-primary hover:underline"
-          >
-            看全部 <span aria-hidden>→</span>
-          </Link>
-        </header>
+        <SectionHeader title="最近做過" actionHref="/app/library" />
         {loadingRecent ? (
           <div className="flex gap-3 overflow-x-auto pb-2">
             {Array.from({ length: 3 }).map((_, i) => (

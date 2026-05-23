@@ -6,6 +6,22 @@
 
 ---
 
+## [Unreleased] — Frontend Wave 4c（Plan / Shopping / Me）
+
+### Added
+
+- **`SectionHeader`**：Today「最近做過」、Plan「本週餐點」共用區塊標題
+
+### Changed
+
+- **Plan**：空格子虛線邊框 + `surface-muted` 底
+- **Shopping**：分類標題 14px medium；清單列 `border-b` 樣式
+- **Me**：區塊標題一致；配額提示文案
+- **App layout**：`page-enter` 包裝全 `/app` 子頁
+- **`docs/UX_PLAYBOOK.md`**：§ Web App 表面（Today / Library / Cook / Public / Plan）
+
+---
+
 ## [Unreleased] — Frontend Wave 4b（烹飪 + 公開分享）
 
 ### Added

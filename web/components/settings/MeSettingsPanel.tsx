@@ -117,8 +117,9 @@ export function MeSettingsPanel() {
 
   return (
     <div className="space-y-8">
+      <p className="text-sm text-text-muted">手機上可在這裡查看今日配額</p>
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">帳戶概覽</h2>
+        <h2 className="text-sm font-medium text-text-ink">帳戶概覽</h2>
         <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
           <div>
             <dt className="text-text-muted">食譜數</dt>
@@ -132,14 +133,14 @@ export function MeSettingsPanel() {
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">今日配額</h2>
+        <h2 className="text-sm font-medium text-text-ink">今日配額</h2>
         <div className="mt-4">
           <QuotaIndicator refreshIntervalMs={15_000} />
         </div>
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">外觀</h2>
+        <h2 className="text-sm font-medium text-text-ink">外觀</h2>
         <p className="mt-1 text-sm text-text-muted">跟隨系統或手動切換淺色／深色</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(["light", "dark", "system"] as const).map((t) => (
@@ -157,7 +158,7 @@ export function MeSettingsPanel() {
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">字級</h2>
+        <h2 className="text-sm font-medium text-text-ink">字級</h2>
         <p className="mt-1 text-sm text-text-muted">{s.font_scale}%</p>
         <input
           type="range"
@@ -172,7 +173,7 @@ export function MeSettingsPanel() {
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">語言</h2>
+        <h2 className="text-sm font-medium text-text-ink">語言</h2>
         <select
           className="mt-2 w-full rounded-md border border-border-default bg-surface-muted px-3 py-2 text-sm"
           value={s.locale}
@@ -186,7 +187,7 @@ export function MeSettingsPanel() {
 
       {FLAGS.analytics && (
         <section className="rounded-lg border border-border-default bg-surface-default p-4">
-          <h2 className="font-medium text-text-ink">使用分析</h2>
+          <h2 className="text-sm font-medium text-text-ink">使用分析</h2>
           <p className="mt-1 text-sm text-text-muted">
             協助改善產品；可隨時關閉，不影響核心功能。
           </p>
@@ -205,7 +206,7 @@ export function MeSettingsPanel() {
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-medium text-text-ink">自動生成主圖</h2>
+            <h2 className="text-sm font-medium text-text-ink">自動生成主圖</h2>
             <p className="mt-1 text-sm text-text-muted">
               每道新食譜會自動配一張 AI 成品圖（使用每日圖片配額，每道僅生成一次）
             </p>
@@ -223,7 +224,7 @@ export function MeSettingsPanel() {
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="font-medium text-text-ink">語音（烹飪模式）</h2>
+        <h2 className="text-sm font-medium text-text-ink">語音（烹飪模式）</h2>
         <label className="mt-3 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -236,7 +237,7 @@ export function MeSettingsPanel() {
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4 text-sm">
-        <h2 className="font-medium text-text-ink">法律與隱私</h2>
+        <h2 className="text-sm font-medium text-text-ink">法律與隱私</h2>
         <ul className="mt-2 space-y-2 text-brand-primary">
           <li>
             <Link href="/legal/privacy" className="hover:underline">
