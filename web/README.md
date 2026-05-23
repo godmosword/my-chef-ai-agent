@@ -43,7 +43,9 @@ pnpm dev:web
 - `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）
 - `GET|POST /api/recipes`（POST 產生食譜並可持久化；GET 列表）
 - `GET|PATCH|DELETE /api/recipes/[id]`（PATCH：`rating`、`record_cook`）、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
-- `POST /api/recipes/hero`（**image** 配額）、`POST /api/recipes/poster`
+- `POST /api/recipes/hero`（legacy 手動主圖；**image** 配額）
+- `GET /api/recipes/[id]/hero-status`（主圖狀態 polling）、`POST /api/recipes/[id]/hero`（重生主圖）
+- `POST /api/recipes/poster`
 - `GET|PUT /api/cuisine`、`DELETE /api/memory`
 - `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
 - `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag）
@@ -53,7 +55,7 @@ pnpm dev:web
 ## 資料庫
 
 ```bash
-# 初次或升級（0001 Phase1 baseline → 0003 Recipe Library → 0004/0005）
+# 初次或升級（0001 → 0003 Recipe Library → 0004/0005 → 0006 hero auto）
 pnpm -F @chef/web db:migrate
 ```
 

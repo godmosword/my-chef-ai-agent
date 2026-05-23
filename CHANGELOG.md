@@ -6,6 +6,22 @@
 
 ---
 
+## [Unreleased] — 食譜主圖自動化（Prompt 8）
+
+### Added
+
+- **主圖自動生成**：migration `0006`（`hero_status`、`hero_error`、`hero_updated_at`）；`user_settings.hero_auto_generate`
+- **背景觸發**：`POST /api/recipes` 完成後以 `waitUntil` 執行 `triggerHeroGeneration`（`AUTO_HERO_IMAGE` 預設開，可設 `0` 關閉）
+- **Polling**：`GET /api/recipes/:id/hero-status`；手動重生 `POST /api/recipes/:id/hero`
+- **UI**：菜系漸層占位、`useHeroPolling`、Today／Library 卡片、詳情頁主圖與「重生主圖」；「我的」可關閉自動主圖
+
+### Changed
+
+- **`buildHeroPrompt`**：依菜系／食材組裝雜誌風寫實 prompt（`web/lib/hero/build-prompt.ts`）
+- **既有食譜**：migration 將無 `hero_url` 的舊列標為 `skipped`（避免一次爆配額）
+
+---
+
 ## [Unreleased] — 公開分享 + 體驗收尾（Prompt 7）
 
 ### Added

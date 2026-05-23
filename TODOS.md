@@ -19,6 +19,7 @@
 | 2026-05-23 | **Prompt 5 — Meal Planner + Shopping**：`meal_plans`、週曆／採買頁、單位聚合；`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`；規格 [`2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)。 |
 | 2026-05-23 | **Prompt 6 — PWA + Offline**：Serwist SW、Dexie 快取、離線 Library／Cook、A2HS；規格 [`2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)。 |
 | 2026-05-23 | **Prompt 7 — Public Sharing + Polish**：公開 `/r/:token`、分享 API、設定／刪帳戶、PostHog、錯誤頁；規格 [`2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)。 |
+| 2026-05-23 | **Prompt 8 — Hero 自動化**：`POST /api/recipes` 背景主圖、`hero_status` polling、占位 UI、設定開關；migration `0006`。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -37,7 +38,7 @@
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
 - [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
-- [ ] **主圖**：「生成主圖」有圖（placeholder 或 OpenAI）
+- [ ] **主圖**：新食譜自動占位→主圖（`IMAGE_PROVIDER`）；詳情可「重生主圖」；關閉自動：我的 → 自動生成主圖
 - [ ] **海報**：「下載海報」取得 HTML 且可列印
 
 ---

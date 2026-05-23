@@ -203,6 +203,26 @@ export function MeSettingsPanel() {
       )}
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-medium text-text-ink">自動生成主圖</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              每道新食譜會自動配一張 AI 成品圖（使用每日圖片配額，每道僅生成一次）
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={s.hero_auto_generate}
+              disabled={saving}
+              onChange={(e) => patch({ hero_auto_generate: e.target.checked })}
+            />
+            開啟
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="font-medium text-text-ink">語音（烹飪模式）</h2>
         <label className="mt-3 flex items-center gap-2 text-sm">
           <input
