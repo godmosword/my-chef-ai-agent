@@ -67,6 +67,16 @@ export async function getRecipe(id: string): Promise<{ ok: true; recipe: RecipeP
   return apiFetch<{ ok: true; recipe: RecipePayload }>(`/api/recipes/${id}`);
 }
 
+export async function recordRecipeCook(
+  id: string,
+  body: { rating?: number; record_cook?: boolean },
+): Promise<{ ok: true; updated: true }> {
+  return apiFetch(`/api/recipes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function deleteRecipe(id: string): Promise<{ ok: true; deleted: boolean }> {
   return apiFetch<{ ok: true; deleted: boolean }>(`/api/recipes/${id}`, {
     method: "DELETE",

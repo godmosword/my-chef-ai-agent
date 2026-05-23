@@ -27,6 +27,8 @@ pnpm dev:web
 
 **新 UI（Prompt 3）**：在 `web/.env.local` 設 `NEXT_PUBLIC_NEW_UI=1` 後重啟 dev，造訪 `/`（Landing）與 `/app`（Today）。未設時根路徑仍為經典聊天；`/legacy` 永遠可用。
 
+**烹飪模式（Prompt 4）**：另設 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`，於食譜詳情頁顯示「進入烹飪模式」（路由 `/app/library/:id/cook` 亦可直連）。
+
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更

@@ -20,9 +20,10 @@ pnpm dev:web
 | 變數 | 說明 |
 |------|------|
 | `NEXT_PUBLIC_NEW_UI=1` | `/` 為 Landing；`/app` 為 Today／Library／Me |
+| `NEXT_PUBLIC_COOKING_MODE_ENABLED=1` | 食譜詳情顯示「進入烹飪模式」 |
 | （未設或 `0`） | `/` 為經典 `ChatPanel`；`/legacy` 永遠可用 |
 
-規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)
+規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)、[`2026-05-23-cooking-mode.md`](../docs/superpowers/specs/2026-05-23-cooking-mode.md)
 
 ## Vercel 部署
 
@@ -32,7 +33,7 @@ pnpm dev:web
 4. **Install Command**（建議）：`cd .. && pnpm install --frozen-lockfile`
 5. **Build Command**（建議）：`cd .. && pnpm tokens:build && pnpm -F @chef/web build`
 6. 設定 `GEMINI_API_KEY`；Neon 連結後有 `DATABASE_URL`
-7. （可選）`NEXT_PUBLIC_NEW_UI=1` 啟用新 App shell
+7. （可選）`NEXT_PUBLIC_NEW_UI=1` 啟用新 App shell；`NEXT_PUBLIC_COOKING_MODE_ENABLED=1` 啟用烹飪模式入口
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 
@@ -40,7 +41,7 @@ pnpm dev:web
 
 - `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）
 - `GET|POST /api/recipes`（POST 產生食譜並可持久化；GET 列表）
-- `GET|DELETE /api/recipes/[id]`、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
+- `GET|PATCH|DELETE /api/recipes/[id]`（PATCH：`rating`、`record_cook`）、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
 - `POST /api/recipes/hero`（**image** 配額）、`POST /api/recipes/poster`
 - `GET|PUT /api/cuisine`、`DELETE /api/memory`
 - `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
@@ -55,7 +56,7 @@ DATABASE_URL=... pnpm -F @chef/web db:migrate
 ```
 
 ```bash
-pnpm -F @chef/web test   # Vitest
+pnpm -F @chef/web test   # Vitest（含 cooking timer／parseTimer 單元測試，14 tests）
 ```
 
 ## 設計 token

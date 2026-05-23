@@ -443,6 +443,55 @@ export async function listRecipeVersions(
     .orderBy(desc(recipeVersions.versionNo));
 }
 
+export async function patchRecipeMeta(
+  userId: string,
+  tenantId: string,
+  recipeId: string,
+  opts: { rating?: number; recordCook?: boolean },
+): Promise<boolean> {
+  const db = getDb();
+  if (!db) return false;
+
+  const [row] = await db
+    .select({ cookCount: recipes.cookCount })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.id, recipeId),
+        eq(recipes.userId, userId),
+        eq(recipes.tenantId, tenantId),
+        isNull(recipes.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return false;
+
+  const patch: Partial<typeof recipes.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+  if (opts.rating != null) patch.rating = opts.rating;
+  if (opts.recordCook) {
+    patch.cookCount = row.cookCount + 1;
+    patch.lastCookedAt = new Date();
+  }
+
+  const result = await db
+    .update(recipes)
+    .set(patch)
+    .where(
+      and(
+        eq(recipes.id, recipeId),
+        eq(recipes.userId, userId),
+        eq(recipes.tenantId, tenantId),
+        isNull(recipes.deletedAt),
+      ),
+    )
+    .returning({ id: recipes.id });
+
+  return result.length > 0;
+}
+
 export async function updateRecipeHeroUrl(
   userId: string,
   tenantId: string,

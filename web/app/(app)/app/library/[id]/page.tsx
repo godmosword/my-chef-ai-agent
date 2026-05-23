@@ -8,7 +8,8 @@ import type { RecipePayload } from "@chef/shared-types";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChefHat } from "lucide-react";
+import { FLAGS } from "@/lib/flags";
 
 export default function RecipeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -59,9 +60,19 @@ export default function RecipeDetailPage() {
 
       {recipe && !loading && (
         <article>
-          <h1 className="font-serif text-3xl text-text-ink">
-            {recipe.recipe_name ?? "食譜"}
-          </h1>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <h1 className="font-serif text-3xl text-text-ink">
+              {recipe.recipe_name ?? "食譜"}
+            </h1>
+            {FLAGS.cookingMode && recipe.id && (
+              <Button asChild size="lg" className="shrink-0">
+                <Link href={`/app/library/${recipe.id}/cook`}>
+                  <ChefHat className="size-5" aria-hidden />
+                  進入烹飪模式
+                </Link>
+              </Button>
+            )}
+          </div>
           {recipe.summary && (
             <p className="mt-2 text-text-muted">{recipe.summary}</p>
           )}

@@ -39,3 +39,63 @@
     @apply outline-2 outline-offset-2 outline-brand-primary;
   }
 }
+
+/* Cooking Mode — forced dark kitchen theme (page-scoped) */
+.cooking-mode {
+  --color-background-default: #0f0e0d;
+  --color-surface-default: #1a1816;
+  --color-surface-muted: #252220;
+  --color-border-default: #3d3530;
+  --color-text-ink: #f5f0e6;
+  --color-text-body: #e8e0d4;
+  --color-text-muted: #9c8f84;
+  --color-brand-primary: #d4a24a;
+  --color-brand-primaryDark: #f5f0e6;
+  --color-brand-primaryLight: #3d3020;
+  min-height: 100dvh;
+  overscroll-behavior: contain;
+  background: var(--color-background-default);
+  color: var(--color-text-body);
+}
+
+@keyframes cooking-bg-flash {
+  0%,
+  100% {
+    background-color: var(--color-background-default);
+  }
+  50% {
+    background-color: color-mix(in srgb, var(--color-cuisine-taiwanese) 35%, transparent);
+  }
+}
+
+.cooking-mode.cooking-flash {
+  animation: cooking-bg-flash 0.6s ease-in-out 6;
+}
+
+@keyframes cooking-confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.cooking-confetti-piece {
+  position: fixed;
+  width: 8px;
+  height: 12px;
+  top: -12px;
+  animation: cooking-confetti-fall 2.5s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cooking-mode.cooking-flash {
+    animation: none;
+  }
+  .cooking-confetti-piece {
+    display: none;
+  }
+}

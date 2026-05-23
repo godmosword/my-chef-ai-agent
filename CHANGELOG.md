@@ -6,6 +6,24 @@
 
 ---
 
+## [Unreleased] — Cooking Mode（Prompt 4）
+
+### Added
+
+- **烹飪模式**（`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`）：食譜詳情頁「進入烹飪模式」→ `/app/library/:id/cook`；獨立 `(cooking)` layout（無 AppShell）
+- **步驟導覽**：滑動／鍵盤 ←→、語音朗讀（Web Speech API）、URL `?step=`／`?voice=1`
+- **計時器**：最多 3 個並行；`performance.now()` + 絕對 `endAtMs`（RAF 更新）；步驟文字 fallback 解析 `timer_seconds`
+- **完成畫面**：CSS confetti、1–5 星評分；`PATCH /api/recipes/:id`（`rating`、`record_cook`）；離線評分佇列 `localStorage`
+- **營運**：Wake Lock／全螢幕提示、離開長按 1s 確認、`sessionStorage` 恢復進度、首次 onboarding
+
+### Changed
+
+- **`web/app/globals.css`**：`.cooking-mode` 深色主題與到時閃爍動畫
+
+規格：[`docs/superpowers/specs/2026-05-23-cooking-mode.md`](docs/superpowers/specs/2026-05-23-cooking-mode.md)
+
+---
+
 ## [Unreleased] — Today + Library UI（Prompt 3）
 
 ### Added
