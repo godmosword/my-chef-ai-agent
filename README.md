@@ -45,6 +45,8 @@ pnpm dev:web
 
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
+若 GCP **Cloud Build** 仍連到此 repo 並用 `docker build`（根目錄 `Dockerfile`），push `main` 後應可通過；**產品主線仍是 Vercel**。若不需要 Cloud Run，請在 GCP 關閉該 trigger，避免與 Vercel 重複部署。
+
 ### Design tokens 變更
 
 ```bash

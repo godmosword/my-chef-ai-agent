@@ -1,0 +1,15 @@
+.git
+.github
+.cursor
+.pytest_cache
+.ruff_cache
+node_modules
+**/node_modules
+web/.next
+**/.next
+web/.env.local
+.env
+.env.local
+**/*.md
+docs
+agent-transcripts

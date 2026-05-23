@@ -17,6 +17,10 @@
 - **`web/vercel.json`**：預設 `IMAGE_PROVIDER=openai_compatible`（仍須在 Vercel 設定 `IMAGE_OPENAI_API_KEY` 才會真生圖）。
 - **OpenAI 圖像模型**：預設改為 **`gpt-image-2`**（主圖與烹飪步驟圖共用；可 `OPENAI_GPT_IMAGE_MODEL_ID` 覆寫）。
 
+### Fixed
+
+- **GCP Cloud Build**：新增根目錄 **`Dockerfile`**（Next.js `standalone`）與 **`.dockerignore`**，修正 `lstat /workspace/Dockerfile: no such file`（舊 LINE Bot 映像已不在 repo）。
+
 ---
 ## [0.2.0] — 2026-05-24 — Web 產品線（Prompt 2–10、Wave 4）
 

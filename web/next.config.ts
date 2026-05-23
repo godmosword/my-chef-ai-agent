@@ -19,6 +19,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: "standalone",
   transpilePackages: ["@chef/design-tokens", "@chef/shared-types"],
 };
 
