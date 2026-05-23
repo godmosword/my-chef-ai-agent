@@ -6,6 +6,16 @@
 
 ---
 
+## [Unreleased] — 行動版版面修正
+
+### Fixed
+
+- **iOS / PWA**：`viewport-fit: cover` + `safe-area-inset`（頂部瀏海、底部 Tab）
+- **Today**：移除重複「職人料理」頂欄；onboarding 卡片不再壓住底部導覽
+- **最近食譜**：API 失敗或逾時後不再無限 skeleton
+
+---
+
 ## [Unreleased] — DB repair + Marketing 占位
 
 ### Fixed

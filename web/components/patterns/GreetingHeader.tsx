@@ -7,7 +7,7 @@ import {
 export function GreetingHeader({ now = new Date() }: { now?: Date }) {
   return (
     <header className="mb-5 sm:mb-7">
-      <h1 className="font-serif text-[2rem] leading-tight text-text-ink sm:text-5xl sm:font-medium">
+      <h1 className="font-serif text-3xl leading-tight text-text-ink sm:text-5xl sm:font-medium">
         {timeOfDayGreeting(now)}
       </h1>
       <p className="mt-1 text-xs text-text-muted">

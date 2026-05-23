@@ -13,7 +13,7 @@ export function AppTabBar() {
   const pathname = usePathname();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border-default bg-surface-default pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex min-h-[3.5rem] border-t border-border-default bg-surface-default pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="行動導覽"
     >
       {TAB_ITEMS.map((item) => {

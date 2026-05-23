@@ -14,8 +14,6 @@ import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
 import { listRecipes } from "@/lib/api/recipes";
 import { recipeListItemToCard } from "@/lib/recipe-display";
 import { useEffect, useState } from "react";
-import { AppOnboardingOverlay } from "@/components/onboarding/AppOnboardingOverlay";
-
 export default function TodayPage() {
   const { recipe, streaming, error, generate, reset } = useRecipeGeneration();
   const [recent, setRecent] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
@@ -23,6 +21,10 @@ export default function TodayPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) setLoadingRecent(false);
+    }, 12_000);
+
     (async () => {
       try {
         const res = await listRecipes({ limit: 6 });
@@ -30,19 +32,20 @@ export default function TodayPage() {
           setRecent(res.items.map(recipeListItemToCard));
         }
       } catch {
-        /* ignore */
+        if (!cancelled) setRecent([]);
       } finally {
         if (!cancelled) setLoadingRecent(false);
       }
     })();
+
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [recipe?.id]);
 
   return (
     <div className="space-y-8">
-      <AppOnboardingOverlay />
       <GreetingHeader />
 
       <section aria-label="生成食譜">

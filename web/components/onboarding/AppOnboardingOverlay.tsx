@@ -50,12 +50,12 @@ export function AppOnboardingOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 px-4 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="app-onboard-title"
     >
-      <div className="w-full max-w-md rounded-xl border border-border-default bg-surface-default p-6 shadow-lg">
+      <div className="w-full max-w-md rounded-xl border border-border-default bg-surface-default p-6 shadow-lg sm:mb-0">
         <p className="text-xs text-text-muted">
           步驟 {step + 1} / {slides.length}
         </p>
