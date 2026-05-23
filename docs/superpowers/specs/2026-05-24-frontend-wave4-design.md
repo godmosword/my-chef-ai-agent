@@ -244,4 +244,4 @@ packages/design-tokens/
 
 ## 11. 實作計畫
 
-核准本 spec 後，使用 **writing-plans** skill 產出 `docs/superpowers/plans/2026-05-24-frontend-wave4-plan.md`（含 task 拆解與 commit 順序）。
+已產出：[`docs/superpowers/plans/2026-05-24-frontend-wave4-plan.md`](../plans/2026-05-24-frontend-wave4-plan.md)
