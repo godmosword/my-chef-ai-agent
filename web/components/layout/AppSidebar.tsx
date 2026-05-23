@@ -48,10 +48,10 @@ export function AppSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                 active
-                  ? "bg-brand-primaryLight font-medium text-text-ink"
-                  : "text-text-body hover:bg-surface-muted",
+                  ? "bg-brand-primaryLight font-medium text-brand-primary"
+                  : "text-text-body hover:bg-surface-muted hover:text-text-ink",
               )}
             >
               <Icon className="size-4" aria-hidden />

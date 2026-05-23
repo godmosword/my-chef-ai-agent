@@ -31,19 +31,26 @@ export function QuotaIndicator({ refreshIntervalMs = 30_000 }: { refreshInterval
 
   return (
     <div className="space-y-3" aria-label="今日配額">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+        今日配額
+      </p>
       <div>
-        <div className="text-xs text-text-muted">文字配額</div>
-        <ProgressBar value={text.used} max={text.limit} className="mt-1" />
-        <div className="mt-0.5 text-xs text-text-muted">
-          {text.remaining} / {text.limit} 次
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-xs text-text-body">文字</span>
+          <span className="text-[11px] text-text-muted">
+            {text.remaining} / {text.limit}
+          </span>
         </div>
+        <ProgressBar value={text.used} max={text.limit} tone="auto" className="mt-1.5 h-[3px]" />
       </div>
       <div>
-        <div className="text-xs text-text-muted">圖片配額</div>
-        <ProgressBar value={image.used} max={image.limit} className="mt-1" />
-        <div className="mt-0.5 text-xs text-text-muted">
-          {image.remaining} / {image.limit} 次
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-xs text-text-body">圖片</span>
+          <span className="text-[11px] text-text-muted">
+            {image.remaining} / {image.limit}
+          </span>
         </div>
+        <ProgressBar value={image.used} max={image.limit} tone="auto" className="mt-1.5 h-[3px]" />
       </div>
     </div>
   );

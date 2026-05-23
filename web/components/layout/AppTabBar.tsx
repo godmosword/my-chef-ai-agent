@@ -28,8 +28,10 @@ export function AppTabBar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs",
-              active ? "text-brand-primary" : "text-text-muted",
+              "flex flex-1 flex-col items-center gap-0.5 rounded-lg py-2 text-xs transition-colors",
+              active
+                ? "font-medium text-brand-primary"
+                : "text-text-muted hover:text-text-body",
             )}
           >
             <Icon className="size-5" aria-hidden />
