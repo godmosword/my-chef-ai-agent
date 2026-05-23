@@ -3,11 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { HeroPlaceholder } from "@/components/recipe/HeroPlaceholder";
 import { Card } from "@/components/primitives/Card";
 import { Chip } from "@/components/primitives/Chip";
 import { formatRelativeTime } from "@/lib/utils/format";
 import type { RecipeCardModel } from "@/lib/recipe-display";
 import { cn } from "@/lib/utils/cn";
+import type { HeroStatus } from "@chef/shared-types";
 
 export type RecipeCardProps = {
   recipe: RecipeCardModel;
@@ -34,8 +36,8 @@ export function RecipeCard({
       className={cn("group overflow-hidden", compact ? "min-w-[15rem] shrink-0" : "h-[12.5rem]", className)}
     >
       <Link href={href} className="flex h-full flex-col focus:outline-none">
-        <div className="relative h-28 shrink-0 bg-surface-muted">
-          {recipe.heroUrl ? (
+        <div className="relative h-28 shrink-0 overflow-hidden bg-surface-muted">
+          {recipe.heroStatus === "ready" && recipe.heroUrl ? (
             <Image
               src={recipe.heroUrl}
               alt=""
@@ -45,9 +47,15 @@ export function RecipeCard({
               unoptimized
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-text-muted">
-              尚無主圖
-            </div>
+            <HeroPlaceholder
+              status={(recipe.heroStatus ?? "skipped") as HeroStatus}
+              cuisine={recipe.cuisine}
+            />
+          )}
+          {recipe.cuisine && (
+            <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white backdrop-blur">
+              {recipe.cuisine}
+            </span>
           )}
           {onFavoriteToggle && (
             <button

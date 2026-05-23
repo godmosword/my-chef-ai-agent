@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
 import { ArrowLeft, ChefHat } from "lucide-react";
 import { FLAGS } from "@/lib/flags";
+import { RecipeDetailHero } from "@/components/recipe/RecipeDetailHero";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
 import { track } from "@/lib/analytics/track";
 
@@ -100,6 +101,12 @@ export default function RecipeDetailPage() {
               )}
             </div>
           </div>
+          <div className="mt-4">
+            <RecipeDetailHero
+              recipe={recipe}
+              onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
+            />
+          </div>
           {recipe.summary && (
             <p className="mt-2 text-text-muted">{recipe.summary}</p>
           )}
@@ -126,7 +133,7 @@ export default function RecipeDetailPage() {
               </ol>
             </section>
           )}
-          {/* TODO: version history, hero image editor — Prompt 4+ */}
+          {/* TODO: version history — Prompt 4+ */}
         </article>
       )}
     </div>

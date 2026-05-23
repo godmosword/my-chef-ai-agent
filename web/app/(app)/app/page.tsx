@@ -4,7 +4,8 @@ import Link from "next/link";
 import { GreetingHeader } from "@/components/patterns/GreetingHeader";
 import { HeroInput } from "@/components/patterns/HeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
-import { RecipeCard, RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
+import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
+import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { Button } from "@/components/primitives/Button";
 import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
@@ -92,7 +93,7 @@ export default function TodayPage() {
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2">
             {recent.map((r) => (
-              <RecipeCard
+              <RecipeCardWithHero
                 key={r.id}
                 recipe={r}
                 href={`/app/library/${r.id}`}

@@ -112,6 +112,7 @@ export function MeSettingsPanel() {
     locale: "zh-Hant-TW",
     voice_enabled: false,
     analytics_opt: true,
+    hero_auto_generate: true,
   };
 
   return (

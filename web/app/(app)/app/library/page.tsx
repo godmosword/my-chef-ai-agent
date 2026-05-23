@@ -7,7 +7,8 @@ import { recipeListItemToCard } from "@/lib/recipe-display";
 import { SearchInput } from "@/components/patterns/SearchInput";
 import { FilterRail, type FilterOption } from "@/components/patterns/FilterRail";
 import { ViewToggle, type LibraryView } from "@/components/patterns/ViewToggle";
-import { RecipeCard, RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
+import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
+import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { BookOpen } from "lucide-react";
 
@@ -112,7 +113,7 @@ export default function LibraryPage() {
       ) : view === "gallery" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((r) => (
-            <RecipeCard
+            <RecipeCardWithHero
               key={r.id}
               recipe={r}
               href={`/app/library/${r.id}`}
