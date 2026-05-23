@@ -23,17 +23,23 @@ function colorsForCuisine(cuisine?: string | null): [string, string] {
 export type HeroPlaceholderProps = {
   status: HeroStatus | string;
   cuisine?: string | null;
+  error?: string | null;
   className?: string;
 };
 
-export function HeroPlaceholder({ status, cuisine, className }: HeroPlaceholderProps) {
+export function HeroPlaceholder({
+  status,
+  cuisine,
+  error,
+  className,
+}: HeroPlaceholderProps) {
   const [from, to] = colorsForCuisine(cuisine);
   const isLoading = status === "pending" || status === "generating";
   const showHat = status === "failed" || status === "skipped";
 
   return (
     <div
-      className={className ?? "flex h-full w-full items-center justify-center relative"}
+      className={className ?? "flex h-full w-full flex-col items-center justify-center relative gap-2 px-3 text-center"}
       style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
     >
       {isLoading && (
@@ -43,6 +49,9 @@ export function HeroPlaceholder({ status, cuisine, className }: HeroPlaceholderP
         </div>
       )}
       {showHat && <ChefHat className="size-8 text-white/70" aria-hidden />}
+      {showHat && error && (
+        <p className="max-w-[18rem] text-[11px] leading-snug text-white/90">{error}</p>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { HeroStatus } from "@chef/shared-types";
 
-const MAX_POLLS = 12;
+const MAX_POLLS = 24;
 
 type HeroStatusResponse = {
   ok: boolean;

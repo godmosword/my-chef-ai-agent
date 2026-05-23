@@ -18,7 +18,7 @@ import {
   resolveImageApiKey,
 } from "@/lib/media/hero-image";
 
-const IMAGE_TIMEOUT_MS = 20_000;
+const IMAGE_TIMEOUT_MS = 55_000;
 
 function maxStepImages(): number {
   const n = parseInt(process.env.MAX_STEP_IMAGES || "6", 10);

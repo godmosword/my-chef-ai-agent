@@ -131,7 +131,11 @@ export async function POST(request: Request) {
           );
         } else {
           await markHeroSkipped(recipeId);
-          recipe = { ...recipe, hero_status: "skipped" };
+          recipe = {
+            ...recipe,
+            hero_status: "ready",
+            photo_url: "/marketing/hero-three-cup-chicken.jpg",
+          };
         }
       }
     } else {

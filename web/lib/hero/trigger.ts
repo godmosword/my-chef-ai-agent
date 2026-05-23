@@ -8,11 +8,12 @@ import { recipes } from "@/lib/db/schema";
 import { buildHeroPrompt } from "@/lib/hero/build-prompt";
 import {
   generateRecipeHeroImage,
+  getPlaceholderHeroUrl,
   resolveImageApiKey,
   imageProvider,
 } from "@/lib/media/hero-image";
 
-const IMAGE_TIMEOUT_MS = 20_000;
+const IMAGE_TIMEOUT_MS = 55_000;
 
 export type TriggerHeroOptions = {
   recipeId: string;
@@ -164,8 +165,11 @@ export async function triggerHeroGeneration(
   } catch (err) {
     const message =
       err instanceof Error ? err.message.slice(0, 200) : "unknown";
+    console.error("[hero-auto] generation failed:", message);
+    // Degraded: show committed marketing hero so UI is not stuck on failed/skipped.
     await markHero(opts.recipeId, {
-      heroStatus: "failed",
+      heroStatus: "ready",
+      heroUrl: getPlaceholderHeroUrl(recipeName),
       heroError: message,
     });
   }
@@ -173,7 +177,8 @@ export async function triggerHeroGeneration(
 
 export async function markHeroSkipped(recipeId: string): Promise<void> {
   await markHero(recipeId, {
-    heroStatus: "skipped",
-    heroError: null,
+    heroStatus: "ready",
+    heroUrl: getPlaceholderHeroUrl(),
+    heroError: "hero_auto_disabled",
   });
 }

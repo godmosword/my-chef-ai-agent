@@ -20,6 +20,7 @@
 ### Fixed
 
 - **GCP Cloud Build**：新增根目錄 **`Dockerfile`**（Next.js `standalone`）與 **`.dockerignore`**，修正 `lstat /workspace/Dockerfile: no such file`（舊 LINE Bot 映像已不在 repo）。
+- **主圖不顯示**：`gpt-image-2` 改為正確 Images API 參數（移除不支援的 `response_format`、JPEG 輸出）；生圖失敗或關閉自動主圖時改顯示 `/marketing/hero-three-cup-chicken.jpg`，不再卡在廚師帽占位；延長生圖 timeout 與 polling。
 
 ---
 ## [0.2.0] — 2026-05-24 — Web 產品線（Prompt 2–10、Wave 4）

@@ -41,7 +41,10 @@ export function RecipeCard({
     >
       <Link href={href} className="flex h-full flex-col focus:outline-none">
         <div className="relative h-28 shrink-0 overflow-hidden bg-surface-muted">
-          {recipe.heroStatus === "ready" && recipe.heroUrl ? (
+          {recipe.heroUrl &&
+          (recipe.heroStatus === "ready" ||
+            recipe.heroUrl.startsWith("/") ||
+            recipe.heroUrl.startsWith("data:")) ? (
             <Image
               src={recipe.heroUrl}
               alt=""
