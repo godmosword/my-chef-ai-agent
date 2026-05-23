@@ -12,13 +12,14 @@ import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { BookOpen } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/format";
+import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 
 export default function LibraryPage() {
   const [q, setQ] = useState("");
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [view, setView] = useState<LibraryView>("gallery");
   const [items, setItems] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const { favoriteIds, toggle, syncInitial } = useFavoriteToggle(new Set());
   const [loading, setLoading] = useState(true);
   const [offlineOnly, setOfflineOnly] = useState(false);
 
@@ -31,7 +32,7 @@ export default function LibraryPage() {
         limit: 50,
       });
       setItems(res.items);
-      setFavoriteIds(res.favoriteIds);
+      syncInitial(res.favoriteIds);
       setOfflineOnly(res.offlineOnly);
     } catch {
       setItems([]);
@@ -39,7 +40,7 @@ export default function LibraryPage() {
     } finally {
       setLoading(false);
     }
-  }, [q, cuisine]);
+  }, [q, cuisine, syncInitial]);
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -119,6 +120,7 @@ export default function LibraryPage() {
               recipe={r}
               href={`/app/library/${r.id}`}
               favorited={favoriteIds.has(r.id)}
+              onFavoriteToggle={() => void toggle(r.id)}
             />
           ))}
         </div>

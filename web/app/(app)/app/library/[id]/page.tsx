@@ -7,8 +7,11 @@ import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
-import { ArrowLeft, ChefHat } from "lucide-react";
+import { ArrowLeft, ChefHat, Heart } from "lucide-react";
 import { FLAGS } from "@/lib/flags";
+import { listFavorites } from "@/lib/api/recipes";
+import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
+import { cn } from "@/lib/utils/cn";
 import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
@@ -21,6 +24,24 @@ export default function RecipeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fromCache, setFromCache] = useState(false);
+  const { favoriteIds, toggle, syncInitial } = useFavoriteToggle(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    void listFavorites()
+      .then((res) => {
+        if (cancelled) return;
+        const ids = new Set<string>();
+        for (const f of res.items) {
+          if (f.recipe_id) ids.add(f.recipe_id);
+        }
+        syncInitial(ids);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [syncInitial]);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,9 +69,26 @@ export default function RecipeDetailPage() {
     };
   }, [id]);
 
+  const favorited = recipe?.id ? favoriteIds.has(recipe.id) : false;
+
   const headerActions =
-    recipe && (FLAGS.sharing || FLAGS.cookingMode) ? (
+    recipe && (FLAGS.sharing || FLAGS.cookingMode || recipe.id) ? (
       <>
+        {recipe.id && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="px-2"
+            aria-label={favorited ? "取消收藏" : "收藏"}
+            onClick={() => void toggle(recipe.id!)}
+          >
+            <Heart
+              className={cn("size-5", favorited && "fill-brand-primary text-brand-primary")}
+              aria-hidden
+            />
+          </Button>
+        )}
         {FLAGS.sharing && recipe.id && (
           <RecipeShareMenu
             recipeId={recipe.id}

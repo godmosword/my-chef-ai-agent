@@ -1,8 +1,10 @@
 # Marketing 靜態圖片
 
-預設 Landing 使用 **CSS 漸層占位**（不請求 `/marketing/*`，避免 400）。
+預設 Landing 使用 **CSS 漸層占位**（不請求 `/marketing/*`）。
 
-將下列檔案放於此目錄後，在 Vercel 設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 即改顯示真實圖。
+本 repo 已含 **`pnpm -F @chef/web marketing:images`** 產生的漸層占位圖（可提交）。在 Vercel 設 **`NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1`** 即改以 `<img>` 顯示下列檔案。
+
+若要換成真實攝影／截圖，覆寫同名檔案即可。
 
 | 檔名 | 尺寸建議 |
 |------|----------|

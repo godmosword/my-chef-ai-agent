@@ -39,7 +39,9 @@ pnpm dev:web
 
 **主圖自動化（Prompt 8）**：新食譜預設背景生成主圖（需 `DATABASE_URL`）；env `AUTO_HERO_IMAGE=0` 可全域關閉；「我的」可關閉個人偏好。跑 migration `web/migrations/0006_recipe_hero_auto.sql`。`IMAGE_PROVIDER=placeholder`（預設）或 `openai_compatible`（需 API key）。
 
-**行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為新版 Landing；情境卡片連 `/app?prefill=…`。可選靜態圖見 `web/public/marketing/README.md`。
+**行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為新版 Landing；情境卡片連 `/app?prefill=…`。占位圖：`pnpm -F @chef/web marketing:images`；Vercel 設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 啟用（見 `web/public/marketing/README.md`）。
+
+**PWA 真機驗收**：見 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)（飛航模式、Cook 計時、收藏離線同步）。
 
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 

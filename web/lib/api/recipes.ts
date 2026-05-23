@@ -112,6 +112,14 @@ export async function removeFavoriteById(id: number): Promise<{ ok: true; delete
   return apiFetch(`/api/favorites/${id}`, { method: "DELETE" });
 }
 
+export async function removeFavoriteByRecipeId(
+  recipeId: string,
+): Promise<{ ok: true; deleted: boolean }> {
+  return apiFetch(`/api/favorites/by-recipe/${encodeURIComponent(recipeId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchCuisine(): Promise<{
   ok: true;
   active_cuisine: string | null;

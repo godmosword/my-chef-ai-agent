@@ -82,9 +82,9 @@
 
 > 規格：[`docs/superpowers/specs/2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)
 
-- [ ] **真機驗收**：安裝 PWA、飛航模式 Library／Cook、評分同步、SW 更新（規格 §13）
+- [ ] **真機驗收**：安裝 PWA、飛航模式 Library／Cook、評分同步、SW 更新（清單 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)）
 - [ ] **Vercel**：production build 勿設 `ENABLE_PWA=false`（除非刻意關閉）
-- [ ] **Library 收藏**：離線 optimistic + `favorite_*` mutations UI
+- [x] **Library 收藏**：離線 optimistic + `favorite_*` mutations UI（2026-05-24）
 - [ ] **Lighthouse PWA**：補 screenshots、分數截圖存檔
 - [ ] **Background Sync**：若未來要 POST 食譜離線佇列，另開項（目前刻意 NetworkOnly）
 
@@ -110,7 +110,7 @@
 
 - [ ] **真 SSE 串流**：`POST /api/recipes?stream=1`（Prompt 2.5）
 - [ ] **⌘K CommandBar**
-- [ ] **Library 收藏切換** UI 接 `POST/DELETE /api/favorites`
+- [x] **Library 收藏切換** UI 接 `POST/DELETE /api/favorites`（2026-05-24）
 - [ ] **菜系篩選計數** 由 API 提供 aggregate
 - [ ] **E2E**：Today 生成、Library 列表（Playwright）
 

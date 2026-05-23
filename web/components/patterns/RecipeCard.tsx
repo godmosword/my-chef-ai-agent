@@ -57,7 +57,12 @@ export function RecipeCard({
             />
           )}
           {recipe.cuisine && (
-            <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white backdrop-blur">
+            <span
+              className={cn(
+                "absolute top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white backdrop-blur",
+                onFavoriteToggle ? "left-2" : "right-2",
+              )}
+            >
               {recipe.cuisine}
             </span>
           )}

@@ -5,273 +5,50 @@
 工程計畫或里程碑收尾時，請與 **`TODOS.md`**、**`README.md`** 一併更新，避免文件與程式脫節（見 [`AGENTS.md`](AGENTS.md)「Plan／里程碑收尾」）。
 
 ---
+## [0.2.0] — 2026-05-24 — Web 產品線（Prompt 2–10、Wave 4）
 
-## [Unreleased] — 行動版版面修正
+合併原多段 `[Unreleased]`：Recipe Library、Today／Library UI、烹飪模式、週曆採買、PWA、公開分享、主圖自動化、行銷 Landing、Today polish、DB 修復、行動版 safe-area。
+
+### Added
+
+- **Recipe Library**（Prompt 2）：`recipes`／`recipe_versions`／`recipe_tags`／`favorites_v2`；`POST|GET /api/recipes`、配額 text/image 拆分
+- **Today + Library UI**（Prompt 3）：`/app` shell、Tailwind primitives、Landing（`NEXT_PUBLIC_NEW_UI=1`）
+- **Cooking Mode**（Prompt 4）：`/app/library/:id/cook`、計時器、語音、Wake Lock、`PATCH` 評分
+- **Meal Planner**（Prompt 5）：`meal_plans`、週曆 DnD、`/app/shopping` 聚合採買與列印
+- **PWA + Offline**（Prompt 6）：Serwist、Dexie 快取 20 筆、A2HS、離線 Library／Cook、mutations 佇列
+- **Public Sharing**（Prompt 7）：`/r/:token`、分享 API、`user_settings`、PostHog、onboarding
+- **Hero 自動化**（Prompt 8）：`hero_status`、背景生圖、`hero-status` polling、設定開關
+- **Marketing Landing**（Prompt 9）：五段式首頁、`/app?prefill=`、動態 OG
+- **Today polish**（Prompt 10）：quick prompts、⌘/Ctrl+Enter、`EmptyStateOnboarding`、`Kbd`
+- **Wave 4a–c**：`RecipeResultHero`、`RecipeDetailLayout`、公開頁 hero-first、Plan/Shopping `SectionHeader`
+- **DB**：`0001` Phase1 baseline、`0006`–`0008` idempotent 修復；`web/scripts/generate-marketing-images.ts`
+- **收藏 UI**：料理書／詳情 ♥ 切換、`DELETE /api/favorites/by-recipe/:id`、離線 enqueue
+- **行銷占位圖**：`public/marketing/*`（`marketing:images`）；**PWA 真機清單** [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)
+
+### Changed
+
+- **Monorepo**：`web/` + `@chef/design-tokens` + `@chef/shared-types`；Vercel Root = `web`
+- **移除 LINE Bot / Render**；產品僅 Web（見 `docs/LEGACY_LINE_BOT.md`）
+- **Drizzle**：`neon-serverless` Pool 支援 `db.transaction()`（食譜寫入）
+- **Landing**：預設 CSS 漸層占位；`NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 顯示 `public/marketing/*`
+- **migrate**：略過 `*.down.sql`；自動讀 `web/.env.local`
 
 ### Fixed
 
-- **iOS / PWA**：`viewport-fit: cover` + `safe-area-inset`（頂部瀏海、底部 Tab）
-- **Today**：移除重複「職人料理」頂欄；onboarding 卡片不再壓住底部導覽
-- **最近食譜**：API 失敗或逾時後不再無限 skeleton
-
----
-
-## [Unreleased] — DB repair + Marketing 占位
-
-### Fixed
-
-- Migration **`0008_ensure_user_settings_and_sharing.sql`**：idempotent 補建 `user_settings`（含 `hero_auto_generate`）、分享表、`meal_plans`
-- **`/api/me/settings`**：`user_settings` 缺表時回預設值並 log，不再 500
-- **Landing**：`/marketing/*` 預設漸層占位（不再 `next/image` 請求缺檔）；設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 可啟用靜態圖
-
-### Changed
-
-- 公開頁／行銷用例漸層色與規格對齊（番茄炒蛋、兒童餐、燉牛肉等）
-
----
-
-## [Unreleased] — Frontend Wave 4c（Plan / Shopping / Me）
-
-### Added
-
-- **`SectionHeader`**：Today「最近做過」、Plan「本週餐點」共用區塊標題
-
-### Changed
-
-- **Plan**：空格子虛線邊框 + `surface-muted` 底
-- **Shopping**：分類標題 14px medium；清單列 `border-b` 樣式
-- **Me**：區塊標題一致；配額提示文案
-- **App layout**：`page-enter` 包裝全 `/app` 子頁
-- **`docs/UX_PLAYBOOK.md`**：§ Web App 表面（Today / Library / Cook / Public / Plan）
-
----
-
-## [Unreleased] — Frontend Wave 4b（烹飪 + 公開分享）
-
-### Added
-
-- **`RecipeDetailSections`**：食材／步驟區塊（server-safe），詳情與公開頁共用
-
-### Changed
-
-- **烹飪模式**：步驟文字 `text-2xl`／`md:text-3xl`；步驟計時按鈕 `brand-primary`；完成／評分成功 toast「已記錄完成」
-- **公開頁 `/r/:token`**：hero-first（`next/image`）、serif 標題、`Chip`、14px 區塊標題；有主圖時 OG 用 `hero_url`
-- **料理書列表**：表格「最近」欄改相對時間（與卡片一致）
-
----
-
-## [Unreleased] — Frontend Wave 4a（首次生成 UX）
-
-### Added
-
-- **暗色 token**：`design-tokens` 為 background／surface／text／border 補齊 `dark` 值（`pnpm tokens:build`）
-- **`RecipeResultHero`**：Today 結果區主圖占位 + `useHeroPolling`
-- **`RecipeDetailLayout`**：詳情 hero-first、手機底部固定「進入烹飪模式」
-
-### Changed
-
-- **`StreamingRecipe`**：完成後顯示主圖；菜系改 `Chip`；額度／429 錯誤附「查看配額」連結
-- **`HeroInput`**：`streaming` 時 footer／按鈕顯示「生成中…」
-- **料理書詳情**：改用 `RecipeDetailLayout`；食材／步驟標題 14px medium
-
----
-
-## [Unreleased] — DB fix: subscriptions table
-
-### Fixed
-
-- Migration `0007_ensure_phase1_tables.sql`：idempotent 補建 `subscriptions` 等 Phase 1 表（僅跑過 0003+ 的 DB）
-- 配額查詢在 `subscriptions` 缺失時 fallback 為 free plan 並 log 警告（避免 500）
-
----
-
-## [Unreleased] — Today 頁 Polish（Prompt 10）
-
-### Added
-
-- **Hero 輸入區**：quick prompts（6 個）、⌘/Ctrl+Enter 送出、配額用完 disabled + tooltip
-- **空狀態引導**：`EmptyStateOnboarding`（3 個 starter 情境）
-- **`Kbd` primitive**、 `lib/prompts/quick.ts` / `starter.ts`
-
-### Changed
-
-- **Greeting**：serif 標題放大 + 時段 subtitle（日期 · 問候副標）
-- **最近**：「最近做過」14px +「看全部」連結；卡片 hover 陰影
-- **配額**：`QuotaIndicator` sidebar 樣式（3px bar、今日配額標題）；nav active 更明顯
-- **進場**：Today `page-enter` fade-in
-
----
-
-## [Unreleased] — Marketing Landing（Prompt 9）
-
-### Added
-
-- **Landing 改版**：五段式行銷頁（Hero + 手機框食譜卡、情境範例、Library／廚房模式、差異化、Footer）
-- **Prefill**：`/app?prefill=…` 預填今晚輸入框
-- **OG**：`app/opengraph-image.tsx`（1200×630）；首頁 `metadata` 完整 SEO
-
-### Changed
-
-- 移除顯眼「經典聊天」CTA 與「配額透明」feature；經典介面改 footer 小字連結
-- `public/marketing/README.md` 說明可選靜態圖資產
-
----
-
-## [Unreleased] — 食譜主圖自動化（Prompt 8）
-
-### Added
-
-- **主圖自動生成**：migration `0006`（`hero_status`、`hero_error`、`hero_updated_at`）；`user_settings.hero_auto_generate`
-- **背景觸發**：`POST /api/recipes` 完成後以 `waitUntil` 執行 `triggerHeroGeneration`（`AUTO_HERO_IMAGE` 預設開，可設 `0` 關閉）
-- **Polling**：`GET /api/recipes/:id/hero-status`；手動重生 `POST /api/recipes/:id/hero`
-- **UI**：菜系漸層占位、`useHeroPolling`、Today／Library 卡片、詳情頁主圖與「重生主圖」；「我的」可關閉自動主圖
-
-### Changed
-
-- **`buildHeroPrompt`**：依菜系／食材組裝雜誌風寫實 prompt（`web/lib/hero/build-prompt.ts`）
-- **既有食譜**：migration 將無 `hero_url` 的舊列標為 `skipped`（避免一次爆配額）
-
----
-
-## [Unreleased] — 公開分享 + 體驗收尾（Prompt 7）
-
-### Added
-
-- **公開分享**：migration `0005`；`POST/DELETE /api/recipes/:id/share`；公開讀取 `/api/r/:token`、瀏覽／按讚
-- **公開頁**：`/r/[token]`（SSR、noindex）、Edge `opengraph-image`（背景 `#FFFAF5`）
-- **設定**：`user_settings`；`GET/PUT /api/me/settings`；「我的」頁（主題、字級、語言、分析、刪帳戶）
-- **Analytics**：PostHog lazy（`posthog-js`）；`track()` 事件（生成、檢視、烹飪、分享、onboarding）
-- **體驗**：`not-found` / `error` / `quota-reached`；App onboarding v1；導覽文案（今晚／料理書／我的）
-- **SW**：`/api/r/*` 一律 NetworkOnly
-
-### Changed
-
-- **`@chef/shared-types`**：`PublicRecipe`、`UserSettings`；`RecipePayload` 含 `share_token` / `published_at`
-- **料理書詳情**：`RecipeShareMenu`（flag `NEXT_PUBLIC_SHARING_ENABLED`，預設開）
-
-規格：[`docs/superpowers/specs/2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)
-
----
-
-## [Unreleased] — PWA + 離線快取（Prompt 6）
-
-### Added
-
-- **PWA**：`manifest.webmanifest`、192/512 icons（`pnpm -F @chef/web icons:generate`）、`theme-color`、Apple Web App meta
-- **Serwist**：`app/sw.ts`（靜態 CacheFirst、GET recipes SWR、POST recipes NetworkOnly、導覽 NetworkFirst、fallback `/offline`）
-- **離線資料**：Dexie `chef-offline`（LRU 20 食譜、`mutations` 佇列）；`listRecipesWithOffline` / `fetchRecipeWithOffline`
-- **UI**：頂部離線列、`/offline` 頁、A2HS 橫幅（第 2 次造訪）、SW 更新提示
-- **烹飪模式**：Cook 改 client loader；評分失敗入 Dexie 佇列，上線自動 flush
-
-### Changed
-
-- **`web/middleware.ts`**：排除 `sw.js`、`manifest.webmanifest`、`icons/`
-- **`web/app/layout.tsx`**：Serwist + OfflineProvider 包裹
-
-規格：[`docs/superpowers/specs/2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)
-
----
-
-## [Unreleased] — 週曆規劃 + 採買清單（Prompt 5）
-
-### Added
-
-- **週曆規劃**（`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`）：`/app/plan?week_of=`（21 格、週一 floor）、`/app/shopping?week_of=`（聚合採買、瀏覽器列印）
-- **API**：`GET /api/plan`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`
-- **資料**：migration `0004_meal_plans`；`@chef/shared-types` 單位歸併與 `shopping_list` 解析
-- **拖拉**：`@dnd-kit/core` 跨格移動食譜
-
-### Changed
-
-- **`web/app/globals.css`**：採買清單 `@media print` 樣式
-
-規格：[`docs/superpowers/specs/2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)
-
----
-
-## [Unreleased] — Cooking Mode（Prompt 4）
-
-### Added
-
-- **烹飪模式**（`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`）：食譜詳情頁「進入烹飪模式」→ `/app/library/:id/cook`；獨立 `(cooking)` layout（無 AppShell）
-- **步驟導覽**：滑動／鍵盤 ←→、語音朗讀（Web Speech API）、URL `?step=`／`?voice=1`
-- **計時器**：最多 3 個並行；`performance.now()` + 絕對 `endAtMs`（RAF 更新）；步驟文字 fallback 解析 `timer_seconds`
-- **完成畫面**：CSS confetti、1–5 星評分；`PATCH /api/recipes/:id`（`rating`、`record_cook`）；離線評分佇列 `localStorage`
-- **營運**：Wake Lock／全螢幕提示、離開長按 1s 確認、`sessionStorage` 恢復進度、首次 onboarding
-
-### Changed
-
-- **`web/app/globals.css`**：`.cooking-mode` 深色主題與到時閃爍動畫
-
-規格：[`docs/superpowers/specs/2026-05-23-cooking-mode.md`](docs/superpowers/specs/2026-05-23-cooking-mode.md)
-
----
-
-## [Unreleased] — Today + Library UI（Prompt 3）
-
-### Added
-
-- **新 UI shell**（`NEXT_PUBLIC_NEW_UI=1`）：Marketing `/`、App `/app`（Today）、`/app/library`、`/app/library/[id]`、`/app/me`；經典聊天保留於 `/legacy` 與 flag 關閉時的 `/`
-- **設計系統落地**：Tailwind + `@chef/design-tokens`；`web/components/primitives/*`、`patterns/*`、`layout/*`
-- **Client API**：`web/lib/api/{client,recipes,streaming}.ts`；`fakeRecipeStream` 模擬漸進顯示（真 SSE 留待後續）
-- **開發**：`/showcase` primitives 頁
-
-### Changed
-
-- **根 layout**：`next/font`（Noto Sans／Serif TC）、`ThemeProvider`、`ToastProvider`
-
----
-
-## [Unreleased] — 移除 LINE Bot 與 Render
-
-### Removed
-
-- **`apps/line-bot/`** 整包（FastAPI LINE webhook、pytest、Dockerfile、Rich Menu）
-- **Render**：`render.yaml`、[`docs/LEGACY_LINE_BOT.md`](docs/LEGACY_LINE_BOT.md)、[`docs/DEPLOY_GCP.md`](docs/DEPLOY_GCP.md)、[`docs/RENDER_POSTGRES.md`](docs/RENDER_POSTGRES.md)、[`docs/RICH_MENU.md`](docs/RICH_MENU.md)
-- **CI／部署**：`line-bot-ci.yml`、根目錄 `Dockerfile`、Cloud Run source deploy
-- **`@chef/design-tokens`** 不再產出 `tokens.py`（僅 CSS + Tailwind preset）
-
-### Changed
-
-- **README**、**AGENTS**、**CONTRIBUTING**、**TODOS** 改為僅 Web（Vercel）
-- **Schema 文件**：migration 來源改為 `web/migrations/`
-- **目錄**：`apps/web` 搬至根目錄 **`web/`**（Vercel 不接受符號連結作 Root Directory）
-- **Vercel build**：`web` 的 `build` 腳本先跑 `@chef/design-tokens build`；`vercel.json` 註明 monorepo install
-
----
-
-## [Unreleased] — Recipe Library（Prompt 2）
-
-### Added
-
-- **Recipe Library（Web）**：`recipes`、`recipe_versions`、`recipe_tags`、`favorites_v2`；migration `apps/web/migrations/0003_recipe_library.sql`；`pnpm -F @chef/web db:migrate`
-- **Drizzle ORM**（`neon-http`）與 `@chef/shared-types` Zod schema（`RecipePayload`、`GenerateRecipeRequest` 等）
-- **API**：`GET /api/recipes`（列表＋cursor）、`GET|DELETE /api/recipes/[id]`、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`；`POST /api/recipes` 在 `DATABASE_URL` 設定時持久化並回傳 `recipe.id`
-- **配額**：`usage_daily.text_requests_count`／`image_requests_count`；`GET /api/quota` 回傳 `text`／`image` bucket；主圖走 **image** 配額
-- **收藏**：支援 `{ recipe_id }` 寫入 `favorites_v2` 並雙寫 legacy `favorite_recipes`
+- **`usage_daily` 缺表**：新 Neon 須先跑 `0001` 再 `0003`
+- **`user_settings` 缺表 / `/api/me/settings` 500**：`0008` + 缺表時回預設值
+- **`subscriptions` 缺表導致配額 500**：`0007` + fallback free plan
+- **neon-http 不支援 transaction**：改 Pool driver
+- **iOS safe-area**：onboarding 不壓 Tab；Today 移除重複頂欄；最近食譜 skeleton 逾時
 
 ### Migration notes
 
-- 部署 Web 後請執行：`DATABASE_URL=... pnpm -F @chef/web db:migrate`
-- `POST /api/recipes` 回應仍為 `{ ok, recipe, quota }`；`recipe` 可含 `id`／`version_no`
+- 部署後：`pnpm -F @chef/web db:migrate`（至 `0008`）
+- Vercel：`GEMINI_API_KEY`、`DATABASE_URL`；建議 `NEXT_PUBLIC_NEW_UI=1`、`COOKING`、`MEAL_PLAN`、`SITE_URL`
+- 行銷真圖：`pnpm -F @chef/web marketing:images` 後設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1`
+- PWA 真機驗收：[`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)
 
----
-
-## [Unreleased] — Monorepo + Design Tokens（Phase 3 起點）
-
-### Changed
-
-- 重構為 **pnpm workspace monorepo**：`apps/web`、`apps/line-bot`、`packages/design-tokens`、`packages/shared-types`
-- 新增 **`@chef/design-tokens`**：`tokens.json` → `tokens.css`、`tokens.py`、`tailwind-preset.js`；LINE `design_tokens.py` 改薄包裝 + `_generated_tokens.py`
-- CI 拆分：**`web-ci.yml`** / **`line-bot-ci.yml`**（path filter）；Cloud Run deploy 僅 LINE 路徑變更時觸發
-- Docker：**build context = repo 根**，`docker build -f apps/line-bot/Dockerfile .`
-
-### Migration notes
-
-- **Vercel** Root Directory：`web` → **`apps/web`**；Install/Build 見 [`apps/web/README.md`](apps/web/README.md)
-- **Render**：`apps/line-bot/render.yaml`；build 前需 `pnpm tokens:build`
-- 本機需 **pnpm ≥ 9**；Web：`pnpm dev:web`；LINE：`pnpm line:test` / `pnpm line:dev`
-- 設計 token 變更：`pnpm tokens:build` → `apps/line-bot/scripts/sync_tokens.sh`
+規格索引：[`docs/superpowers/specs/`](docs/superpowers/specs/)（2026-05-23 系列 + Wave 4）
 
 ---
 

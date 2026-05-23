@@ -1,7 +1,7 @@
 import {
   addFavoriteByRecipeId,
   recordRecipeCook,
-  removeFavoriteById,
+  removeFavoriteByRecipeId,
 } from "@/lib/api/recipes";
 import {
   dequeuePendingRating,
@@ -39,8 +39,8 @@ async function sendMutation(m: PendingMutation): Promise<void> {
       return;
     }
     case "favorite_remove": {
-      const { favorite_id } = m.payload as { favorite_id: number };
-      await removeFavoriteById(favorite_id);
+      const { recipe_id } = m.payload as { recipe_id: string };
+      await removeFavoriteByRecipeId(recipe_id);
       return;
     }
     case "rating": {
