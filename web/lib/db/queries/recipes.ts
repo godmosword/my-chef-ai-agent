@@ -13,6 +13,7 @@ import type {
   RecipeTag,
   RecipeWithLatestVersion,
 } from "@chef/shared-types";
+import { ensureStoredSteps } from "@/lib/hero/step-storage";
 import { getDb } from "../drizzle";
 import {
   favoritesV2,
@@ -132,7 +133,7 @@ export async function createRecipeFromAi(
         recipeId: recipeRow.id,
         versionNo: 1,
         ingredients: input.aiRecipe.ingredients ?? [],
-        steps: input.aiRecipe.steps ?? [],
+        steps: ensureStoredSteps(input.aiRecipe.steps ?? []),
         shoppingList: input.aiRecipe.shopping_list ?? [],
         kitchenTalk: serializeKitchenTalk(input.aiRecipe.kitchen_talk),
         costEstimate: costToJsonb(input.aiRecipe.estimated_total_cost),

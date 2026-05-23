@@ -19,17 +19,50 @@ export default function CookPageLoader() {
 
   useEffect(() => {
     let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const load = async () => {
+      const { recipe: payload } = await fetchRecipeWithOffline(id);
+      const cooking = recipePayloadToCooking(payload);
+      if (!cooking.steps.length) {
+        if (!cancelled) router.replace(`/app/library/${id}`);
+        return null;
+      }
+      return cooking;
+    };
+
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const { recipe: payload } = await fetchRecipeWithOffline(id);
-        const cooking = recipePayloadToCooking(payload);
-        if (!cooking.steps.length) {
-          if (!cancelled) router.replace(`/app/library/${id}`);
-          return;
+        const cooking = await load();
+        if (!cooking || cancelled) return;
+        setRecipe(cooking);
+
+        const needsPoll = cooking.steps.some(
+          (s) =>
+            s.imageStatus === "pending" ||
+            s.imageStatus === "generating" ||
+            (s.imageStatus === "ready" && !s.imageUrl),
+        );
+        if (needsPoll) {
+          pollTimer = setInterval(async () => {
+            try {
+              const next = await load();
+              if (!next || cancelled) return;
+              setRecipe(next);
+              const done = !next.steps.some(
+                (s) => s.imageStatus === "pending" || s.imageStatus === "generating",
+              );
+              if (done && pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+              }
+            } catch {
+              /* keep last state */
+            }
+          }, 4000);
         }
-        if (!cancelled) setRecipe(cooking);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "無法載入食譜");
@@ -38,8 +71,10 @@ export default function CookPageLoader() {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
     };
   }, [id, router]);
 

@@ -47,7 +47,7 @@
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
 - [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
-- [ ] **主圖**：新食譜自動占位→主圖（`IMAGE_PROVIDER`）；詳情可「重生主圖」；關閉自動：我的 → 自動生成主圖
+- [x] **主圖 + 步驟插圖**：新食譜自動 AI 主圖與 Cook 步驟圖（`IMAGE_PROVIDER=openai_compatible` + API key）；`AUTO_STEP_IMAGES=0` 關步驟圖
 - [ ] **海報**：「下載海報」取得 HTML 且可列印
 
 ---

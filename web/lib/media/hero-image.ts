@@ -17,11 +17,13 @@ export function resolveImageApiKey(): string | null {
   );
 }
 
-function placeholderUrl(recipeName: string): string | null {
+/** Same-origin static asset (committed under public/marketing). Reliable on Vercel; placehold.co is often blocked. */
+const DEFAULT_PLACEHOLDER_HERO = "/marketing/hero-three-cup-chicken.jpg";
+
+function placeholderUrl(_recipeName: string): string | null {
   const custom = process.env.RECIPE_FALLBACK_HERO_IMAGE_URL?.trim();
   if (custom && custom.toLowerCase() !== "none") return custom;
-  const q = encodeURIComponent(recipeName.slice(0, 40));
-  return `https://placehold.co/800x600/f5efe6/2a6049/png?text=${q}`;
+  return DEFAULT_PLACEHOLDER_HERO;
 }
 
 export type HeroImageResult = {
@@ -66,7 +68,7 @@ export async function generateRecipeHeroImage(
 
   const client = new OpenAI({ apiKey, maxRetries: 1 });
   const model =
-    process.env.OPENAI_GPT_IMAGE_MODEL_ID?.trim() || "gpt-image-1";
+    process.env.OPENAI_GPT_IMAGE_MODEL_ID?.trim() || "gpt-image-2";
 
   try {
     const response = await client.images.generate({

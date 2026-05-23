@@ -6,6 +6,7 @@ import { isDatabaseConfigured } from "@/lib/db/client";
 import { createRecipeFromAi, listRecipesForUser } from "@/lib/db/queries/recipes";
 import { isHeroAutoEnabled } from "@/lib/hero/preferences";
 import { markHeroSkipped, triggerHeroGeneration } from "@/lib/hero/trigger";
+import { triggerStepImagesGeneration } from "@/lib/hero/trigger-step-images";
 import { aiRecipeToPayload } from "@/lib/recipe-payload";
 import { getSessionUserId } from "@/lib/session";
 import type { RecipePayload } from "@chef/shared-types";
@@ -109,18 +110,27 @@ export async function POST(request: Request) {
       recipe = persisted ?? aiRecipeToPayload(result.recipe);
 
       const autoHeroEnv = process.env.AUTO_HERO_IMAGE !== "0";
-      if (recipe.id && recipe.hero_status !== "ready") {
+      const recipeId = recipe.id;
+      if (recipeId && recipe.hero_status !== "ready") {
         if (autoHeroEnv && (await isHeroAutoEnabled(userId))) {
           waitUntil(
-            triggerHeroGeneration({
-              recipeId: recipe.id,
-              userId,
-              tenantId: DEFAULT_TENANT_ID,
-              recipe,
-            }),
+            (async () => {
+              await triggerHeroGeneration({
+                recipeId,
+                userId,
+                tenantId: DEFAULT_TENANT_ID,
+                recipe,
+              });
+              await triggerStepImagesGeneration({
+                recipeId,
+                userId,
+                tenantId: DEFAULT_TENANT_ID,
+                recipe,
+              });
+            })(),
           );
         } else {
-          await markHeroSkipped(recipe.id);
+          await markHeroSkipped(recipeId);
           recipe = { ...recipe, hero_status: "skipped" };
         }
       }

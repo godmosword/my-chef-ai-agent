@@ -9,6 +9,8 @@
     "MAX_HISTORY_TURNS": "2",
     "PLAN_FREE_DAILY_LIMIT": "20",
     "DEFAULT_TENANT_ID": "default",
-    "IMAGE_PROVIDER": "placeholder"
+    "IMAGE_PROVIDER": "openai_compatible",
+    "OPENAI_GPT_IMAGE_MODEL_ID": "gpt-image-2",
+    "MAX_STEP_IMAGES": "6"
   }
 }

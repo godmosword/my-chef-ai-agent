@@ -5,6 +5,19 @@
 工程計畫或里程碑收尾時，請與 **`TODOS.md`**、**`README.md`** 一併更新，避免文件與程式脫節（見 [`AGENTS.md`](AGENTS.md)「Plan／里程碑收尾」）。
 
 ---
+## [Unreleased]
+
+### Added
+
+- **烹飪步驟 AI 插圖**：`openai_compatible` + API key 時，新食譜背景為前 N 步（`MAX_STEP_IMAGES`，預設 6）生成教學用過程照；Cook 頁輪詢更新；`AUTO_STEP_IMAGES=0` 可關閉。
+- **主圖備援**：`placeholder` 或無金鑰時改用站內 `/marketing/hero-three-cup-chicken.jpg`，避免 `placehold.co` 在瀏覽器被擋。
+
+### Changed
+
+- **`web/vercel.json`**：預設 `IMAGE_PROVIDER=openai_compatible`（仍須在 Vercel 設定 `IMAGE_OPENAI_API_KEY` 才會真生圖）。
+- **OpenAI 圖像模型**：預設改為 **`gpt-image-2`**（主圖與烹飪步驟圖共用；可 `OPENAI_GPT_IMAGE_MODEL_ID` 覆寫）。
+
+---
 ## [0.2.0] — 2026-05-24 — Web 產品線（Prompt 2–10、Wave 4）
 
 合併原多段 `[Unreleased]`：Recipe Library、Today／Library UI、烹飪模式、週曆採買、PWA、公開分享、主圖自動化、行銷 Landing、Today polish、DB 修復、行動版 safe-area。

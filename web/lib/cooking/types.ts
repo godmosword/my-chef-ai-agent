@@ -1,9 +1,18 @@
+export type StepImageStatus =
+  | "pending"
+  | "generating"
+  | "ready"
+  | "failed"
+  | "skipped";
+
 export type CookingStep = {
   index: number;
   text: string;
   tip?: string;
   timerSeconds?: number;
   imageHint?: string;
+  imageUrl?: string;
+  imageStatus?: StepImageStatus;
 };
 
 export type CookingRecipe = {

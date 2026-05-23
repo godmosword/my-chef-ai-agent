@@ -40,6 +40,15 @@ export function normalizeCookingSteps(steps: unknown[] | undefined): CookingStep
         raw && typeof raw === "object" && "image_hint" in raw
           ? String((raw as { image_hint?: string }).image_hint)
           : undefined,
+      imageUrl:
+        raw && typeof raw === "object" && "image_url" in raw
+          ? String((raw as { image_url?: string }).image_url || "") || undefined
+          : undefined,
+      imageStatus:
+        raw && typeof raw === "object" && "image_status" in raw
+          ? ((raw as { image_status?: CookingStep["imageStatus"] }).image_status ??
+            undefined)
+          : undefined,
     };
   });
 }

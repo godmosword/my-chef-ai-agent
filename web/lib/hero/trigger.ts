@@ -85,12 +85,9 @@ export async function triggerHeroGeneration(
 
   const provider = imageProvider();
   if (provider === "openai_compatible" && !resolveImageApiKey()) {
-    await markHero(opts.recipeId, {
-      heroStatus: "skipped",
-      heroError: "image_api_key_missing",
-    });
-    console.warn("[hero-auto] skipped: no OpenAI image API key");
-    return;
+    console.warn(
+      "[hero-auto] IMAGE_PROVIDER=openai_compatible but no image API key; using placeholder fallback",
+    );
   }
 
   const quota = await checkQuota(opts.userId, tenantId, "image");

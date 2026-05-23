@@ -37,7 +37,7 @@ pnpm dev:web
 
 **分析（Prompt 7）**：選填 `NEXT_PUBLIC_POSTHOG_KEY`（與 `NEXT_PUBLIC_POSTHOG_HOST`）；設 `NEXT_PUBLIC_ANALYTICS_ENABLED=0` 關閉。使用者在「我的」可關閉匿名事件。
 
-**主圖自動化（Prompt 8）**：新食譜預設背景生成主圖（需 `DATABASE_URL`）；env `AUTO_HERO_IMAGE=0` 可全域關閉；「我的」可關閉個人偏好。跑 migration `web/migrations/0006_recipe_hero_auto.sql`。`IMAGE_PROVIDER=placeholder`（預設）或 `openai_compatible`（需 API key）。
+**主圖與步驟插圖（Prompt 8）**：新食譜背景生成**主圖**與**烹飪步驟 AI 插圖**（Cook 模式逐步顯示；最多 `MAX_STEP_IMAGES`，預設 6 步）。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0`／`AUTO_STEP_IMAGES=0` 可關閉；「我的」可關閉個人主圖偏好。每張圖各計入每日 **image** 配額（主圖 1 次 + 每步 1 次）。
 
 **行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為新版 Landing；情境卡片連 `/app?prefill=…`。占位圖：`pnpm -F @chef/web marketing:images`；Vercel 設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 啟用（見 `web/public/marketing/README.md`）。
 

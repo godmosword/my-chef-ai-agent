@@ -1,6 +1,6 @@
 import type { RecipePayload } from "@chef/shared-types";
 
-function cuisineToEnglish(label: string): string {
+export function cuisineToEnglish(label: string): string {
   if (label.includes("日")) return "Japanese";
   if (label.includes("義")) return "Italian";
   if (label.includes("韓")) return "Korean";
