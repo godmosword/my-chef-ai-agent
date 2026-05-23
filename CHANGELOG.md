@@ -6,6 +6,22 @@
 
 ---
 
+## [Unreleased] — Frontend Wave 4a（首次生成 UX）
+
+### Added
+
+- **暗色 token**：`design-tokens` 為 background／surface／text／border 補齊 `dark` 值（`pnpm tokens:build`）
+- **`RecipeResultHero`**：Today 結果區主圖占位 + `useHeroPolling`
+- **`RecipeDetailLayout`**：詳情 hero-first、手機底部固定「進入烹飪模式」
+
+### Changed
+
+- **`StreamingRecipe`**：完成後顯示主圖；菜系改 `Chip`；額度／429 錯誤附「查看配額」連結
+- **`HeroInput`**：`streaming` 時 footer／按鈕顯示「生成中…」
+- **料理書詳情**：改用 `RecipeDetailLayout`；食材／步驟標題 14px medium
+
+---
+
 ## [Unreleased] — DB fix: subscriptions table
 
 ### Fixed
