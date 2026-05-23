@@ -7,13 +7,12 @@ import { PrefillHeroInput } from "@/components/patterns/PrefillHeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
-import { EmptyState } from "@/components/patterns/EmptyState";
+import { EmptyStateOnboarding } from "@/components/patterns/EmptyStateOnboarding";
 import { Button } from "@/components/primitives/Button";
 import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
 import { listRecipes } from "@/lib/api/recipes";
 import { recipeListItemToCard } from "@/lib/recipe-display";
 import { useEffect, useState } from "react";
-import { BookOpen } from "lucide-react";
 import { AppOnboardingOverlay } from "@/components/onboarding/AppOnboardingOverlay";
 
 export default function TodayPage() {
@@ -41,7 +40,7 @@ export default function TodayPage() {
   }, [recipe?.id]);
 
   return (
-    <div className="space-y-8">
+    <div className="page-enter space-y-8">
       <AppOnboardingOverlay />
       <GreetingHeader />
 
@@ -69,13 +68,16 @@ export default function TodayPage() {
         )}
       </section>
 
-      <section aria-label="最近食譜">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-serif text-xl text-text-ink">最近</h2>
-          <Link href="/app/library" className="text-sm text-brand-primary hover:underline">
-            全部
+      <section className="mt-7" aria-label="最近食譜">
+        <header className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-medium text-text-ink">最近做過</h2>
+          <Link
+            href="/app/library"
+            className="text-xs text-brand-primary hover:underline"
+          >
+            看全部 <span aria-hidden>→</span>
           </Link>
-        </div>
+        </header>
         {loadingRecent ? (
           <div className="flex gap-3 overflow-x-auto pb-2">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -83,15 +85,9 @@ export default function TodayPage() {
             ))}
           </div>
         ) : recent.length === 0 ? (
-          <EmptyState
-            icon={<BookOpen className="size-10" />}
-            title="還沒有食譜"
-            body="用上方輸入框描述今晚想吃的，或到料理書瀏覽。"
-            actions={
-              <Button asChild>
-                <Link href="/app/library">前往料理書</Link>
-              </Button>
-            }
+          <EmptyStateOnboarding
+            disabled={streaming}
+            onPick={(message) => generate({ message })}
           />
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-2">

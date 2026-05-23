@@ -33,7 +33,11 @@ export function RecipeCard({
       as="article"
       interactive
       padding="none"
-      className={cn("group overflow-hidden", compact ? "min-w-[15rem] shrink-0" : "h-[12.5rem]", className)}
+      className={cn(
+        "recipe-card group overflow-hidden",
+        compact ? "min-w-[15rem] shrink-0" : "h-[12.5rem]",
+        className,
+      )}
     >
       <Link href={href} className="flex h-full flex-col focus:outline-none">
         <div className="relative h-28 shrink-0 overflow-hidden bg-surface-muted">
