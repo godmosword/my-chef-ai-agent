@@ -53,9 +53,11 @@ pnpm dev:web
 ## 資料庫
 
 ```bash
-# 初次或升級（Recipe Library）
-DATABASE_URL=... pnpm -F @chef/web db:migrate
+# 初次或升級（0001 Phase1 baseline → 0003 Recipe Library → 0004/0005）
+pnpm -F @chef/web db:migrate
 ```
+
+`db:migrate` 會自動讀取 `web/.env.local` 的 `DATABASE_URL`（Neon URL 請用雙引號包住，避免 `&` 被 shell 誤解析）。
 
 ```bash
 pnpm -F @chef/web test   # Vitest（30 tests：cooking、unit-normalizer、shopping-parse、migration 等）
