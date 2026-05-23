@@ -48,6 +48,7 @@ export default function TodayPage() {
         <Suspense fallback={null}>
           <PrefillHeroInput
             disabled={streaming}
+            streaming={streaming}
             onSubmit={(message) => generate({ message })}
           />
         </Suspense>
