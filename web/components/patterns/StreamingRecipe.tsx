@@ -1,8 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { Skeleton } from "@/components/primitives/Skeleton";
+import { Chip } from "@/components/primitives/Chip";
+import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
+
+function isQuotaError(message: string): boolean {
+  return message.includes("額度") || message.includes("429");
+}
 
 export type StreamingRecipeProps = {
   recipe: RecipePayload | null;
@@ -17,7 +24,14 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
         className="rounded-lg border border-danger/30 bg-surface-default p-4 text-danger"
         role="alert"
       >
-        {error}
+        <p>{error}</p>
+        {isQuotaError(error) && (
+          <p className="mt-2 text-sm">
+            <Link href="/app/me" className="text-brand-primary underline hover:no-underline">
+              查看配額
+            </Link>
+          </p>
+        )}
       </div>
     );
   }
@@ -37,12 +51,15 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
 
   return (
     <article className="rounded-lg border border-border-default bg-surface-default p-4 shadow-card">
+      {!streaming && recipe.id && <RecipeResultHero recipe={recipe} />}
       <h2 className="font-serif text-2xl text-text-ink">
         {recipe.recipe_name ?? (streaming ? "生成中…" : "未命名食譜")}
       </h2>
       {recipe.summary && <p className="mt-2 text-sm text-text-muted">{recipe.summary}</p>}
       {recipe.cuisine && (
-        <p className="mt-1 text-sm text-text-muted">菜系：{recipe.cuisine}</p>
+        <div className="mt-2">
+          <Chip label={recipe.cuisine} />
+        </div>
       )}
       {recipe.ingredients && recipe.ingredients.length > 0 && (
         <section className="mt-4">

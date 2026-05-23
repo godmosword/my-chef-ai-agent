@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils/cn";
 export type HeroInputProps = {
   onSubmit: (text: string) => void;
   disabled?: boolean;
+  streaming?: boolean;
   placeholder?: string;
   className?: string;
   defaultValue?: string;
@@ -17,6 +18,7 @@ export type HeroInputProps = {
 export function HeroInput({
   onSubmit,
   disabled,
+  streaming = false,
   placeholder = "今晚想吃什麼？冰箱有什麼？想試試什麼風味？",
   className,
   defaultValue = "",
@@ -45,13 +47,14 @@ export function HeroInput({
   }, []);
 
   const quotaExhausted = textQuotaRemaining === 0;
-  const submitDisabled = disabled || !text.trim() || quotaExhausted;
+  const inputDisabled = disabled || streaming;
+  const submitDisabled = inputDisabled || !text.trim() || quotaExhausted;
 
   const submit = useCallback(() => {
     const trimmed = text.trim();
-    if (!trimmed || disabled || quotaExhausted) return;
+    if (!trimmed || inputDisabled || quotaExhausted) return;
     onSubmit(trimmed);
-  }, [text, disabled, quotaExhausted, onSubmit]);
+  }, [text, inputDisabled, quotaExhausted, onSubmit]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -101,7 +104,7 @@ export function HeroInput({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={placeholder}
-        disabled={disabled || quotaExhausted}
+        disabled={inputDisabled || quotaExhausted}
         rows={3}
         className="w-full resize-none border-0 bg-transparent px-4 pb-2 pt-3 text-base text-text-ink placeholder:text-text-muted focus:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60"
       />
@@ -111,7 +114,7 @@ export function HeroInput({
           <button
             key={p.key}
             type="button"
-            disabled={disabled || quotaExhausted}
+            disabled={inputDisabled || quotaExhausted}
             onClick={() => insertPrefix(p.value)}
             className="rounded-full border border-border-default bg-canvas px-2.5 py-1 text-xs text-text-body transition-colors hover:border-brand-primary hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -122,7 +125,13 @@ export function HeroInput({
 
       <div className="mt-0 flex items-center justify-between gap-3 border-t border-border-default bg-surface-muted px-4 py-2.5">
         <span className="text-xs text-text-muted">
-          <Kbd>{modKey}</Kbd> + <Kbd>↵</Kbd> 送出 · 約 6 秒
+          {streaming ? (
+            "生成中…"
+          ) : (
+            <>
+              <Kbd>{modKey}</Kbd> + <Kbd>↵</Kbd> 送出 · 約 6 秒
+            </>
+          )}
         </span>
         <button
           type="submit"
@@ -130,7 +139,7 @@ export function HeroInput({
           title={quotaExhausted ? "今日配額已用完，明日 0 點重置" : undefined}
           className="rounded-md bg-brand-primary px-4 py-1.5 text-sm font-medium text-brand-greenText transition-colors hover:bg-brand-primaryDark disabled:cursor-not-allowed disabled:bg-text-muted disabled:text-surface-default"
         >
-          生成食譜 →
+          {streaming ? "生成中…" : "生成食譜 →"}
         </button>
       </div>
     </form>

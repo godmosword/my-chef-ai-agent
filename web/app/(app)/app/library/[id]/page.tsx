@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
 import { ArrowLeft, ChefHat } from "lucide-react";
 import { FLAGS } from "@/lib/flags";
-import { RecipeDetailHero } from "@/components/recipe/RecipeDetailHero";
+import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
 import { track } from "@/lib/analytics/track";
 
@@ -48,6 +48,27 @@ export default function RecipeDetailPage() {
     };
   }, [id]);
 
+  const headerActions =
+    recipe && (FLAGS.sharing || FLAGS.cookingMode) ? (
+      <>
+        {FLAGS.sharing && recipe.id && (
+          <RecipeShareMenu
+            recipeId={recipe.id}
+            initialToken={recipe.share_token}
+            initialPublishedAt={recipe.published_at}
+          />
+        )}
+        {FLAGS.cookingMode && recipe.id && (
+          <Button asChild size="lg" className="hidden md:inline-flex">
+            <Link href={`/app/library/${recipe.id}/cook`}>
+              <ChefHat className="size-5" aria-hidden />
+              進入烹飪模式
+            </Link>
+          </Button>
+        )}
+      </>
+    ) : null;
+
   return (
     <div className="space-y-6">
       <Button asChild variant="ghost" size="sm">
@@ -78,44 +99,14 @@ export default function RecipeDetailPage() {
       )}
 
       {recipe && !loading && (
-        <article>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <h1 className="font-serif text-3xl text-text-ink">
-              {recipe.recipe_name ?? "食譜"}
-            </h1>
-            <div className="flex shrink-0 flex-wrap gap-2">
-              {FLAGS.sharing && recipe.id && (
-                <RecipeShareMenu
-                  recipeId={recipe.id}
-                  initialToken={recipe.share_token}
-                  initialPublishedAt={recipe.published_at}
-                />
-              )}
-              {FLAGS.cookingMode && recipe.id && (
-                <Button asChild size="lg">
-                  <Link href={`/app/library/${recipe.id}/cook`}>
-                    <ChefHat className="size-5" aria-hidden />
-                    進入烹飪模式
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className="mt-4">
-            <RecipeDetailHero
-              recipe={recipe}
-              onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
-            />
-          </div>
-          {recipe.summary && (
-            <p className="mt-2 text-text-muted">{recipe.summary}</p>
-          )}
-          {recipe.cuisine && (
-            <p className="mt-1 text-sm text-text-muted">菜系：{recipe.cuisine}</p>
-          )}
+        <RecipeDetailLayout
+          recipe={recipe}
+          headerActions={headerActions}
+          onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
+        >
           {recipe.ingredients && recipe.ingredients.length > 0 && (
-            <section className="mt-6">
-              <h2 className="font-serif text-xl text-text-ink">食材</h2>
+            <section>
+              <h2 className="text-sm font-medium text-text-ink">食材</h2>
               <ul className="mt-2 list-inside list-disc text-text-body">
                 {recipe.ingredients.map((ing, i) => (
                   <li key={i}>{formatIngredient(ing)}</li>
@@ -124,8 +115,8 @@ export default function RecipeDetailPage() {
             </section>
           )}
           {recipe.steps && recipe.steps.length > 0 && (
-            <section className="mt-6">
-              <h2 className="font-serif text-xl text-text-ink">步驟</h2>
+            <section>
+              <h2 className="text-sm font-medium text-text-ink">步驟</h2>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-text-body">
                 {recipe.steps.map((step, i) => (
                   <li key={i}>{formatStep(step)}</li>
@@ -133,8 +124,7 @@ export default function RecipeDetailPage() {
               </ol>
             </section>
           )}
-          {/* TODO: version history — Prompt 4+ */}
-        </article>
+        </RecipeDetailLayout>
       )}
     </div>
   );
