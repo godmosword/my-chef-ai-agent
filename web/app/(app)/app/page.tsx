@@ -12,6 +12,7 @@ import { listRecipes } from "@/lib/api/recipes";
 import { recipeListItemToCard } from "@/lib/recipe-display";
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
+import { AppOnboardingOverlay } from "@/components/onboarding/AppOnboardingOverlay";
 
 export default function TodayPage() {
   const { recipe, streaming, error, generate, reset } = useRecipeGeneration();
@@ -39,6 +40,7 @@ export default function TodayPage() {
 
   return (
     <div className="space-y-8">
+      <AppOnboardingOverlay />
       <GreetingHeader />
 
       <section aria-label="生成食譜">
@@ -80,10 +82,10 @@ export default function TodayPage() {
           <EmptyState
             icon={<BookOpen className="size-10" />}
             title="還沒有食譜"
-            body="用上方輸入框描述今晚想吃的，或到 Library 瀏覽。"
+            body="用上方輸入框描述今晚想吃的，或到料理書瀏覽。"
             actions={
               <Button asChild>
-                <Link href="/app/library">前往 Library</Link>
+                <Link href="/app/library">前往料理書</Link>
               </Button>
             }
           />

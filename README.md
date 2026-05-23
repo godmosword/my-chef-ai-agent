@@ -33,6 +33,10 @@ pnpm dev:web
 
 **PWA 與離線（Prompt 6）**：production `next build` 會產生 `public/sw.js`（Serwist）。本機 dev 預設不註冊 SW。關閉：build 設 `ENABLE_PWA=false`，或 client 設 `NEXT_PUBLIC_ENABLE_PWA=false`。圖示：`pnpm -F @chef/web icons:generate`（需 pnpm）。離線可讀已快取食譜（最近 20 筆）；生成新食譜仍需連線。
 
+**公開分享（Prompt 7）**：預設開啟（`NEXT_PUBLIC_SHARING_ENABLED=0` 可關）。料理書詳情可建立公開連結 `/r/:token`；需設定 `NEXT_PUBLIC_SITE_URL`（分享與 OG）。Neon 需跑 migration `web/migrations/0005_public_sharing.sql`。
+
+**分析（Prompt 7）**：選填 `NEXT_PUBLIC_POSTHOG_KEY`（與 `NEXT_PUBLIC_POSTHOG_HOST`）；設 `NEXT_PUBLIC_ANALYTICS_ENABLED=0` 關閉。使用者在「我的」可關閉匿名事件。
+
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更

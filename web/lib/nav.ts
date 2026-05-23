@@ -17,21 +17,21 @@ export type NavItem = {
 };
 
 export const APP_NAV: NavItem[] = [
-  { href: "/app", label: "Today", icon: Home, enabled: true },
-  { href: "/app/library", label: "Library", icon: BookOpen, enabled: true },
+  { href: "/app", label: "今晚", icon: Home, enabled: true },
+  { href: "/app/library", label: "料理書", icon: BookOpen, enabled: true },
   {
     href: "/app/plan",
-    label: "Plan",
+    label: "週曆",
     icon: Calendar,
     enabled: FLAGS.mealPlan,
     soonMessage: "週曆規劃即將推出",
   },
   {
     href: "/app/shopping",
-    label: "Shopping",
+    label: "採買",
     icon: ShoppingCart,
     enabled: FLAGS.mealPlan,
     soonMessage: "購物清單即將推出",
   },
-  { href: "/app/me", label: "Me", icon: User, enabled: true },
+  { href: "/app/me", label: "我的", icon: User, enabled: true },
 ];

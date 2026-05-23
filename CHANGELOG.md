@@ -6,6 +6,26 @@
 
 ---
 
+## [Unreleased] — 公開分享 + 體驗收尾（Prompt 7）
+
+### Added
+
+- **公開分享**：migration `0005`；`POST/DELETE /api/recipes/:id/share`；公開讀取 `/api/r/:token`、瀏覽／按讚
+- **公開頁**：`/r/[token]`（SSR、noindex）、Edge `opengraph-image`（背景 `#FFFAF5`）
+- **設定**：`user_settings`；`GET/PUT /api/me/settings`；「我的」頁（主題、字級、語言、分析、刪帳戶）
+- **Analytics**：PostHog lazy（`posthog-js`）；`track()` 事件（生成、檢視、烹飪、分享、onboarding）
+- **體驗**：`not-found` / `error` / `quota-reached`；App onboarding v1；導覽文案（今晚／料理書／我的）
+- **SW**：`/api/r/*` 一律 NetworkOnly
+
+### Changed
+
+- **`@chef/shared-types`**：`PublicRecipe`、`UserSettings`；`RecipePayload` 含 `share_token` / `published_at`
+- **料理書詳情**：`RecipeShareMenu`（flag `NEXT_PUBLIC_SHARING_ENABLED`，預設開）
+
+規格：[`docs/superpowers/specs/2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)
+
+---
+
 ## [Unreleased] — PWA + 離線快取（Prompt 6）
 
 ### Added

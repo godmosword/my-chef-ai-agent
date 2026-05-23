@@ -25,6 +25,7 @@ import { CompletionScreen } from "./CompletionScreen";
 import { ExitConfirmDialog } from "./ExitConfirmDialog";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/primitives/Button";
+import { track } from "@/lib/analytics/track";
 
 export type CookingModeClientProps = {
   recipe: CookingRecipe;
@@ -70,6 +71,7 @@ export function CookingModeClient({
 
   useEffect(() => {
     enterFullscreen();
+    track("cooking_mode_entered", { recipe_id: recipe.id });
     const snap = loadCookingSession(recipe.id);
     if (snap && snap.currentStep > 0) {
       setResumePrompt(true);
@@ -81,6 +83,11 @@ export function CookingModeClient({
       exitFullscreen();
     };
   }, [recipe.id, enterFullscreen, exitFullscreen]);
+
+  useEffect(() => {
+    if (!completed) return;
+    track("cooking_mode_completed", { recipe_id: recipe.id });
+  }, [completed, recipe.id]);
 
   useEffect(() => {
     syncUrl(currentStep, voiceEnabled);

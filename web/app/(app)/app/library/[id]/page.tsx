@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
 import { ArrowLeft, ChefHat } from "lucide-react";
 import { FLAGS } from "@/lib/flags";
+import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
+import { track } from "@/lib/analytics/track";
 
 export default function RecipeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -27,6 +29,12 @@ export default function RecipeDetailPage() {
         if (!cancelled) {
           setRecipe(res.recipe);
           setFromCache(res.fromCache);
+          if (res.recipe.id) {
+            track("recipe_viewed", {
+              recipe_id: res.recipe.id,
+              source: res.fromCache ? "library_offline" : "library",
+            });
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "載入失敗");
@@ -44,7 +52,7 @@ export default function RecipeDetailPage() {
       <Button asChild variant="ghost" size="sm">
         <Link href="/app/library" className="inline-flex items-center gap-2">
           <ArrowLeft className="size-4" aria-hidden />
-          返回 Library
+          返回料理書
         </Link>
       </Button>
 
@@ -74,14 +82,23 @@ export default function RecipeDetailPage() {
             <h1 className="font-serif text-3xl text-text-ink">
               {recipe.recipe_name ?? "食譜"}
             </h1>
-            {FLAGS.cookingMode && recipe.id && (
-              <Button asChild size="lg" className="shrink-0">
-                <Link href={`/app/library/${recipe.id}/cook`}>
-                  <ChefHat className="size-5" aria-hidden />
-                  進入烹飪模式
-                </Link>
-              </Button>
-            )}
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {FLAGS.sharing && recipe.id && (
+                <RecipeShareMenu
+                  recipeId={recipe.id}
+                  initialToken={recipe.share_token}
+                  initialPublishedAt={recipe.published_at}
+                />
+              )}
+              {FLAGS.cookingMode && recipe.id && (
+                <Button asChild size="lg">
+                  <Link href={`/app/library/${recipe.id}/cook`}>
+                    <ChefHat className="size-5" aria-hidden />
+                    進入烹飪模式
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
           {recipe.summary && (
             <p className="mt-2 text-text-muted">{recipe.summary}</p>

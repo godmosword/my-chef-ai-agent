@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SerwistRegistration } from "@/components/providers/SerwistRegistration";
 import { OfflineProvider } from "@/components/providers/OfflineProvider";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
+import { SettingsBootstrap } from "@/components/providers/SettingsBootstrap";
 
 const notoSans = Noto_Sans_TC({
   subsets: ["latin"],
@@ -51,7 +53,10 @@ export default function RootLayout({
         <SerwistRegistration>
           <OfflineProvider>
             <ThemeProvider>
-              <ToastProvider>{children}</ToastProvider>
+              <PostHogProvider>
+                <SettingsBootstrap />
+                <ToastProvider>{children}</ToastProvider>
+              </PostHogProvider>
             </ThemeProvider>
           </OfflineProvider>
         </SerwistRegistration>

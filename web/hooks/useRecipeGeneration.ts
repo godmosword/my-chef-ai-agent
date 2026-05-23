@@ -5,6 +5,7 @@ import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
 import { isBrowserOnline } from "@/lib/offline/network";
 import { offlineGenerationMessage } from "@/lib/offline/recipes";
+import { track } from "@/lib/analytics/track";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };
@@ -58,6 +59,12 @@ export function useRecipeGeneration() {
           setRecipe({ ...partial });
         } else if (ev.type === "done") {
           setRecipe(ev.recipe);
+          if (ev.recipe.id) {
+            track("recipe_generated", {
+              recipe_id: ev.recipe.id,
+              source: "today",
+            });
+          }
         } else if (ev.type === "error") {
           setError(ev.message);
         }

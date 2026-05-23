@@ -18,6 +18,7 @@
 | 2026-05-23 | **Prompt 4 — Cooking Mode**：`/app/library/:id/cook`、計時器／語音／Wake Lock、`PATCH /api/recipes/:id`；`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`；規格 [`2026-05-23-cooking-mode.md`](docs/superpowers/specs/2026-05-23-cooking-mode.md)。 |
 | 2026-05-23 | **Prompt 5 — Meal Planner + Shopping**：`meal_plans`、週曆／採買頁、單位聚合；`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`；規格 [`2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)。 |
 | 2026-05-23 | **Prompt 6 — PWA + Offline**：Serwist SW、Dexie 快取、離線 Library／Cook、A2HS；規格 [`2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)。 |
+| 2026-05-23 | **Prompt 7 — Public Sharing + Polish**：公開 `/r/:token`、分享 API、設定／刪帳戶、PostHog、錯誤頁；規格 [`2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -55,6 +56,17 @@
 - [x] **Prompt 4 — Cooking Mode**（全螢幕烹飪、計時器、語音、評分 PATCH；flag `NEXT_PUBLIC_COOKING_MODE_ENABLED`）（2026-05-23）
 - [x] **Prompt 5 — Meal Planner + Shopping**（週曆、DnD、採買聚合、列印；flag `NEXT_PUBLIC_MEAL_PLAN_ENABLED`）（2026-05-23）
 - [x] **Prompt 6 — PWA + Offline**（Serwist、Dexie、離線 Library／Cook、manifest；build 預設產 SW）（2026-05-23）
+- [x] **Prompt 7 — Public Sharing + Polish**（公開頁、分享 lifecycle、設定、PostHog、文案；migration `0005`）（2026-05-23）
+
+### Prompt 7 後續（Sharing / Polish）
+
+> 規格：[`docs/superpowers/specs/2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)
+
+- [ ] **Neon**：執行 `0005_public_sharing.sql`
+- [ ] **Vercel**：`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_POSTHOG_KEY`（選填 `POSTHOG_HOST`）
+- [ ] **真機**：LINE／FB 連結預覽 OG；重新發布／撤銷 curl 或 UI 驗收
+- [ ] **Analytics**：PostHog 儀表板對照事件清單
+- [ ] **其餘埋點**：plan／shopping／favorite 等（可選）
 
 ### Prompt 6 後續（PWA / Offline）
 

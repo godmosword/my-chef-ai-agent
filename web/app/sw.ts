@@ -90,6 +90,10 @@ const serwist = new Serwist({
       handler: new NetworkOnly(),
     },
     {
+      matcher: ({ url }) => url.pathname.startsWith("/api/r/"),
+      handler: new NetworkOnly(),
+    },
+    {
       matcher: ({ url, request }) =>
         url.pathname.startsWith("/api/plan/shopping") && request.method === "GET",
       handler: new NetworkFirst({

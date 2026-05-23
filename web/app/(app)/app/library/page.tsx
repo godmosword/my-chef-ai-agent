@@ -66,7 +66,7 @@ export default function LibraryPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-2xl text-text-ink">Library</h1>
+        <h1 className="font-serif text-2xl text-text-ink">料理書</h1>
         <p className="mt-1 text-sm text-text-muted">你的食譜收藏與歷史</p>
       </header>
 
@@ -102,10 +102,10 @@ export default function LibraryPage() {
         <EmptyState
           icon={<BookOpen className="size-10" />}
           title="找不到食譜"
-          body="試試其他關鍵字，或回到 Today 生成新食譜。"
+          body="試試其他關鍵字，或回到今晚生成新食譜。"
           actions={
             <Link href="/app" className="text-sm text-brand-primary hover:underline">
-              前往 Today
+              前往今晚
             </Link>
           }
         />

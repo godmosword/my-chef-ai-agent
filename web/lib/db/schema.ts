@@ -31,6 +31,12 @@ export const recipes = pgTable(
     rating: smallint("rating"),
     cookCount: integer("cook_count").notNull().default(0),
     lastCookedAt: timestamp("last_cooked_at", { withTimezone: true }),
+    shareToken: text("share_token"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    /** FK enforced in migration 0005; avoid circular Drizzle ref here. */
+    publishedVersionId: uuid("published_version_id"),
+    viewCount: integer("view_count").notNull().default(0),
+    likeCount: integer("like_count").notNull().default(0),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -111,6 +117,53 @@ export const favoritesV2 = pgTable(
     pk: primaryKey({ columns: [t.userId, t.tenantId, t.recipeId] }),
   }),
 );
+
+export const sharedRecipeLikes = pgTable(
+  "shared_recipe_likes",
+  {
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    visitorId: text("visitor_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.recipeId, t.visitorId] }),
+    recipeIdx: index("idx_shared_likes_recipe").on(t.recipeId),
+  }),
+);
+
+export const sharedRecipeViews = pgTable(
+  "shared_recipe_views",
+  {
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    visitorId: text("visitor_id").notNull(),
+    viewedAt: timestamp("viewed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.recipeId, t.visitorId] }),
+    recipeIdx: index("idx_shared_views_recipe").on(t.recipeId),
+  }),
+);
+
+export const userSettings = pgTable("user_settings", {
+  userId: text("user_id").primaryKey(),
+  tenantId: text("tenant_id").notNull().default("default"),
+  theme: text("theme").notNull().default("system"),
+  fontScale: smallint("font_scale").notNull().default(100),
+  locale: text("locale").notNull().default("zh-Hant-TW"),
+  voiceEnabled: boolean("voice_enabled").notNull().default(false),
+  analyticsOpt: boolean("analytics_opt").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 export const mealPlans = pgTable(
   "meal_plans",

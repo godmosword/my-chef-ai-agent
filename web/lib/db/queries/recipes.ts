@@ -36,7 +36,7 @@ function rowToRecipePayload(
   version: typeof recipeVersions.$inferSelect,
   tags: RecipeTag[],
 ): RecipePayload {
-  return aiRecipeToPayload(
+  const payload = aiRecipeToPayload(
     {
       recipe_name: row.title,
       theme: row.cuisine ?? undefined,
@@ -50,6 +50,11 @@ function rowToRecipePayload(
     { id: row.id, version_no: version.versionNo },
     tags,
   );
+  return {
+    ...payload,
+    share_token: row.shareToken ?? null,
+    published_at: row.publishedAt?.toISOString() ?? null,
+  };
 }
 
 function parseKitchenTalk(
@@ -490,6 +495,27 @@ export async function patchRecipeMeta(
     .returning({ id: recipes.id });
 
   return result.length > 0;
+}
+
+export async function countRecipesForUser(
+  userId: string,
+  tenantId: string,
+): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+
+  const rows = await db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.userId, userId),
+        eq(recipes.tenantId, tenantId),
+        isNull(recipes.deletedAt),
+      ),
+    );
+
+  return rows.length;
 }
 
 export async function updateRecipeHeroUrl(
