@@ -6,6 +6,15 @@
 
 ---
 
+## [Unreleased] — DB fix: subscriptions table
+
+### Fixed
+
+- Migration `0007_ensure_phase1_tables.sql`：idempotent 補建 `subscriptions` 等 Phase 1 表（僅跑過 0003+ 的 DB）
+- 配額查詢在 `subscriptions` 缺失時 fallback 為 free plan 並 log 警告（避免 500）
+
+---
+
 ## [Unreleased] — Today 頁 Polish（Prompt 10）
 
 ### Added

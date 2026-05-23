@@ -1,0 +1,1 @@
+-- Intentionally empty: do not drop Phase 1 tables on rollback.

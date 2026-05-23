@@ -55,7 +55,7 @@ pnpm dev:web
 ## 資料庫
 
 ```bash
-# 初次或升級（0001 → 0003 Recipe Library → 0004/0005 → 0006 hero auto）
+# 初次或升級（**必須含 0001 Phase1**：subscriptions / usage_daily；或跑完整 migrate 至 0007）
 pnpm -F @chef/web db:migrate
 ```
 

@@ -24,6 +24,13 @@ function utcToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function isMissingRelationError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const code = "code" in err ? String((err as { code?: string }).code) : "";
+  const message = err instanceof Error ? err.message : String(err);
+  return code === "42P01" || message.includes('relation "subscriptions" does not exist');
+}
+
 async function getSubscription(
   userId: string,
   tenantId: string,
@@ -31,17 +38,27 @@ async function getSubscription(
   const sql = getSql();
   if (!sql) return { plan_key: "free", status: "inactive" };
 
-  const rows = await sql`
-    SELECT plan_key, status FROM subscriptions
-    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
-    LIMIT 1
-  `;
-  const row = asRows<{ plan_key?: string; status?: string }>(rows)[0];
-  if (!row) return { plan_key: "free", status: "inactive" };
-  return {
-    plan_key: row.plan_key || "free",
-    status: row.status || "inactive",
-  };
+  try {
+    const rows = await sql`
+      SELECT plan_key, status FROM subscriptions
+      WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+      LIMIT 1
+    `;
+    const row = asRows<{ plan_key?: string; status?: string }>(rows)[0];
+    if (!row) return { plan_key: "free", status: "inactive" };
+    return {
+      plan_key: row.plan_key || "free",
+      status: row.status || "inactive",
+    };
+  } catch (err) {
+    if (isMissingRelationError(err)) {
+      console.warn(
+        "[quota] subscriptions table missing; run pnpm -F @chef/web db:migrate (0001 or 0007)",
+      );
+      return { plan_key: "free", status: "inactive" };
+    }
+    throw err;
+  }
 }
 
 type DailyUsageRow = {
