@@ -6,6 +6,25 @@
 
 ---
 
+## [Unreleased] — PWA + 離線快取（Prompt 6）
+
+### Added
+
+- **PWA**：`manifest.webmanifest`、192/512 icons（`pnpm -F @chef/web icons:generate`）、`theme-color`、Apple Web App meta
+- **Serwist**：`app/sw.ts`（靜態 CacheFirst、GET recipes SWR、POST recipes NetworkOnly、導覽 NetworkFirst、fallback `/offline`）
+- **離線資料**：Dexie `chef-offline`（LRU 20 食譜、`mutations` 佇列）；`listRecipesWithOffline` / `fetchRecipeWithOffline`
+- **UI**：頂部離線列、`/offline` 頁、A2HS 橫幅（第 2 次造訪）、SW 更新提示
+- **烹飪模式**：Cook 改 client loader；評分失敗入 Dexie 佇列，上線自動 flush
+
+### Changed
+
+- **`web/middleware.ts`**：排除 `sw.js`、`manifest.webmanifest`、`icons/`
+- **`web/app/layout.tsx`**：Serwist + OfflineProvider 包裹
+
+規格：[`docs/superpowers/specs/2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)
+
+---
+
 ## [Unreleased] — 週曆規劃 + 採買清單（Prompt 5）
 
 ### Added

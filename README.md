@@ -31,6 +31,8 @@ pnpm dev:web
 
 **週曆與採買（Prompt 5）**：另設 `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`，側欄出現 Plan／Shopping（`/app/plan`、`/app/shopping`）。
 
+**PWA 與離線（Prompt 6）**：production `next build` 會產生 `public/sw.js`（Serwist）。本機 dev 預設不註冊 SW。關閉：build 設 `ENABLE_PWA=false`，或 client 設 `NEXT_PUBLIC_ENABLE_PWA=false`。圖示：`pnpm -F @chef/web icons:generate`（需 pnpm）。離線可讀已快取食譜（最近 20 筆）；生成新食譜仍需連線。
+
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更

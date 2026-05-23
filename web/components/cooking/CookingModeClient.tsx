@@ -9,7 +9,8 @@ import {
   loadCookingSession,
   saveCookingSession,
 } from "@/lib/cooking/session";
-import { enqueuePendingRating, dequeuePendingRating } from "@/lib/cooking/ratingQueue";
+import { dequeuePendingRating } from "@/lib/cooking/ratingQueue";
+import { enqueueMutation } from "@/lib/offline/mutations";
 import { useWakeLock } from "./hooks/useWakeLock";
 import { useFullscreen } from "./hooks/useFullscreen";
 import { useSpeech } from "./hooks/useSpeech";
@@ -139,10 +140,13 @@ export function CookingModeClient({
       await recordRecipeCook(recipe.id, { rating: stars, record_cook: true });
       dequeuePendingRating(recipe.id);
     } catch {
-      enqueuePendingRating({ recipeId: recipe.id, rating: stars, at: Date.now() });
+      await enqueueMutation({
+        type: "rating",
+        payload: { recipe_id: recipe.id, rating: stars },
+      });
       toast({
         title: "儲存評分失敗",
-        description: "已暫存，連線後可再試",
+        description: "已暫存，連線後會自動同步",
         variant: "error",
       });
     }

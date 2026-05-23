@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { getRecipe } from "@/lib/api/recipes";
+import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { Skeleton } from "@/components/primitives/Skeleton";
@@ -17,13 +17,17 @@ export default function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<RecipePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fromCache, setFromCache] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await getRecipe(id);
-        if (!cancelled) setRecipe(res.recipe);
+        const res = await fetchRecipeWithOffline(id);
+        if (!cancelled) {
+          setRecipe(res.recipe);
+          setFromCache(res.fromCache);
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "載入失敗");
       } finally {
@@ -55,6 +59,12 @@ export default function RecipeDetailPage() {
       {error && (
         <p className="text-danger" role="alert">
           {error}
+        </p>
+      )}
+
+      {fromCache && recipe && !loading && (
+        <p className="text-sm text-text-muted" role="status">
+          離線快取版本
         </p>
       )}
 

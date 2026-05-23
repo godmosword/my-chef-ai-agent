@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
+import { isBrowserOnline } from "@/lib/offline/network";
+import { offlineGenerationMessage } from "@/lib/offline/recipes";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };
@@ -37,6 +39,10 @@ export function useRecipeGeneration() {
   const [error, setError] = useState<string | null>(null);
 
   const generate = useCallback(async (body: GenerateRecipeRequest) => {
+    if (!isBrowserOnline()) {
+      setError(offlineGenerationMessage());
+      return;
+    }
     setStreaming(true);
     setError(null);
     setRecipe(null);

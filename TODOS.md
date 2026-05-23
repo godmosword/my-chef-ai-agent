@@ -17,6 +17,7 @@
 | 2026-05-23 | **Prompt 3 — Today + Library UI**：Tailwind、primitives、App shell、`/app/*` 頁面；`NEXT_PUBLIC_NEW_UI=1` 啟用；規格 [`2026-05-23-today-library-ui.md`](docs/superpowers/specs/2026-05-23-today-library-ui.md)。 |
 | 2026-05-23 | **Prompt 4 — Cooking Mode**：`/app/library/:id/cook`、計時器／語音／Wake Lock、`PATCH /api/recipes/:id`；`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`；規格 [`2026-05-23-cooking-mode.md`](docs/superpowers/specs/2026-05-23-cooking-mode.md)。 |
 | 2026-05-23 | **Prompt 5 — Meal Planner + Shopping**：`meal_plans`、週曆／採買頁、單位聚合；`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`；規格 [`2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)。 |
+| 2026-05-23 | **Prompt 6 — PWA + Offline**：Serwist SW、Dexie 快取、離線 Library／Cook、A2HS；規格 [`2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |
@@ -53,6 +54,17 @@
 - [x] **Prompt 3 — Today + Library UI**（Tailwind、primitives、patterns、`/app` 路由；flag `NEXT_PUBLIC_NEW_UI`）（2026-05-23）
 - [x] **Prompt 4 — Cooking Mode**（全螢幕烹飪、計時器、語音、評分 PATCH；flag `NEXT_PUBLIC_COOKING_MODE_ENABLED`）（2026-05-23）
 - [x] **Prompt 5 — Meal Planner + Shopping**（週曆、DnD、採買聚合、列印；flag `NEXT_PUBLIC_MEAL_PLAN_ENABLED`）（2026-05-23）
+- [x] **Prompt 6 — PWA + Offline**（Serwist、Dexie、離線 Library／Cook、manifest；build 預設產 SW）（2026-05-23）
+
+### Prompt 6 後續（PWA / Offline）
+
+> 規格：[`docs/superpowers/specs/2026-05-23-pwa-offline.md`](docs/superpowers/specs/2026-05-23-pwa-offline.md)
+
+- [ ] **真機驗收**：安裝 PWA、飛航模式 Library／Cook、評分同步、SW 更新（規格 §13）
+- [ ] **Vercel**：production build 勿設 `ENABLE_PWA=false`（除非刻意關閉）
+- [ ] **Library 收藏**：離線 optimistic + `favorite_*` mutations UI
+- [ ] **Lighthouse PWA**：補 screenshots、分數截圖存檔
+- [ ] **Background Sync**：若未來要 POST 食譜離線佇列，另開項（目前刻意 NetworkOnly）
 
 ### Prompt 5 後續（Meal Planner）
 

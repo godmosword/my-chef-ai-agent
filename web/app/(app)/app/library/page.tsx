@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { listRecipes, listFavorites } from "@/lib/api/recipes";
+import { listRecipesWithOffline } from "@/lib/offline/recipes";
 import { recipeListItemToCard } from "@/lib/recipe-display";
 import { SearchInput } from "@/components/patterns/SearchInput";
 import { FilterRail, type FilterOption } from "@/components/patterns/FilterRail";
@@ -18,26 +18,22 @@ export default function LibraryPage() {
   const [items, setItems] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [offlineOnly, setOfflineOnly] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [recipesRes, favRes] = await Promise.all([
-        listRecipes({
-          q: q.trim() || undefined,
-          cuisine: cuisine ?? undefined,
-          limit: 50,
-        }),
-        listFavorites(),
-      ]);
-      setItems(recipesRes.items.map(recipeListItemToCard));
-      const ids = new Set<string>();
-      for (const f of favRes.items) {
-        if (f.recipe_id) ids.add(f.recipe_id);
-      }
-      setFavoriteIds(ids);
+      const res = await listRecipesWithOffline({
+        q: q.trim() || undefined,
+        cuisine: cuisine ?? undefined,
+        limit: 50,
+      });
+      setItems(res.items);
+      setFavoriteIds(res.favoriteIds);
+      setOfflineOnly(res.offlineOnly);
     } catch {
       setItems([]);
+      setOfflineOnly(false);
     } finally {
       setLoading(false);
     }
@@ -73,6 +69,15 @@ export default function LibraryPage() {
         <h1 className="font-serif text-2xl text-text-ink">Library</h1>
         <p className="mt-1 text-sm text-text-muted">你的食譜收藏與歷史</p>
       </header>
+
+      {offlineOnly && (
+        <p
+          role="status"
+          className="rounded-lg border border-border-default bg-surface-muted px-3 py-2 text-sm text-text-muted"
+        >
+          離線模式：僅顯示已快取的食譜
+        </p>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchInput value={q} onChange={setQ} className="flex-1" />

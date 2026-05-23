@@ -1,10 +1,14 @@
 import { AppSidebar } from "./AppSidebar";
 import { AppTabBar } from "./AppTabBar";
 import { CommandBar } from "@/components/patterns/CommandBar";
+import { NetworkStatus } from "@/components/patterns/NetworkStatus";
+import { A2HSBanner } from "@/components/patterns/A2HSBanner";
+import { SwUpdateToast } from "@/components/patterns/SwUpdateToast";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
+      <NetworkStatus />
       <AppSidebar />
       <div className="flex min-h-screen flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border-default bg-surface-default/95 px-4 py-3 backdrop-blur">
@@ -16,6 +20,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <AppTabBar />
+      <A2HSBanner />
+      <SwUpdateToast />
     </div>
   );
 }
