@@ -23,7 +23,7 @@ export const MARKETING_SECTION = {
       quote: "冰箱有番茄、洋蔥跟雞蛋",
       prefill: "冰箱有番茄、洋蔥跟雞蛋",
       image: "/marketing/usecase-fridge-tomato-eggs.jpg",
-      gradient: ["#E5A33D", "#C8881A"] as [string, string],
+      gradient: ["#F5C4B3", "#D85A30"] as [string, string],
     },
     {
       id: "kids",
@@ -32,7 +32,7 @@ export const MARKETING_SECTION = {
       quote: "四歲孩子不吃辣的晚餐",
       prefill: "四歲孩子不吃辣的晚餐",
       image: "/marketing/usecase-kids-rice-bowl.jpg",
-      gradient: ["#F5C4B3", "#D85A30"] as [string, string],
+      gradient: ["#9FE1CB", "#1D9E75"] as [string, string],
     },
     {
       id: "guests",
@@ -41,7 +41,7 @@ export const MARKETING_SECTION = {
       quote: "週末 6 個人的晚餐",
       prefill: "週末 6 個人的晚餐",
       image: "/marketing/usecase-guest-beef-stew.jpg",
-      gradient: ["#B5D4F4", "#378ADD"] as [string, string],
+      gradient: ["#FAC775", "#BA7517"] as [string, string],
     },
   ],
   features: {

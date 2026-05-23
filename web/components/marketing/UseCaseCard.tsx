@@ -21,8 +21,6 @@ export function UseCaseCard({ item }: { item: UseCaseCardModel }) {
         <MarketingImage
           src={item.image}
           alt={item.title}
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
           fallbackGradient={item.gradient}
           fallbackLabel={item.label}
           className="absolute inset-0"

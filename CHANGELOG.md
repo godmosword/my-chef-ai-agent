@@ -6,6 +6,20 @@
 
 ---
 
+## [Unreleased] — DB repair + Marketing 占位
+
+### Fixed
+
+- Migration **`0008_ensure_user_settings_and_sharing.sql`**：idempotent 補建 `user_settings`（含 `hero_auto_generate`）、分享表、`meal_plans`
+- **`/api/me/settings`**：`user_settings` 缺表時回預設值並 log，不再 500
+- **Landing**：`/marketing/*` 預設漸層占位（不再 `next/image` 請求缺檔）；設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 可啟用靜態圖
+
+### Changed
+
+- 公開頁／行銷用例漸層色與規格對齊（番茄炒蛋、兒童餐、燉牛肉等）
+
+---
+
 ## [Unreleased] — Frontend Wave 4c（Plan / Shopping / Me）
 
 ### Added

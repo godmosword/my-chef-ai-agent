@@ -1,6 +1,8 @@
 # Marketing 靜態圖片
 
-將下列檔案放於此目錄後，Landing 會自動顯示真實圖（缺檔時顯示漸層占位）。
+預設 Landing 使用 **CSS 漸層占位**（不請求 `/marketing/*`，避免 400）。
+
+將下列檔案放於此目錄後，在 Vercel 設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 即改顯示真實圖。
 
 | 檔名 | 尺寸建議 |
 |------|----------|

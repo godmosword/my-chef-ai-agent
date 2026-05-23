@@ -13,6 +13,16 @@ describe("recipe library migration SQL", () => {
     expect(sql).toContain("CREATE TABLE IF NOT EXISTS usage_daily");
   });
 
+  it("0008 ensures user_settings idempotently", () => {
+    const sql = fs.readFileSync(
+      path.join(migrationsDir, "0008_ensure_user_settings_and_sharing.sql"),
+      "utf-8",
+    );
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS user_settings");
+    expect(sql).toContain("hero_auto_generate");
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS meal_plans");
+  });
+
   it("0003 is idempotent-friendly", () => {
     const sql = fs.readFileSync(
       path.join(migrationsDir, "0003_recipe_library.sql"),

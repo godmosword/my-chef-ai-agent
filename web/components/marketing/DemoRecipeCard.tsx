@@ -10,11 +10,9 @@ export function DemoRecipeCard() {
         <MarketingImage
           src={demo.image}
           alt={demo.imageAlt}
-          fill
-          sizes="280px"
+          className="absolute inset-0"
           fallbackGradient={["#E5A33D", "#C8881A"]}
           fallbackLabel="三杯雞"
-          priority
         />
         <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white backdrop-blur">
           {demo.cuisine}

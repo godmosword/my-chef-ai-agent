@@ -36,7 +36,13 @@
 
 ---
 
-## 零、部署後建議手動驗收（Web · Vercel）
+## 零、Neon 資料庫（部署後若 API 500）
+
+- [ ] **執行 migration**：`pnpm -F @chef/web db:migrate`（含 `0008` 補 `user_settings`、分享表、`meal_plans`）
+- [ ] 或 Neon SQL Editor 貼 `web/migrations/0008_ensure_user_settings_and_sharing.sql`
+- [ ] 確認：`SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1;`
+
+## 零點一、部署後建議手動驗收（Web · Vercel）
 
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
