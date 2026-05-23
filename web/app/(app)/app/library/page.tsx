@@ -11,6 +11,7 @@ import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { BookOpen } from "lucide-react";
+import { formatRelativeTime } from "@/lib/utils/format";
 
 export default function LibraryPage() {
   const [q, setQ] = useState("");
@@ -144,9 +145,7 @@ export default function LibraryPage() {
                   </td>
                   <td className="px-4 py-3 text-text-muted">{r.cuisine ?? "—"}</td>
                   <td className="px-4 py-3 text-text-muted">
-                    {r.lastCookedAt
-                      ? new Date(r.lastCookedAt).toLocaleDateString("zh-TW")
-                      : "—"}
+                    {r.lastCookedAt ? formatRelativeTime(r.lastCookedAt) : "—"}
                   </td>
                 </tr>
               ))}
