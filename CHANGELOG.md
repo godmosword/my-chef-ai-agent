@@ -6,6 +6,23 @@
 
 ---
 
+## [Unreleased] — Today 頁 Polish（Prompt 10）
+
+### Added
+
+- **Hero 輸入區**：quick prompts（6 個）、⌘/Ctrl+Enter 送出、配額用完 disabled + tooltip
+- **空狀態引導**：`EmptyStateOnboarding`（3 個 starter 情境）
+- **`Kbd` primitive**、 `lib/prompts/quick.ts` / `starter.ts`
+
+### Changed
+
+- **Greeting**：serif 標題放大 + 時段 subtitle（日期 · 問候副標）
+- **最近**：「最近做過」14px +「看全部」連結；卡片 hover 陰影
+- **配額**：`QuotaIndicator` sidebar 樣式（3px bar、今日配額標題）；nav active 更明顯
+- **進場**：Today `page-enter` fade-in
+
+---
+
 ## [Unreleased] — Marketing Landing（Prompt 9）
 
 ### Added
