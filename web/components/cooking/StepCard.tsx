@@ -19,7 +19,7 @@ export function StepCard({ step, stepIndex, totalSteps, swipeRef }: StepCardProp
       <p className="text-lg text-text-muted">
         {stepIndex + 1} / {totalSteps}
       </p>
-      <p className="mt-4 font-serif text-[1.75rem] leading-snug text-text-ink md:text-[2rem]">
+      <p className="mt-4 font-serif text-2xl leading-snug text-text-ink md:text-3xl">
         {step.text}
       </p>
       {step.tip && (

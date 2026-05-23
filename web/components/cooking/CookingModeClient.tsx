@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CookingRecipe } from "@/lib/cooking/types";
 import { recordRecipeCook } from "@/lib/api/recipes";
@@ -55,6 +55,16 @@ export function CookingModeClient({
   const [showExit, setShowExit] = useState(false);
   const [flash, setFlash] = useState(false);
   const [resumePrompt, setResumePrompt] = useState(false);
+  const recordToastShown = useRef(false);
+
+  const showRecordToast = useCallback(() => {
+    if (recordToastShown.current) return;
+    recordToastShown.current = true;
+    toast({
+      title: "已記錄完成",
+      description: "這道菜已加入你的料理書紀錄",
+    });
+  }, [toast]);
 
   const syncUrl = useCallback(
     (step: number, voice: boolean) => {
@@ -87,7 +97,8 @@ export function CookingModeClient({
   useEffect(() => {
     if (!completed) return;
     track("cooking_mode_completed", { recipe_id: recipe.id });
-  }, [completed, recipe.id]);
+    showRecordToast();
+  }, [completed, recipe.id, showRecordToast]);
 
   useEffect(() => {
     syncUrl(currentStep, voiceEnabled);
@@ -146,6 +157,7 @@ export function CookingModeClient({
     try {
       await recordRecipeCook(recipe.id, { rating: stars, record_cook: true });
       dequeuePendingRating(recipe.id);
+      showRecordToast();
     } catch {
       await enqueueMutation({
         type: "rating",

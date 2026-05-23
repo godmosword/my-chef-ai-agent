@@ -84,7 +84,19 @@ flowchart TD
   Favorite -->|partial| FavoritePartial[SkipBrokenItemsShowValidOnes]
 ```
 
-## 5) Acceptance Checklist
+## 5) Web App 表面（Next.js `/app`）
+
+| 表面 | 主要路徑 | 視覺與互動基線 |
+|------|----------|----------------|
+| **Today** | `/app` | Hero 輸入 + 串流結果主圖 polling；區塊標題用 `SectionHeader`（14px medium） |
+| **Library** | `/app/library`, `/app/library/[id]` | 卡片／表格一致；詳情 hero-first + 手機底部烹飪 CTA |
+| **Cook** | `/app/library/[id]/cook` | `.cooking-mode` 深色廚房主題；步驟大字 serif；完成 toast |
+| **Public** | `/r/[token]` | 與詳情相同的 hero + 食材／步驟區塊結構（無 polling） |
+| **Plan / Shopping / Me** | `/app/plan`, `/app/shopping`, `/app/me` | 與 Today 相同 token／邊框；空週曆格虛線底 |
+
+錯誤與配額：429／額度文案需附可執行連結（如「查看配額」→ `/app/me`）。
+
+## 6) Acceptance Checklist
 
 - 五大功能皆有 loading/empty/error/success/partial 定義。
 - 任一失敗都能看到可執行下一步（重試/返回/保留內容）。

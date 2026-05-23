@@ -6,6 +6,36 @@
 
 ---
 
+## [Unreleased] — Frontend Wave 4c（Plan / Shopping / Me）
+
+### Added
+
+- **`SectionHeader`**：Today「最近做過」、Plan「本週餐點」共用區塊標題
+
+### Changed
+
+- **Plan**：空格子虛線邊框 + `surface-muted` 底
+- **Shopping**：分類標題 14px medium；清單列 `border-b` 樣式
+- **Me**：區塊標題一致；配額提示文案
+- **App layout**：`page-enter` 包裝全 `/app` 子頁
+- **`docs/UX_PLAYBOOK.md`**：§ Web App 表面（Today / Library / Cook / Public / Plan）
+
+---
+
+## [Unreleased] — Frontend Wave 4b（烹飪 + 公開分享）
+
+### Added
+
+- **`RecipeDetailSections`**：食材／步驟區塊（server-safe），詳情與公開頁共用
+
+### Changed
+
+- **烹飪模式**：步驟文字 `text-2xl`／`md:text-3xl`；步驟計時按鈕 `brand-primary`；完成／評分成功 toast「已記錄完成」
+- **公開頁 `/r/:token`**：hero-first（`next/image`）、serif 標題、`Chip`、14px 區塊標題；有主圖時 OG 用 `hero_url`
+- **料理書列表**：表格「最近」欄改相對時間（與卡片一致）
+
+---
+
 ## [Unreleased] — Frontend Wave 4a（首次生成 UX）
 
 ### Added

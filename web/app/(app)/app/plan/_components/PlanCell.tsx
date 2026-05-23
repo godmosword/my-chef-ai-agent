@@ -33,7 +33,10 @@ export function PlanCell({ slot, isToday, isPast, onActivate }: PlanCellProps) {
     <div
       ref={setRef}
       className={cn(
-        "relative min-h-[4.5rem] rounded-lg border border-border-default p-2 transition-colors",
+        "relative min-h-[4.5rem] rounded-lg border p-2 transition-colors",
+        slot.filled
+          ? "border-border-default bg-surface-default"
+          : "border-dashed border-border-default bg-surface-muted",
         isToday && "ring-1 ring-brand-primary",
         isPast && "opacity-60",
         isOver && "border-brand-primary bg-brand-primaryLight/40",

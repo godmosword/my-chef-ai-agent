@@ -52,10 +52,10 @@ export function ShoppingListView({ items, groups, printMode }: ShoppingListViewP
           key={section.cat}
           className={cn("mb-6", printMode && "shopping-print-group")}
         >
-          <h2 className="mb-2 font-serif text-lg text-text-ink">
+          <h2 className="mb-2 text-sm font-medium text-text-ink">
             {section.label}（{section.items.length} 項）
           </h2>
-          <ul className="space-y-2">
+          <ul className="divide-y divide-border-default rounded-lg border border-border-default bg-surface-default">
             {section.items.map((item) => {
               const key = `${item.name}-${formatItemAmount(item)}`;
               const isChecked = checked[key];
@@ -63,7 +63,7 @@ export function ShoppingListView({ items, groups, printMode }: ShoppingListViewP
                 <li
                   key={key}
                   className={cn(
-                    "rounded-lg border border-border-default p-3",
+                    "border-b border-border-default p-3 last:border-b-0",
                     isChecked && !printMode && "opacity-50",
                   )}
                 >

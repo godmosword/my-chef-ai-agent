@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
-import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
 import { ArrowLeft, ChefHat } from "lucide-react";
 import { FLAGS } from "@/lib/flags";
 import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
+import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
 import { track } from "@/lib/analytics/track";
 
@@ -104,26 +104,10 @@ export default function RecipeDetailPage() {
           headerActions={headerActions}
           onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
         >
-          {recipe.ingredients && recipe.ingredients.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-text-ink">食材</h2>
-              <ul className="mt-2 list-inside list-disc text-text-body">
-                {recipe.ingredients.map((ing, i) => (
-                  <li key={i}>{formatIngredient(ing)}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-          {recipe.steps && recipe.steps.length > 0 && (
-            <section>
-              <h2 className="text-sm font-medium text-text-ink">步驟</h2>
-              <ol className="mt-2 list-decimal space-y-2 pl-5 text-text-body">
-                {recipe.steps.map((step, i) => (
-                  <li key={i}>{formatStep(step)}</li>
-                ))}
-              </ol>
-            </section>
-          )}
+          <RecipeDetailSections
+            ingredients={recipe.ingredients}
+            steps={recipe.steps}
+          />
         </RecipeDetailLayout>
       )}
     </div>

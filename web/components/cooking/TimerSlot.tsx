@@ -134,9 +134,9 @@ export function TimerSlot({
       )}
       {canStartStepTimer && (
         <Button
-          variant="secondary"
+          variant="primary"
           size="sm"
-          className="mb-3 w-full"
+          className="mb-3 w-full bg-brand-primary text-brand-greenText hover:bg-brand-primaryDark"
           onClick={() =>
             startTimer(`步驟 ${currentStep.index + 1}`, (currentStep.timerSeconds ?? 0) * 1000)
           }
