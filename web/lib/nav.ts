@@ -6,6 +6,7 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
+import { FLAGS } from "@/lib/flags";
 
 export type NavItem = {
   href: string;
@@ -22,14 +23,14 @@ export const APP_NAV: NavItem[] = [
     href: "/app/plan",
     label: "Plan",
     icon: Calendar,
-    enabled: false,
+    enabled: FLAGS.mealPlan,
     soonMessage: "週曆規劃即將推出",
   },
   {
     href: "/app/shopping",
     label: "Shopping",
     icon: ShoppingCart,
-    enabled: false,
+    enabled: FLAGS.mealPlan,
     soonMessage: "購物清單即將推出",
   },
   { href: "/app/me", label: "Me", icon: User, enabled: true },

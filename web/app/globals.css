@@ -99,3 +99,43 @@
     display: none;
   }
 }
+
+/* Shopping list print */
+@media print {
+  aside,
+  header,
+  nav,
+  .shopping-screen-only {
+    display: none !important;
+  }
+
+  .shopping-print-only {
+    display: block !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .shopping-print-title {
+    font-family: var(--font-serif, serif);
+    font-size: 24pt;
+    margin-bottom: 12pt;
+  }
+
+  .shopping-print-group {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .shopping-print-root {
+    color: #000;
+    background: #fff;
+  }
+
+  .shopping-print-root input[type="checkbox"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -29,6 +29,8 @@ pnpm dev:web
 
 **烹飪模式（Prompt 4）**：另設 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`，於食譜詳情頁顯示「進入烹飪模式」（路由 `/app/library/:id/cook` 亦可直連）。
 
+**週曆與採買（Prompt 5）**：另設 `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`，側欄出現 Plan／Shopping（`/app/plan`、`/app/shopping`）。
+
 部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
 
 ### Design tokens 變更
@@ -59,7 +61,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test   # Vitest（5 tests：recipe payload + migration SQL）
+pnpm -F @chef/web test   # Vitest（30 tests：recipe、migration、cooking、meal-plan 單位／解析）
 ```
 
 ---

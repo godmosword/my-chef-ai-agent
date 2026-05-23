@@ -12,6 +12,7 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -108,6 +109,45 @@ export const favoritesV2 = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.userId, t.tenantId, t.recipeId] }),
+  }),
+);
+
+export const mealPlans = pgTable(
+  "meal_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    tenantId: text("tenant_id").notNull().default("default"),
+    planDate: date("plan_date").notNull(),
+    slot: text("slot").notNull(),
+    recipeId: uuid("recipe_id").references(() => recipes.id, {
+      onDelete: "set null",
+    }),
+    recipeVersionId: uuid("recipe_version_id").references(
+      () => recipeVersions.id,
+      { onDelete: "set null" },
+    ),
+    servings: integer("servings").notNull().default(2),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userDateSlotUnq: uniqueIndex("meal_plans_user_date_slot_unq").on(
+      t.userId,
+      t.tenantId,
+      t.planDate,
+      t.slot,
+    ),
+    userWeek: index("idx_meal_plans_user_week").on(
+      t.userId,
+      t.tenantId,
+      t.planDate,
+    ),
   }),
 );
 

@@ -12,6 +12,7 @@ export type InputProps = {
   disabled?: boolean;
   type?: "text" | "search";
   className?: string;
+  onBlur?: () => void;
 };
 
 export function Input({
@@ -24,6 +25,7 @@ export function Input({
   disabled,
   type = "text",
   className,
+  onBlur,
 }: InputProps) {
   const inputId = id ?? label?.replace(/\s/g, "-").toLowerCase();
   return (
@@ -38,6 +40,7 @@ export function Input({
         disabled={disabled}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className={cn(
           "w-full rounded-lg border border-border-default bg-surface-default px-3 py-2 text-text-ink placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary",
           error && "border-danger",

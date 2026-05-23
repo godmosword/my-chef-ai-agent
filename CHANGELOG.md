@@ -6,6 +6,23 @@
 
 ---
 
+## [Unreleased] — 週曆規劃 + 採買清單（Prompt 5）
+
+### Added
+
+- **週曆規劃**（`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`）：`/app/plan?week_of=`（21 格、週一 floor）、`/app/shopping?week_of=`（聚合採買、瀏覽器列印）
+- **API**：`GET /api/plan`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`
+- **資料**：migration `0004_meal_plans`；`@chef/shared-types` 單位歸併與 `shopping_list` 解析
+- **拖拉**：`@dnd-kit/core` 跨格移動食譜
+
+### Changed
+
+- **`web/app/globals.css`**：採買清單 `@media print` 樣式
+
+規格：[`docs/superpowers/specs/2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)
+
+---
+
 ## [Unreleased] — Cooking Mode（Prompt 4）
 
 ### Added
