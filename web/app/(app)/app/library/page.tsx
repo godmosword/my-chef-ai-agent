@@ -10,9 +10,21 @@ import { ViewToggle, type LibraryView } from "@/components/patterns/ViewToggle";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
+import { appPrefillHref } from "@/lib/marketing/content";
+
+const INSPIRATION: Array<{ label: string; prefill: string }> = [
+  { label: "清冰箱", prefill: "冰箱剩下這些食材，幫我想一道菜" },
+  { label: "30 分鐘內", prefill: "30 分鐘內可以做好的家常晚餐" },
+  { label: "兒童餐", prefill: "小孩會喜歡、不辣的兒童晚餐" },
+  { label: "帶便當", prefill: "適合明天帶便當、放冷不變難吃的菜" },
+  { label: "招待客人", prefill: "週末 6 個人的晚餐，看起來體面一點" },
+  { label: "一鍋料理", prefill: "一個鍋子煮完的懶人料理" },
+  { label: "低油低鹽", prefill: "低油、低鹽、適合長輩的清淡菜" },
+  { label: "素食", prefill: "純素、沒有蛋奶的一道主菜" },
+];
 
 export default function LibraryPage() {
   const [q, setQ] = useState("");
@@ -72,6 +84,28 @@ export default function LibraryPage() {
         <h1 className="font-serif text-2xl text-text-ink">料理書</h1>
         <p className="mt-1 text-sm text-text-muted">你的食譜收藏與歷史</p>
       </header>
+
+      <section
+        aria-label="找食譜的靈感"
+        className="rounded-xl border border-border-default bg-surface-muted/40 p-3"
+      >
+        <div className="flex items-center gap-2 text-xs text-text-muted">
+          <Sparkles className="size-4 text-brand-primary" aria-hidden />
+          <span>沒想法？試試這些情境，會帶你去今晚頁直接生成</span>
+        </div>
+        <ul className="mt-2 flex flex-wrap gap-2" role="list">
+          {INSPIRATION.map((item) => (
+            <li key={item.label}>
+              <Link
+                href={appPrefillHref(item.prefill)}
+                className="inline-flex items-center rounded-full border border-border-default bg-surface-default px-3 py-1 text-xs text-text-body transition-colors hover:border-brand-primary hover:bg-brand-primaryLight hover:text-brand-primaryDark"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {offlineOnly && (
         <p
