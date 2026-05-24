@@ -28,13 +28,26 @@ export function listItemToPayload(row: RecipeWithLatestVersion): RecipePayload {
   };
 }
 
+/**
+ * Strip heavy fields (e.g. base64 data URL hero) before caching.
+ * IndexedDB cache is a fallback for offline reading — the Postgres
+ * row is the source of truth for hero_url. Storing 200KB+ data URLs
+ * per recipe makes the cache write block the main thread for seconds.
+ */
+function stripHeavy(payload: RecipePayload): RecipePayload {
+  if (payload.photo_url?.startsWith("data:")) {
+    return { ...payload, photo_url: undefined };
+  }
+  return payload;
+}
+
 export async function cacheRecipePayload(payload: RecipePayload): Promise<void> {
   const db = getOfflineDb();
   if (!db || !payload.id) return;
   const entry: OfflineRecipe = {
     id: payload.id,
     user_id: OFFLINE_DEVICE_USER,
-    data: payload,
+    data: stripHeavy(payload),
     cached_at: Date.now(),
   };
   await db.recipes.put(entry);
@@ -44,10 +57,23 @@ export async function cacheRecipePayload(payload: RecipePayload): Promise<void> 
 export async function cacheRecipeListItems(
   items: RecipeWithLatestVersion[],
 ): Promise<void> {
+  const db = getOfflineDb();
+  if (!db) return;
+  const now = Date.now();
+  const entries: OfflineRecipe[] = [];
   for (const row of items) {
     const payload = listItemToPayload(row);
-    if (payload.id) await cacheRecipePayload(payload);
+    if (!payload.id) continue;
+    entries.push({
+      id: payload.id,
+      user_id: OFFLINE_DEVICE_USER,
+      data: stripHeavy(payload),
+      cached_at: now,
+    });
   }
+  if (entries.length === 0) return;
+  await db.recipes.bulkPut(entries);
+  await pruneOfflineRecipes();
 }
 
 async function pruneOfflineRecipes(): Promise<void> {

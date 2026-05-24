@@ -22,7 +22,7 @@ export async function fetchRecipeWithOffline(
   if (isBrowserOnline()) {
     try {
       const res = await getRecipe(id);
-      await cacheRecipePayload(res.recipe);
+      void cacheRecipePayload(res.recipe).catch(() => {});
       return { recipe: res.recipe, fromCache: false };
     } catch (e) {
       const cached = await getOfflineRecipe(id);
@@ -56,7 +56,7 @@ export async function listRecipesWithOffline(params?: {
         }),
         listFavorites(),
       ]);
-      await cacheRecipeListItems(recipesRes.items);
+      void cacheRecipeListItems(recipesRes.items).catch(() => {});
       const ids = new Set<string>();
       for (const f of favRes.items) {
         if (f.recipe_id) ids.add(f.recipe_id);
