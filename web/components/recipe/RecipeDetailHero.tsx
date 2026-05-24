@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import type { HeroStatus, RecipePayload } from "@chef/shared-types";
 import { HeroPlaceholder } from "@/components/recipe/HeroPlaceholder";
 import { Button } from "@/components/primitives/Button";
@@ -63,14 +64,23 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
     <div className="space-y-3">
       <div className="relative aspect-[16/9] w-full max-w-[480px] overflow-hidden rounded-xl border border-border-default">
         {heroStatus === "ready" && heroUrl ? (
-          <Image
-            src={heroUrl}
-            alt={recipe.recipe_name ?? "主圖"}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 480px"
-            unoptimized
-          />
+          <>
+            <Image
+              src={heroUrl}
+              alt={recipe.recipe_name ?? "主圖"}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 480px"
+              unoptimized
+            />
+            <span
+              title="主圖已永久儲存到你的料理書，不會自動消失"
+              className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-green/85 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm backdrop-blur"
+            >
+              <Check className="size-3" aria-hidden />
+              已永久保存
+            </span>
+          </>
         ) : (
           <HeroPlaceholder status={heroStatus} cuisine={recipe.cuisine ?? recipe.theme} />
         )}

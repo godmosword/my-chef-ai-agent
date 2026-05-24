@@ -40,7 +40,17 @@ export function RecipeCard({
       )}
     >
       <Link href={href} className="flex h-full flex-col focus:outline-none">
-        <div className="relative h-28 shrink-0 overflow-hidden bg-surface-muted">
+        <div
+          className="relative h-28 shrink-0 overflow-hidden bg-surface-muted"
+          title={
+            recipe.heroUrl &&
+            (recipe.heroStatus === "ready" ||
+              recipe.heroUrl.startsWith("/") ||
+              recipe.heroUrl.startsWith("data:"))
+              ? "主圖已永久儲存"
+              : undefined
+          }
+        >
           {recipe.heroUrl &&
           (recipe.heroStatus === "ready" ||
             recipe.heroUrl.startsWith("/") ||
