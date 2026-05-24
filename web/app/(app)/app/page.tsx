@@ -9,6 +9,7 @@ import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyStateOnboarding } from "@/components/patterns/EmptyStateOnboarding";
+import { InspirationCard } from "@/components/patterns/InspirationCard";
 import { Button } from "@/components/primitives/Button";
 import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
 import { listRecipes } from "@/lib/api/recipes";
@@ -48,57 +49,65 @@ export default function TodayPage() {
     <div className="space-y-8">
       <GreetingHeader />
 
-      <section aria-label="生成食譜">
-        <Suspense fallback={null}>
-          <PrefillHeroInput
-            disabled={streaming}
-            streaming={streaming}
-            onSubmit={(message) => generate({ message })}
-          />
-        </Suspense>
-        {(recipe || streaming || error) && (
-          <div className="mt-4 space-y-3">
-            <StreamingRecipe recipe={recipe} streaming={streaming} error={error} />
-            {recipe?.id && !streaming && (
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="secondary" size="sm">
-                  <Link href={`/app/library/${recipe.id}`}>查看詳情</Link>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={reset}>
-                  再來一道
-                </Button>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="space-y-8 min-w-0">
+          <section aria-label="生成食譜">
+            <Suspense fallback={null}>
+              <PrefillHeroInput
+                disabled={streaming}
+                streaming={streaming}
+                onSubmit={(message) => generate({ message })}
+              />
+            </Suspense>
+            {(recipe || streaming || error) && (
+              <div className="mt-4 space-y-3">
+                <StreamingRecipe recipe={recipe} streaming={streaming} error={error} />
+                {recipe?.id && !streaming && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild variant="secondary" size="sm">
+                      <Link href={`/app/library/${recipe.id}`}>查看詳情</Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={reset}>
+                      再來一道
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-      </section>
+          </section>
 
-      <section className="mt-7" aria-label="最近食譜">
-        <SectionHeader title="最近做過" actionHref="/app/library" />
-        {loadingRecent ? (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <RecipeCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : recent.length === 0 ? (
-          <EmptyStateOnboarding
-            disabled={streaming}
-            onPick={(message) => generate({ message })}
-          />
-        ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {recent.map((r) => (
-              <RecipeCardWithHero
-                key={r.id}
-                recipe={r}
-                href={`/app/library/${r.id}`}
-                compact
+          <section aria-label="最近食譜">
+            <SectionHeader title="最近做過" actionHref="/app/library" />
+            {loadingRecent ? (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <RecipeCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : recent.length === 0 ? (
+              <EmptyStateOnboarding
+                disabled={streaming}
+                onPick={(message) => generate({ message })}
               />
-            ))}
-          </div>
-        )}
-      </section>
+            ) : (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {recent.map((r) => (
+                  <RecipeCardWithHero
+                    key={r.id}
+                    recipe={r}
+                    href={`/app/library/${r.id}`}
+                    compact
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="lg:sticky lg:top-4 lg:self-start">
+          <InspirationCard />
+        </div>
+      </div>
     </div>
   );
 }
