@@ -1,31 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
+import { scaleIngredient } from "@/lib/recipe-scale";
 import { cn } from "@/lib/utils/cn";
 
 type RecipeDetailSectionsProps = {
   ingredients?: unknown[] | null;
   steps?: unknown[] | null;
+  servings?: number | null;
 };
 
 const STEPS_PREVIEW = 2;
+const SCALE_OPTIONS = [0.5, 1, 2, 4] as const;
 
-export function RecipeDetailSections({ ingredients, steps }: RecipeDetailSectionsProps) {
+export function RecipeDetailSections({
+  ingredients,
+  steps,
+  servings,
+}: RecipeDetailSectionsProps) {
   const ingList = ingredients ?? [];
   const stepList = steps ?? [];
   const [stepsExpanded, setStepsExpanded] = useState(false);
+  const [scale, setScale] = useState(1);
   const canCollapse = stepList.length > STEPS_PREVIEW;
   const visibleSteps = stepsExpanded ? stepList : stepList.slice(0, STEPS_PREVIEW);
+
+  const scaledIngredients = useMemo(
+    () => ingList.map((ing) => scaleIngredient(ing, scale)),
+    [ingList, scale],
+  );
+  const baseServings = servings && servings > 0 ? servings : null;
+  const scaledServings = baseServings ? baseServings * scale : null;
 
   return (
     <>
       {ingList.length > 0 && (
         <section>
-          <h2 className="font-serif text-lg text-text-ink">食材</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-serif text-lg text-text-ink">
+              食材
+              {scaledServings ? (
+                <span className="ml-2 text-sm text-text-muted">
+                  · 約 {formatServings(scaledServings)} 人份
+                </span>
+              ) : null}
+            </h2>
+            <div className="flex gap-1" role="group" aria-label="調整份量">
+              {SCALE_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setScale(opt)}
+                  aria-pressed={scale === opt}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs tabular-nums transition-colors",
+                    scale === opt
+                      ? "bg-brand-primary text-brand-greenText"
+                      : "bg-surface-muted text-text-muted hover:bg-surface-default",
+                  )}
+                >
+                  {opt}x
+                </button>
+              ))}
+            </div>
+          </div>
           <ul className="mt-2 list-inside list-disc text-text-body">
-            {ingList.map((ing, i) => (
+            {scaledIngredients.map((ing, i) => (
               <li key={i}>{formatIngredient(ing)}</li>
             ))}
           </ul>
@@ -73,4 +115,9 @@ export function RecipeDetailSections({ ingredients, steps }: RecipeDetailSection
       )}
     </>
   );
+}
+
+function formatServings(n: number): string {
+  if (Math.abs(n - Math.round(n)) < 1e-9) return String(Math.round(n));
+  return n.toFixed(1).replace(/\.?0+$/, "");
 }

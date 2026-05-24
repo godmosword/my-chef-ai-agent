@@ -141,6 +141,7 @@ export default function RecipeDetailPage() {
           <RecipeDetailSections
             ingredients={recipe.ingredients}
             steps={recipe.steps}
+            servings={recipe.servings}
           />
         </RecipeDetailLayout>
       )}
