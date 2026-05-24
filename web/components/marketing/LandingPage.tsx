@@ -1,8 +1,6 @@
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { Hero } from "@/components/marketing/Hero";
 import { UseCaseGrid } from "@/components/marketing/UseCaseGrid";
-import { FeatureSplit } from "@/components/marketing/FeatureSplit";
-import { FeaturePills } from "@/components/marketing/FeaturePills";
 import { Footer } from "@/components/marketing/Footer";
 
 const sectionY = "py-[clamp(3rem,8vw,5rem)]";
@@ -17,12 +15,6 @@ export function LandingPage() {
         </div>
         <div className={sectionY}>
           <UseCaseGrid />
-        </div>
-        <div className={sectionY}>
-          <FeatureSplit />
-        </div>
-        <div className={sectionY}>
-          <FeaturePills />
         </div>
         <Footer />
       </main>
