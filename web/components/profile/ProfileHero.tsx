@@ -52,7 +52,7 @@ export function ProfileHero({
           {initial}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs uppercase tracking-[0.18em] text-brand-green">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-brand-green">
             {title}
           </p>
           <h2 className="mt-1 truncate font-serif text-2xl text-text-ink">

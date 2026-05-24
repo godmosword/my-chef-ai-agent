@@ -58,7 +58,7 @@ export function AppSidebar() {
           <p className="truncate font-serif text-lg leading-tight text-text-ink">
             職人料理
           </p>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-brand-green">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-brand-green">
             你的私人料理大腦
           </p>
         </div>
@@ -263,7 +263,7 @@ function MeProfileChip({
         >
           {displayName}
         </p>
-        <p className="text-[11px] text-text-body">{subline}</p>
+        <p className="text-xs text-text-body">{subline}</p>
       </div>
     </Link>
   );

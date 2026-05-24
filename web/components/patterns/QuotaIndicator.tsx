@@ -32,7 +32,7 @@ export function QuotaIndicator({ refreshIntervalMs = 30_000 }: { refreshInterval
   return (
     <div className="space-y-3" aria-label="你的今日配額">
       <div title="免費方案的個人帳號每日上限，凌晨重置">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-text-muted">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted">
           你的今日配額
         </p>
         <p className="mt-0.5 text-[10px] text-text-muted/80">
@@ -42,7 +42,7 @@ export function QuotaIndicator({ refreshIntervalMs = 30_000 }: { refreshInterval
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs text-text-body">文字</span>
-          <span className="text-[11px] text-text-muted">
+          <span className="text-xs tabular-nums text-text-muted">
             {text.remaining} / {text.limit}
           </span>
         </div>
@@ -51,7 +51,7 @@ export function QuotaIndicator({ refreshIntervalMs = 30_000 }: { refreshInterval
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs text-text-body">圖片</span>
-          <span className="text-[11px] text-text-muted">
+          <span className="text-xs tabular-nums text-text-muted">
             {image.remaining} / {image.limit}
           </span>
         </div>
