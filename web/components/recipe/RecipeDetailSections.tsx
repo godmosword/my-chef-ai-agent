@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { scaleIngredient } from "@/lib/recipe-scale";
+import { readProgress, writeProgress } from "@/lib/recipe-progress";
 import { cn } from "@/lib/utils/cn";
 
 type RecipeDetailSectionsProps = {
+  recipeId?: string;
   ingredients?: unknown[] | null;
   steps?: unknown[] | null;
   servings?: number | null;
@@ -16,6 +18,7 @@ const STEPS_PREVIEW = 2;
 const SCALE_OPTIONS = [0.5, 1, 2, 4] as const;
 
 export function RecipeDetailSections({
+  recipeId,
   ingredients,
   steps,
   servings,
@@ -24,6 +27,40 @@ export function RecipeDetailSections({
   const stepList = steps ?? [];
   const [stepsExpanded, setStepsExpanded] = useState(false);
   const [scale, setScale] = useState(1);
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(() => new Set());
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    if (!recipeId) return;
+    const p = readProgress(recipeId);
+    setCheckedIngredients(new Set(p.ingredients));
+    setCheckedSteps(new Set(p.steps));
+  }, [recipeId]);
+
+  useEffect(() => {
+    if (!recipeId) return;
+    writeProgress(recipeId, {
+      ingredients: Array.from(checkedIngredients),
+      steps: Array.from(checkedSteps),
+    });
+  }, [recipeId, checkedIngredients, checkedSteps]);
+
+  const toggleIngredient = (i: number) => {
+    setCheckedIngredients((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+  const toggleStep = (i: number) => {
+    setCheckedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
   const canCollapse = stepList.length > STEPS_PREVIEW;
   const visibleSteps = stepsExpanded ? stepList : stepList.slice(0, STEPS_PREVIEW);
 
@@ -66,10 +103,25 @@ export function RecipeDetailSections({
               ))}
             </div>
           </div>
-          <ul className="mt-2 list-inside list-disc text-text-body">
-            {scaledIngredients.map((ing, i) => (
-              <li key={i}>{formatIngredient(ing)}</li>
-            ))}
+          <ul className="mt-2 space-y-1.5 text-text-body">
+            {scaledIngredients.map((ing, i) => {
+              const checked = checkedIngredients.has(i);
+              return (
+                <li key={i}>
+                  <label className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleIngredient(i)}
+                      className="mt-1 size-4 shrink-0 rounded border-border-default text-brand-primary focus:ring-brand-primary"
+                    />
+                    <span className={cn(checked && "text-text-muted line-through")}>
+                      {formatIngredient(ing)}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
@@ -79,10 +131,33 @@ export function RecipeDetailSections({
             <h2 className="font-serif text-lg text-text-ink">步驟</h2>
             <span className="text-xs text-text-muted">共 {stepList.length} 步</span>
           </div>
-          <ol className="mt-2 list-decimal space-y-2 pl-5 text-text-body">
-            {visibleSteps.map((step, i) => (
-              <li key={i}>{formatStep(step)}</li>
-            ))}
+          <ol className="mt-2 space-y-2 text-text-body">
+            {visibleSteps.map((step, i) => {
+              const checked = checkedSteps.has(i);
+              return (
+                <li key={i}>
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleStep(i)}
+                      className="mt-1 size-4 shrink-0 rounded border-border-default text-brand-primary focus:ring-brand-primary"
+                    />
+                    <span
+                      className={cn(
+                        "flex-1",
+                        checked && "text-text-muted line-through",
+                      )}
+                    >
+                      <span className="mr-2 font-medium tabular-nums text-text-muted">
+                        {i + 1}.
+                      </span>
+                      {formatStep(step)}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ol>
           {canCollapse && (
             <button

@@ -139,6 +139,7 @@ export default function RecipeDetailPage() {
           onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
         >
           <RecipeDetailSections
+            recipeId={recipe.id}
             ingredients={recipe.ingredients}
             steps={recipe.steps}
             servings={recipe.servings}
