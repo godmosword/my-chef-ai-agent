@@ -15,6 +15,7 @@ import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { cn } from "@/lib/utils/cn";
 import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
+import { RecipeNotes } from "@/components/recipe/RecipeNotes";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
 import { track } from "@/lib/analytics/track";
 
@@ -144,6 +145,7 @@ export default function RecipeDetailPage() {
             steps={recipe.steps}
             servings={recipe.servings}
           />
+          <RecipeNotes recipeId={recipe.id} />
         </RecipeDetailLayout>
       )}
     </div>
