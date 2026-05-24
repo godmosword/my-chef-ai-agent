@@ -19,7 +19,7 @@ export function AppDesktopHeader() {
   const pageTitle = active?.label ?? "";
 
   return (
-    <header className="sticky top-0 z-30 hidden items-center justify-between gap-4 border-b border-border-default/60 bg-surface-default/95 px-4 py-3 backdrop-blur md:flex">
+    <header className="hidden items-center justify-between gap-4 border-b border-border-default/60 bg-surface-default px-4 py-3 md:flex">
       <p className="font-serif text-lg text-text-ink">{pageTitle}</p>
       <CommandBar />
     </header>
