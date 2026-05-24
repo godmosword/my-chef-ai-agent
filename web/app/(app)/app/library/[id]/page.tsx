@@ -7,7 +7,8 @@ import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
-import { ArrowLeft, ChefHat, Heart } from "lucide-react";
+import { ChefHat, Heart } from "lucide-react";
+import { BackLink } from "@/components/patterns/BackLink";
 import { FLAGS } from "@/lib/flags";
 import { listFavorites } from "@/lib/api/recipes";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
@@ -109,12 +110,7 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm">
-        <Link href="/app/library" className="inline-flex items-center gap-2">
-          <ArrowLeft className="size-4" aria-hidden />
-          返回食譜
-        </Link>
-      </Button>
+      <BackLink href="/app/library" label="返回食譜" />
 
       {loading && (
         <div className="space-y-3">
