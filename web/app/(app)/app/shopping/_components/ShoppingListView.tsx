@@ -42,7 +42,8 @@ export function ShoppingListView({ items, groups, printMode }: ShoppingListViewP
   }, [groups]);
 
   if (!items.length) {
-    return <p className="text-text-muted">本週尚無規劃餐點，無採買項目。</p>;
+    // Empty state is rendered by the parent so it has access to weekOf.
+    return null;
   }
 
   return (

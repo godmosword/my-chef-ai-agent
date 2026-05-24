@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { fetchUserProfile, type ProfileResponse } from "@/lib/api/profile";
+import { useDisplayName } from "@/lib/profile/display-name";
 import { AchievementsRow } from "./AchievementsRow";
 import { ProfileHero } from "./ProfileHero";
 import { StatsGrid } from "./StatsGrid";
 
-interface MeProfileSectionProps {
-  displayName?: string | null;
-}
-
-export function MeProfileSection({ displayName }: MeProfileSectionProps) {
+export function MeProfileSection() {
+  const displayName = useDisplayName();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
 

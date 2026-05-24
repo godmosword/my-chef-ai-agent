@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Printer } from "lucide-react";
+import { CalendarDays, Printer, ShoppingCart } from "lucide-react";
 import type { AggregatedShoppingList } from "@chef/shared-types";
 import { fetchShoppingList } from "@/lib/api/plan";
 import {
@@ -80,13 +80,47 @@ export function ShoppingPageClient() {
 
       {loading && <p className="text-text-muted">載入中…</p>}
 
-      {!loading && list && (
+      {!loading && list && list.items.length > 0 && (
         <ShoppingListView
           items={list.items}
           groups={list.groups}
           printMode={printOpen}
         />
       )}
+
+      {!loading && list && list.items.length === 0 && (
+        <EmptyShopping weekOf={weekOf} />
+      )}
+    </div>
+  );
+}
+
+function EmptyShopping({ weekOf }: { weekOf: string }) {
+  return (
+    <div className="shopping-screen-only flex flex-col items-center gap-5 rounded-2xl border border-dashed border-border-default bg-surface-default px-6 py-12 text-center">
+      <div
+        aria-hidden
+        className="flex size-16 items-center justify-center rounded-full bg-brand-primaryLight text-brand-primary"
+      >
+        <ShoppingCart className="size-7" />
+      </div>
+      <div className="max-w-sm space-y-2">
+        <h2 className="font-serif text-xl text-text-ink">這週的籃子還是空的</h2>
+        <p className="text-sm text-text-body">
+          先到週曆規劃一些菜，這裡就會自動把食材整理成一份可勾選、可列印的採買清單。
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button asChild variant="primary">
+          <Link href={`/app/plan?week_of=${weekOf}`}>
+            <CalendarDays className="size-4" aria-hidden />
+            去週曆規劃
+          </Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href="/app/library">從料理書挑一道</Link>
+        </Button>
+      </div>
     </div>
   );
 }

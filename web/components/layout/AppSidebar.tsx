@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChefHat, Flame, Sparkles } from "lucide-react";
 import { APP_NAV, type NavItem, type NavSection } from "@/lib/nav";
 import { fetchUserProfile, type ProfileResponse } from "@/lib/api/profile";
+import { useDisplayName } from "@/lib/profile/display-name";
 import { cookedToday } from "@/lib/profile/title";
 import { Avatar } from "@/components/primitives/Avatar";
 import { QuotaIndicator } from "@/components/patterns/QuotaIndicator";
@@ -239,8 +240,7 @@ function MeProfileChip({
       <span className="text-text-muted">今日下廚開始</span>
     );
 
-  // Display name placeholder until we wire account data into this component.
-  const displayName = "美食家";
+  const displayName = useDisplayName();
 
   return (
     <Link

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UserSettings } from "@chef/shared-types";
 import { applyTheme, persistTheme, readLocalTheme, type Theme } from "@/lib/theme";
+import { readDisplayName, writeDisplayName } from "@/lib/profile/display-name";
 import { Button } from "@/components/primitives/Button";
 import { Dialog } from "@/components/primitives/Dialog";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -31,11 +32,18 @@ export function MeSettingsPanel() {
   // Track hydration so SSR markup matches the inline-script's data-theme.
   const [mounted, setMounted] = useState(false);
   const [activeTheme, setActiveTheme] = useState<Theme>("system");
+  const [displayName, setDisplayNameState] = useState("美食家");
 
   useEffect(() => {
     setActiveTheme(readLocalTheme());
+    setDisplayNameState(readDisplayName());
     setMounted(true);
   }, []);
+
+  const handleDisplayNameChange = (value: string) => {
+    setDisplayNameState(value);
+    writeDisplayName(value);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,6 +140,21 @@ export function MeSettingsPanel() {
 
   return (
     <div className="space-y-8">
+      <section className="rounded-lg border border-border-default bg-surface-default p-4">
+        <h2 className="text-sm font-medium text-text-ink">顯示名稱</h2>
+        <p className="mt-1 text-sm text-text-muted">
+          這個名字會顯示在側欄、個人頁與分享卡片
+        </p>
+        <input
+          type="text"
+          value={displayName}
+          maxLength={24}
+          placeholder="美食家"
+          className="mt-3 w-full rounded-md border border-border-default bg-surface-muted px-3 py-2 text-sm"
+          onChange={(e) => handleDisplayNameChange(e.target.value)}
+        />
+      </section>
+
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="text-sm font-medium text-text-ink">外觀</h2>
         <p className="mt-1 text-sm text-text-muted">跟隨系統或手動切換淺色／深色</p>

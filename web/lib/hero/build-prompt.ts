@@ -34,7 +34,11 @@ export function buildHeroPrompt(recipe: RecipePayload): string {
     "Earthy palette: warm cream, deep amber, forest green accents.",
     "Rustic ceramic plate, simple linen napkin, shallow depth of field, 45-degree top-down.",
     "Editorial cookbook, ultra-realistic, 4k.",
-    "No people, no faces, food only. No readable text, no logo, no watermark.",
+    "STRICT: no people, no faces, food only.",
+    // Crucial: gpt-image-2 frequently hallucinates CJK-looking glyphs that the",
+    // browser can't render. Forbid every text surface explicitly.",
+    "STRICT: zero text of any kind in the image — no Chinese characters, no Japanese kanji or kana, no Korean hangul, no Latin letters, no numbers, no calligraphy, no signature marks, no menu cards, no recipe pages, no chalkboards, no book covers, no plate labels, no napkin embroidery, no chef's hat logos with words.",
+    "If the model would otherwise place any character or letter anywhere in the frame, replace it with a clean unmarked surface.",
   ]
     .filter(Boolean)
     .join(" ");
