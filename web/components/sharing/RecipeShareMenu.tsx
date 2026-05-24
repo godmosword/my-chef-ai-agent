@@ -94,7 +94,7 @@ export function RecipeShareMenu({
         size="sm"
         onClick={() => setOpen(true)}
       >
-        <Share2 className="size-4" aria-hidden />
+        <Share2 className="size-5" aria-hidden />
         {isShared ? "分享中" : "分享"}
       </Button>
 
