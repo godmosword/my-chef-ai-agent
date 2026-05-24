@@ -92,7 +92,13 @@ export function RecipeShareMenu({
         type="button"
         variant="secondary"
         size="sm"
-        onClick={() => setOpen(true)}
+        loading={busy && !open}
+        onClick={() => {
+          setOpen(true);
+          if (!isShared && !busy) {
+            void publish(false);
+          }
+        }}
       >
         <Share2 className="size-5" aria-hidden />
         {isShared ? "分享中" : "分享"}
