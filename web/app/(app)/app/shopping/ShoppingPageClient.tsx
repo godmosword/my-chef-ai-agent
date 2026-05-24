@@ -60,7 +60,7 @@ export function ShoppingPageClient() {
     <div className="space-y-4">
       <div className="shopping-screen-only flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-serif text-2xl text-text-ink">採買清單</h1>
+          <h1 className="font-serif text-2xl text-text-ink">買菜清單</h1>
           <p className="text-sm text-text-muted">{formatWeekRangeLabel(weekOf)}</p>
         </div>
         <div className="flex gap-2">
@@ -69,7 +69,7 @@ export function ShoppingPageClient() {
             列印
           </Button>
           <Button asChild variant="ghost">
-            <Link href={`/app/plan?week_of=${weekOf}`}>回到週曆</Link>
+            <Link href={`/app/plan?week_of=${weekOf}`}>回到週菜單</Link>
           </Button>
         </div>
       </div>
@@ -107,18 +107,18 @@ function EmptyShopping({ weekOf }: { weekOf: string }) {
       <div className="max-w-sm space-y-2">
         <h2 className="font-serif text-xl text-text-ink">這週的籃子還是空的</h2>
         <p className="text-sm text-text-body">
-          先到週曆規劃一些菜，這裡就會自動把食材整理成一份可勾選、可列印的採買清單。
+          先到週菜單規劃一些菜，這裡就會自動把食材整理成一份可勾選、可列印的買菜清單。
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button asChild variant="primary">
           <Link href={`/app/plan?week_of=${weekOf}`}>
             <CalendarDays className="size-4" aria-hidden />
-            去週曆規劃
+            去週菜單規劃
           </Link>
         </Button>
         <Button asChild variant="ghost">
-          <Link href="/app/library">從料理書挑一道</Link>
+          <Link href="/app/library">從食譜挑一道</Link>
         </Button>
       </div>
     </div>

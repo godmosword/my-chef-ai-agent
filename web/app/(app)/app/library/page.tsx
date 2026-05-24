@@ -81,8 +81,8 @@ export default function LibraryPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-2xl text-text-ink">料理書</h1>
-        <p className="mt-1 text-sm text-text-muted">你的食譜收藏與歷史</p>
+        <h1 className="font-serif text-2xl text-text-ink">我的食譜</h1>
+        <p className="mt-1 text-sm text-text-muted">你的收藏與歷史</p>
       </header>
 
       <section
@@ -91,7 +91,7 @@ export default function LibraryPage() {
       >
         <div className="flex items-center gap-2 text-xs text-text-muted">
           <Sparkles className="size-4 text-brand-primary" aria-hidden />
-          <span>沒想法？試試這些情境，會帶你去今晚頁直接生成</span>
+          <span>沒想法？試試這些情境，會帶你去今晚吃什麼直接生成</span>
         </div>
         <ul className="mt-2 flex flex-wrap gap-2" role="list">
           {INSPIRATION.map((item) => (
@@ -139,10 +139,10 @@ export default function LibraryPage() {
         <EmptyState
           icon={<BookOpen className="size-10" />}
           title="找不到食譜"
-          body="試試其他關鍵字，或回到今晚生成新食譜。"
+          body="試試其他關鍵字，或回到今晚吃什麼生成新食譜。"
           actions={
             <Link href="/app" className="text-sm text-brand-primary hover:underline">
-              前往今晚
+              前往今晚吃什麼
             </Link>
           }
         />

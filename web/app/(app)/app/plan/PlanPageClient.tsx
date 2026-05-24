@@ -65,7 +65,7 @@ export function PlanPageClient() {
       router.replace(`/app/plan?week_of=${normalized}`, { scroll: false });
     } catch (e) {
       toast({
-        title: "無法載入週曆",
+        title: "無法載入週菜單",
         description: e instanceof Error ? e.message : "請稍後再試",
         variant: "error",
       });
@@ -168,12 +168,12 @@ export function PlanPageClient() {
         <Button asChild variant="secondary">
           <Link href={`/app/shopping?week_of=${weekOf}`}>
             <ShoppingCart className="size-4" aria-hidden />
-            生成採買清單
+            生成買菜清單
           </Link>
         </Button>
       </div>
 
-      {loading && <p className="text-text-muted">載入週曆…</p>}
+      {loading && <p className="text-text-muted">載入週菜單…</p>}
 
       {!loading && plan && (
         <>

@@ -112,7 +112,7 @@ export default function RecipeDetailPage() {
       <Button asChild variant="ghost" size="sm">
         <Link href="/app/library" className="inline-flex items-center gap-2">
           <ArrowLeft className="size-4" aria-hidden />
-          返回料理書
+          返回食譜
         </Link>
       </Button>
 

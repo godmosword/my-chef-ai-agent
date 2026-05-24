@@ -21,40 +21,40 @@ export type NavItem = {
 };
 
 export const APP_NAV: NavItem[] = [
-  { href: "/app", label: "今晚", icon: Flame, enabled: true, section: "下廚" },
+  { href: "/app", label: "今晚吃什麼", icon: Flame, enabled: true, section: "下廚" },
   {
     href: "/app/library",
-    label: "料理書",
+    label: "我的食譜",
     icon: BookOpen,
     enabled: true,
     section: "下廚",
   },
   {
     href: "/app/plan",
-    label: "週曆",
+    label: "週菜單",
     icon: Calendar,
     enabled: FLAGS.mealPlan,
     section: "規劃",
-    soonMessage: "週曆規劃即將推出",
+    soonMessage: "週菜單即將推出",
   },
   {
     href: "/app/shopping",
-    label: "採買",
+    label: "買菜清單",
     icon: ShoppingCart,
     enabled: FLAGS.mealPlan,
     section: "規劃",
-    soonMessage: "購物清單即將推出",
+    soonMessage: "買菜清單即將推出",
   },
   {
     href: "/app/me",
-    label: "我的",
+    label: "你",
     icon: User,
     enabled: true,
     section: "帳號",
   },
   {
     href: "/app/settings",
-    label: "設定",
+    label: "偏好",
     icon: Settings,
     enabled: true,
     section: "帳號",
