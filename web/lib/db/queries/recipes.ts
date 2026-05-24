@@ -48,6 +48,9 @@ function rowToRecipePayload(
       shopping_list: version.shoppingList as AiRecipePayload["shopping_list"],
       estimated_total_cost: costFromJsonb(version.costEstimate),
       photo_url: row.heroUrl ?? undefined,
+      prep_minutes: version.prepMinutes ?? undefined,
+      cook_minutes: version.cookMinutes ?? undefined,
+      servings: version.servings ?? undefined,
     },
     { id: row.id, version_no: version.versionNo },
     tags,
@@ -140,6 +143,9 @@ export async function createRecipeFromAi(
         sourcePrompt: input.sourcePrompt,
         modelUsed: input.modelUsed ?? null,
         deepResearch: input.deepResearch ?? false,
+        prepMinutes: input.aiRecipe.prep_minutes ?? null,
+        cookMinutes: input.aiRecipe.cook_minutes ?? null,
+        servings: input.aiRecipe.servings ?? null,
       })
       .returning();
 

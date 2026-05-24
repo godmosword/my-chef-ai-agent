@@ -37,6 +37,9 @@ export function aiRecipeToPayload(
     cuisine: recipe.theme,
     summary: recipe.recipe_name,
     tags,
+    prep_minutes: recipe.prep_minutes,
+    cook_minutes: recipe.cook_minutes,
+    servings: recipe.servings,
   };
 }
 

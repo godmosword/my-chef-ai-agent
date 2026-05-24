@@ -6,6 +6,7 @@ import { ChefHat } from "lucide-react";
 import { Chip } from "@/components/primitives/Chip";
 import { Button } from "@/components/primitives/Button";
 import { RecipeDetailHero } from "@/components/recipe/RecipeDetailHero";
+import { RecipeStats } from "@/components/recipe/RecipeStats";
 import { FLAGS } from "@/lib/flags";
 
 type RecipeDetailLayoutProps = {
@@ -42,6 +43,12 @@ export function RecipeDetailLayout({
       {recipe.summary && (
         <p className="mt-2 text-text-muted">{recipe.summary}</p>
       )}
+
+      <RecipeStats
+        prepMinutes={recipe.prep_minutes}
+        cookMinutes={recipe.cook_minutes}
+        servings={recipe.servings}
+      />
 
       <div className="mt-6 space-y-6">{children}</div>
 

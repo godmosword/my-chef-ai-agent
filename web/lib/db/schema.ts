@@ -74,6 +74,9 @@ export const recipeVersions = pgTable(
     diffFromPrompt: text("diff_from_prompt"),
     modelUsed: text("model_used"),
     deepResearch: boolean("deep_research").notNull().default(false),
+    prepMinutes: integer("prep_minutes"),
+    cookMinutes: integer("cook_minutes"),
+    servings: integer("servings"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

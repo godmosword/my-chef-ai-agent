@@ -40,6 +40,9 @@ export type RecipePayload = {
   shopping_list?: string[];
   estimated_total_cost?: string;
   photo_url?: string;
+  prep_minutes?: number;
+  cook_minutes?: number;
+  servings?: number;
 };
 
 function getClient(): OpenAI {

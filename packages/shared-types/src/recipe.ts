@@ -135,6 +135,9 @@ export const RecipePayloadSchema = z.object({
   tags: z.array(RecipeTagSchema).optional(),
   share_token: z.string().nullable().optional(),
   published_at: z.string().nullable().optional(),
+  prep_minutes: z.number().int().nonnegative().optional(),
+  cook_minutes: z.number().int().nonnegative().optional(),
+  servings: z.number().int().positive().optional(),
 });
 export type RecipePayload = z.infer<typeof RecipePayloadSchema>;
 

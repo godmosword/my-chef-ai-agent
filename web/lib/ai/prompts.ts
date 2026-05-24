@@ -10,7 +10,8 @@ export const SYSTEM_PROMPT =
   '"theme":"主題","recipe_name":"菜名",' +
   '"ingredients":[{"name":"食材","price":"NT$XX"}],' +
   '"steps":["步驟"],"shopping_list":["區塊：品項"],' +
-  '"estimated_total_cost":"數字"}';
+  '"estimated_total_cost":"數字",' +
+  '"prep_minutes":15,"cook_minutes":20,"servings":2}';
 
 export const AI_RETRY_EXTRA_PROMPT =
   "請務必只回傳純JSON，不要加任何markdown或解釋文字。";
