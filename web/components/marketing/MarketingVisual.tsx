@@ -61,7 +61,7 @@ export function MarketingVisual({
       aria-label={alt}
     >
       {fallbackLabel ? (
-        <span className="rounded-full bg-black/25 px-3 py-1 text-[11px] text-white backdrop-blur">
+        <span className="rounded-full bg-black/25 px-3 py-1 text-xs text-white backdrop-blur">
           {fallbackLabel}
         </span>
       ) : null}

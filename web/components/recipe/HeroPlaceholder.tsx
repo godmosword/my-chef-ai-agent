@@ -45,12 +45,12 @@ export function HeroPlaceholder({
       {isLoading && (
         <div className="flex items-center gap-2 rounded-full bg-black/30 px-3 py-1.5 backdrop-blur">
           <Paintbrush className="size-3 animate-pulse text-white" aria-hidden />
-          <span className="text-[11px] text-white">正在繪製...</span>
+          <span className="text-xs text-white">正在繪製...</span>
         </div>
       )}
       {showHat && <ChefHat className="size-8 text-white/70" aria-hidden />}
       {showHat && error && (
-        <p className="max-w-[18rem] text-[11px] leading-snug text-white/90">{error}</p>
+        <p className="max-w-[18rem] text-xs leading-snug text-white/90">{error}</p>
       )}
     </div>
   );
