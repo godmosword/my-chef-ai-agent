@@ -61,14 +61,14 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border-default">
+      <div className="relative aspect-[16/9] w-full max-w-[480px] overflow-hidden rounded-xl border border-border-default">
         {heroStatus === "ready" && heroUrl ? (
           <Image
             src={heroUrl}
             alt={recipe.recipe_name ?? "主圖"}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 640px"
+            sizes="(max-width: 768px) 100vw, 480px"
             unoptimized
           />
         ) : (
