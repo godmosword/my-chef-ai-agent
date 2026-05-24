@@ -18,6 +18,21 @@ export type FavoriteV2Row = {
   created_at: string;
 };
 
+export async function countFavoritesForUser(
+  userId: string,
+  tenantId: string,
+): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+  const rows = await db
+    .select({ recipeId: favoritesV2.recipeId })
+    .from(favoritesV2)
+    .where(
+      and(eq(favoritesV2.userId, userId), eq(favoritesV2.tenantId, tenantId)),
+    );
+  return rows.length;
+}
+
 export async function listFavoriteRecipes(
   userId: string,
   tenantId: string,

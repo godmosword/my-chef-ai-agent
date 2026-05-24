@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_TC, Noto_Serif_TC } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { SerwistRegistration } from "@/components/providers/SerwistRegistration";
 import { OfflineProvider } from "@/components/providers/OfflineProvider";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { SettingsBootstrap } from "@/components/providers/SettingsBootstrap";
+import { THEME_BOOTSTRAP_SOURCE } from "@/lib/theme";
 
 const notoSans = Noto_Sans_TC({
   subsets: ["latin"],
@@ -50,15 +50,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SOURCE }} />
+      </head>
       <body className={`${notoSans.variable} ${notoSerif.variable}`}>
         <SerwistRegistration>
           <OfflineProvider>
-            <ThemeProvider>
-              <PostHogProvider>
-                <SettingsBootstrap />
-                <ToastProvider>{children}</ToastProvider>
-              </PostHogProvider>
-            </ThemeProvider>
+            <PostHogProvider>
+              <SettingsBootstrap />
+              <ToastProvider>{children}</ToastProvider>
+            </PostHogProvider>
           </OfflineProvider>
         </SerwistRegistration>
       </body>

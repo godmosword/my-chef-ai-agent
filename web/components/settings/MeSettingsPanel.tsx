@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import type { UserSettings } from "@chef/shared-types";
-import { QuotaIndicator } from "@/components/patterns/QuotaIndicator";
+import { applyTheme, persistTheme, readLocalTheme, type Theme } from "@/lib/theme";
 import { Button } from "@/components/primitives/Button";
 import { Dialog } from "@/components/primitives/Dialog";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -23,23 +22,26 @@ import { FLAGS } from "@/lib/flags";
 
 export function MeSettingsPanel() {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [recipeCount, setRecipeCount] = useState(0);
-  const [sharedCount, setSharedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Track hydration so SSR markup matches the inline-script's data-theme.
+  const [mounted, setMounted] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<Theme>("system");
+
+  useEffect(() => {
+    setActiveTheme(readLocalTheme());
+    setMounted(true);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchUserSettings();
       setSettings(res.settings);
-      setRecipeCount(res.recipe_count);
-      setSharedCount(res.shared_count);
       applySettingsToDocument(res.settings);
       saveLocalSettings(res.settings);
       syncAnalyticsOptIn(res.settings.analytics_opt);
@@ -57,13 +59,26 @@ export function MeSettingsPanel() {
   const patch = useCallback(
     async (partial: Partial<UserSettings>) => {
       if (!settings) return;
+      // Theme: write DOM + localStorage synchronously, before React re-renders.
+      if (partial.theme) {
+        const next = partial.theme as Theme;
+        applyTheme(next);
+        persistTheme(next);
+        setActiveTheme(next);
+      }
+
       setSaving(true);
       const optimistic = { ...settings, ...partial };
       setSettings(optimistic);
       applySettingsToDocument(optimistic);
       saveLocalSettings(optimistic);
-      if (partial.theme) setTheme(partial.theme);
       if (partial.analytics_opt != null) syncAnalyticsOptIn(partial.analytics_opt);
+      if (partial.voice_enabled != null && typeof window !== "undefined") {
+        localStorage.setItem(
+          "cooking_voice_enabled",
+          partial.voice_enabled ? "1" : "0",
+        );
+      }
 
       try {
         const res = await updateUserSettings(partial);
@@ -80,7 +95,7 @@ export function MeSettingsPanel() {
         setSaving(false);
       }
     },
-    [settings, setTheme, toast, load],
+    [settings, toast, load],
   );
 
   const onDelete = useCallback(async () => {
@@ -117,28 +132,6 @@ export function MeSettingsPanel() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-text-muted">手機上可在這裡查看今日配額</p>
-      <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="text-sm font-medium text-text-ink">帳戶概覽</h2>
-        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <dt className="text-text-muted">食譜數</dt>
-            <dd className="font-medium text-text-ink">{recipeCount}</dd>
-          </div>
-          <div>
-            <dt className="text-text-muted">公開分享</dt>
-            <dd className="font-medium text-text-ink">{sharedCount}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="rounded-lg border border-border-default bg-surface-default p-4">
-        <h2 className="text-sm font-medium text-text-ink">今日配額</h2>
-        <div className="mt-4">
-          <QuotaIndicator refreshIntervalMs={15_000} />
-        </div>
-      </section>
-
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="text-sm font-medium text-text-ink">外觀</h2>
         <p className="mt-1 text-sm text-text-muted">跟隨系統或手動切換淺色／深色</p>
@@ -146,7 +139,7 @@ export function MeSettingsPanel() {
           {(["light", "dark", "system"] as const).map((t) => (
             <Button
               key={t}
-              variant={(theme ?? s.theme) === t ? "primary" : "secondary"}
+              variant={mounted && activeTheme === t ? "primary" : "secondary"}
               size="sm"
               disabled={saving}
               onClick={() => patch({ theme: t })}
@@ -159,17 +152,19 @@ export function MeSettingsPanel() {
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="text-sm font-medium text-text-ink">字級</h2>
-        <p className="mt-1 text-sm text-text-muted">{s.font_scale}%</p>
-        <input
-          type="range"
-          min={80}
-          max={150}
-          step={5}
+        <p className="mt-1 text-sm text-text-muted">調整全站文字大小</p>
+        <select
+          className="mt-3 w-full rounded-md border border-border-default bg-surface-muted px-3 py-2 text-sm"
           value={s.font_scale}
           disabled={saving}
-          className="mt-3 w-full accent-brand-primary"
           onChange={(e) => patch({ font_scale: Number(e.target.value) })}
-        />
+        >
+          <option value={90}>較小 (90%)</option>
+          <option value={100}>標準 (100%)</option>
+          <option value={115}>較大 (115%)</option>
+          <option value={130}>特大 (130%)</option>
+          <option value={150}>超大 (150%)</option>
+        </select>
       </section>
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">

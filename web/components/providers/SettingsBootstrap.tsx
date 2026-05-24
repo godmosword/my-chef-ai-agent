@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTheme } from "next-themes";
 import { fetchUserSettings } from "@/lib/api/settings";
 import {
   applySettingsToDocument,
@@ -9,6 +8,7 @@ import {
   saveLocalSettings,
 } from "@/lib/settings/apply";
 import { syncAnalyticsOptIn } from "@/components/analytics/PostHogProvider";
+import { applyTheme, persistTheme, readLocalTheme, type Theme } from "@/lib/theme";
 import type { UserSettings } from "@chef/shared-types";
 
 function mergeSettings(
@@ -26,9 +26,14 @@ function mergeSettings(
   return { ...base, ...local, ...remote };
 }
 
-export function SettingsBootstrap() {
-  const { setTheme } = useTheme();
+function syncVoiceDefault(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem("cooking_voice_enabled") == null) {
+    localStorage.setItem("cooking_voice_enabled", enabled ? "1" : "0");
+  }
+}
 
+export function SettingsBootstrap() {
   useEffect(() => {
     let cancelled = false;
 
@@ -36,8 +41,8 @@ export function SettingsBootstrap() {
       const local = loadLocalSettings();
       if (local) {
         applySettingsToDocument(mergeSettings(null, local));
-        if (local.theme) setTheme(local.theme);
         if (local.analytics_opt != null) syncAnalyticsOptIn(local.analytics_opt);
+        if (local.voice_enabled != null) syncVoiceDefault(local.voice_enabled);
       }
 
       try {
@@ -46,8 +51,17 @@ export function SettingsBootstrap() {
         const merged = mergeSettings(res.settings, local);
         applySettingsToDocument(merged);
         saveLocalSettings(merged);
-        setTheme(merged.theme);
         syncAnalyticsOptIn(merged.analytics_opt);
+        syncVoiceDefault(merged.voice_enabled);
+
+        // Sync remote theme into the manual-theme localStorage key + DOM only
+        // if it actually differs from what's already there — keeps SSR / inline
+        // bootstrap script as the single source of truth on first paint.
+        const remoteTheme = merged.theme as Theme;
+        if (remoteTheme !== readLocalTheme()) {
+          persistTheme(remoteTheme);
+          applyTheme(remoteTheme);
+        }
       } catch {
         /* offline or unauthenticated */
       }
@@ -56,7 +70,7 @@ export function SettingsBootstrap() {
     return () => {
       cancelled = true;
     };
-  }, [setTheme]);
+  }, []);
 
   return null;
 }

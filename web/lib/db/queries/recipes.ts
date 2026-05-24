@@ -533,6 +533,49 @@ export async function countRecipesForUser(
   return rows.length;
 }
 
+export type RecipeActivity = {
+  total: number;
+  first_recipe_at: string | null;
+  last_recipe_at: string | null;
+  active_dates: string[];
+};
+
+export async function getRecipeActivityForUser(
+  userId: string,
+  tenantId: string,
+): Promise<RecipeActivity> {
+  const db = getDb();
+  if (!db)
+    return { total: 0, first_recipe_at: null, last_recipe_at: null, active_dates: [] };
+
+  const rows = await db
+    .select({ createdAt: recipes.createdAt })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.userId, userId),
+        eq(recipes.tenantId, tenantId),
+        isNull(recipes.deletedAt),
+      ),
+    )
+    .orderBy(desc(recipes.createdAt));
+
+  if (rows.length === 0)
+    return { total: 0, first_recipe_at: null, last_recipe_at: null, active_dates: [] };
+
+  const dateSet = new Set<string>();
+  for (const row of rows) {
+    dateSet.add(row.createdAt.toISOString().slice(0, 10));
+  }
+
+  return {
+    total: rows.length,
+    first_recipe_at: rows[rows.length - 1].createdAt.toISOString(),
+    last_recipe_at: rows[0].createdAt.toISOString(),
+    active_dates: Array.from(dateSet),
+  };
+}
+
 export async function getRecipeHeroStatus(
   userId: string,
   tenantId: string,
