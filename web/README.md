@@ -26,7 +26,9 @@ pnpm dev:web
 
 規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)、[`2026-05-23-cooking-mode.md`](../docs/superpowers/specs/2026-05-23-cooking-mode.md)、[`2026-05-23-meal-planner.md`](../docs/superpowers/specs/2026-05-23-meal-planner.md)
 
-## Vercel 部署
+## Vercel 部署（唯一正式環境）
+
+本產品**不上線到 localhost**。出貨流程：改 code → 測試／build → **`git push origin main`** → Vercel 自動部署 Production。見根目錄 [`CLAUDE.md`](../CLAUDE.md)、[`AGENTS.md`](../AGENTS.md)。
 
 1. Import repo
 2. **Root Directory** = **`web`**（實體目錄，勿用符號連結）

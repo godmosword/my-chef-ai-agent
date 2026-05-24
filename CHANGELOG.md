@@ -14,6 +14,7 @@
 
 ### Changed
 
+- **部署／出貨規則**：新增 Cursor 規則 `.cursor/rules/vercel-main-ship.mdc`；`AGENTS.md`、`CONTRIBUTING.md`、`README.md`、`web/README.md` 明訂僅 **Vercel** 為正式環境、**`push main`** 出貨、不以 **localhost** 作 deploy 或驗收目標。
 - **`web/vercel.json`**：預設 `IMAGE_PROVIDER=openai_compatible`（仍須在 Vercel 設定 `IMAGE_OPENAI_API_KEY` 才會真生圖）。
 - **OpenAI 圖像模型**：預設改為 **`gpt-image-2`**（主圖與烹飪步驟圖共用；可 `OPENAI_GPT_IMAGE_MODEL_ID` 覆寫）。
 

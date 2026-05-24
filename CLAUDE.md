@@ -44,7 +44,13 @@ Treat `git push origin main` the same as `git push origin <feature>` would be el
 
 The general "ask before destructive actions" rule still applies: confirm before `git reset --hard`, force-push, rewriting history, deleting branches, etc.
 
+## Cursor / 其他 Agent
+
+- 同等條文（繁中、always-on）：[`.cursor/rules/vercel-main-ship.mdc`](.cursor/rules/vercel-main-ship.mdc)
+- 里程碑文件同步：[`.cursor/rules/plan-ship-docs.mdc`](.cursor/rules/plan-ship-docs.mdc)
+
 ## Reference
 
 - Dev / build / token commands: [AGENTS.md](AGENTS.md)
+- 貢獻與出貨（繁中摘要）：[CONTRIBUTING.md](CONTRIBUTING.md)
 - Design system & brand: [DESIGN.md](DESIGN.md)

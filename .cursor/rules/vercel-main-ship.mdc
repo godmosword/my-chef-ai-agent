@@ -1,0 +1,36 @@
+---
+description: 出貨僅走 Vercel（main 直推）；禁止以 localhost 當部署或驗收目標
+alwaysApply: true
+---
+
+# 部署與出貨（Vercel + main）
+
+本倉庫**唯一正式環境**為 **Vercel Production**（Git 連線 `main` 自動部署）。**不要把 `localhost` 當成 deploy 或請使用者驗收的目的地。**
+
+## 標準出貨流程（Agent／維護者預設）
+
+1. 完成程式變更。
+2. 在本機跑靜態檢查（至少 `pnpm -F @chef/web test` 與／或 `pnpm -F @chef/web build`；型別檢查依專案慣例）。
+3. **`git commit` 後 `git push origin main`**（不開 PR、不為出貨開 feature branch）。
+4. 等 **Vercel** 部署完成；請使用者在 **Production URL**（`NEXT_PUBLIC_SITE_URL` 或 Vercel Dashboard）驗收。
+
+## 禁止（除非使用者明確要求）
+
+- ❌ 為了「請你看一下」而啟動 `pnpm dev:web`／`next dev`，並給 `http://localhost:3000` 當驗收網址。
+- ❌ 把「本機跑起來」描述成 deploy、上線、或 production 驗證。
+- ❌ 預設開 PR、等 PR merge 才出貨（本 repo 主線是 **直推 main**）。
+- ❌ 建議用 GCP Cloud Build／根目錄 `Dockerfile`／Cloud Run 作為**產品**出貨路徑（僅 legacy；產品主線是 Vercel）。
+
+## 允許的 localhost
+
+- **本機開發**：`pnpm dev:web` 僅供開發者自己除錯，**不是** agent 出貨驗收步驟。
+- **使用者明確說**：「本機跑」「開 localhost」「start dev server」。
+
+## 無法靜態驗證時
+
+在回覆中**明說**（例如：「無法在不跑瀏覽器的情況下確認 UI；已 push main，請在 Vercel 上驗收」），**不要**改以 localhost 代替，也**不要**無聲推 code 後假裝已驗過。
+
+## 環境變數與平台
+
+- Production 機密與開關設在 **Vercel Dashboard**（見 `web/README.md`），不是只寫進 `web/.env.local`。
+- 細節與 commit 風格：根目錄 `CLAUDE.md`、`AGENTS.md`。

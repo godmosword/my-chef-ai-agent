@@ -43,9 +43,18 @@ pnpm dev:web
 
 **PWA 真機驗收**：見 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)（飛航模式、Cook 計時、收藏離線同步）。
 
-部署：**Vercel Root Directory = `web`**，並啟用 **Include files outside Root Directory**。詳見 [`web/README.md`](web/README.md)。
+### 部署與出貨（維護者／Agent）
 
-若 GCP **Cloud Build** 仍連到此 repo 並用 `docker build`（根目錄 `Dockerfile`），push `main` 後應可通過；**產品主線仍是 Vercel**。若不需要 Cloud Run，請在 GCP 關閉該 trigger，避免與 Vercel 重複部署。
+| 項目 | 規則 |
+|------|------|
+| **正式環境** | **Vercel**（Root Directory = `web`，Include files outside root）— 見 [`web/README.md`](web/README.md) |
+| **出貨** | `git commit` → **`git push origin main`**（預設不開 PR） |
+| **驗收** | Vercel Production URL，**不是** `localhost` |
+| **本機** | `pnpm dev:web` 僅開發用 |
+
+完整條文：[`CLAUDE.md`](CLAUDE.md)、[`AGENTS.md`](AGENTS.md)、Cursor [`.cursor/rules/vercel-main-ship.mdc`](.cursor/rules/vercel-main-ship.mdc)。
+
+可選：GCP Cloud Build 若仍連到本 repo 會 build 根目錄 `Dockerfile`；**產品主線仍是 Vercel**。不需要 Cloud Run 時請關閉 GCP trigger。
 
 ### Design tokens 變更
 

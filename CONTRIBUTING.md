@@ -28,9 +28,30 @@ pnpm -F @chef/web build
 
 ## 維護者出貨（本倉庫預設）
 
-- 改動直接在 **`main`** commit 並 `git push origin main`，**不開 PR**。
-- 對外協作者若無 `main` 寫入權，再改用 fork + PR；與 Agent／維護者日常流程分開。
+### 部署目標：僅 Vercel
+
+- **Production** 由 [Vercel](https://vercel.com) 托管：**Root Directory = `web`**，Git 連 `main` 自動部署。
+- **`localhost` 只用於本機開發**（`pnpm dev:web`），**不是**上線或請人驗收的網址。
+- 根目錄 `Dockerfile` 僅供可選的 GCP Cloud Build；**產品主線仍是 Vercel**。不需要時請在 GCP 關閉 trigger。
+
+### 程式出貨：直推 main
+
+1. 通過測試／建置（見上方指令）。
+2. **`git commit`** → **`git push origin main`**。
+3. 在 Vercel Production（或 `NEXT_PUBLIC_SITE_URL`）驗收。
+
+**不開 PR** 作為維護者／Agent 的預設流程。對外協作者若無 `main` 寫入權，再改用 fork + PR。
+
+### Agent 禁止慣例
+
+- 不要為了「請你看變更」而啟動 dev server 並給 `http://localhost:3000`。
+- 不要把「本機跑起來」說成 deploy。
+
+細節：[`CLAUDE.md`](CLAUDE.md)、[`AGENTS.md`](AGENTS.md)「Git／部署流程」。
 
 ## Cursor 規則
 
-本倉庫在 [`.cursor/rules/plan-ship-docs.mdc`](.cursor/rules/plan-ship-docs.mdc) 設有對應規則，提醒 agent 收尾時同步上述三份文件。
+| 規則 | 用途 |
+|------|------|
+| [`.cursor/rules/vercel-main-ship.mdc`](.cursor/rules/vercel-main-ship.mdc) | Vercel + 直推 `main`；禁止 localhost 當 deploy／驗收 |
+| [`.cursor/rules/plan-ship-docs.mdc`](.cursor/rules/plan-ship-docs.mdc) | 里程碑收尾時同步 TODOS、CHANGELOG、README |
