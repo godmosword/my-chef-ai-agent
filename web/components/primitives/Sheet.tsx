@@ -13,9 +13,9 @@ export type SheetProps = {
 };
 
 const sideClass = {
-  left: "inset-y-0 left-0 h-full w-[min(100%,20rem)] data-[state=open]:slide-in-from-left",
+  left: "inset-y-0 left-0 h-full w-[min(100%,22rem)] data-[state=open]:slide-in-from-left",
   right:
-    "inset-y-0 right-0 h-full w-[min(100%,20rem)] data-[state=open]:slide-in-from-right",
+    "inset-y-0 right-0 h-full w-[min(100%,24rem)] data-[state=open]:slide-in-from-right",
   bottom:
     "inset-x-0 bottom-0 w-full max-h-[85dvh] rounded-t-lg data-[state=open]:slide-in-from-bottom",
 };
