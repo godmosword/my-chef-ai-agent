@@ -1,6 +1,7 @@
 "use client";
 
 import { Flame, Sparkles } from "lucide-react";
+import { chefTitle, daysSinceIso } from "@/lib/profile/title";
 import { cn } from "@/lib/utils/cn";
 
 export interface ProfileHeroProps {
@@ -8,23 +9,6 @@ export interface ProfileHeroProps {
   currentStreak: number;
   firstRecipeAt: string | null;
   loading?: boolean;
-}
-
-function daysSince(iso: string | null): number {
-  if (!iso) return 0;
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return 0;
-  const diff = Date.now() - then;
-  return Math.max(0, Math.floor(diff / 86_400_000));
-}
-
-function chefTitle(daysCooking: number): string {
-  if (daysCooking >= 365) return "傳家名廚";
-  if (daysCooking >= 180) return "家常老手";
-  if (daysCooking >= 60) return "穩定下廚的人";
-  if (daysCooking >= 14) return "練習中的廚師";
-  if (daysCooking > 0) return "剛開始的味蕾探險家";
-  return "今日的廚房新手";
 }
 
 export function ProfileHero({
@@ -35,7 +19,7 @@ export function ProfileHero({
 }: ProfileHeroProps) {
   const name = displayName?.trim() || "美食家";
   const initial = (name[0] ?? "?").toUpperCase();
-  const days = daysSince(firstRecipeAt);
+  const days = daysSinceIso(firstRecipeAt);
   const title = chefTitle(days);
 
   return (
