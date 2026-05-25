@@ -12,7 +12,24 @@ const config: Config = {
     extend: {
       colors: {
         canvas: "var(--color-background-default)",
+        bg: {
+          base: "var(--bg-base)",
+          raised: "var(--bg-raised)",
+          sunken: "var(--bg-sunken)",
+        },
+        fg: {
+          primary: "var(--fg-primary)",
+          secondary: "var(--fg-secondary)",
+          tertiary: "var(--fg-tertiary)",
+          inverse: "var(--fg-inverse)",
+        },
         accent: {
+          50: "var(--accent-50)",
+          100: "var(--accent-100)",
+          200: "var(--accent-200)",
+          500: "var(--accent-500)",
+          600: "var(--accent-600)",
+          700: "var(--accent-700)",
           primary: "var(--color-brand-primary)",
           primaryMuted: "var(--color-brand-primaryLight)",
         },

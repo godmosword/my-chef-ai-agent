@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
+import { ServingToggle } from "@/components/recipe/ServingToggle";
 import { scaleIngredient } from "@/lib/recipe-scale";
 import { readProgress, writeProgress } from "@/lib/recipe-progress";
 import { cn } from "@/lib/utils/cn";
@@ -15,7 +15,6 @@ type RecipeDetailSectionsProps = {
   servings?: number | null;
 };
 
-const STEPS_PREVIEW = 2;
 const SCALE_OPTIONS = [0.5, 1, 2, 4] as const;
 
 export function RecipeDetailSections({
@@ -26,7 +25,6 @@ export function RecipeDetailSections({
 }: RecipeDetailSectionsProps) {
   const ingList = ingredients ?? [];
   const stepList = steps ?? [];
-  const [stepsExpanded, setStepsExpanded] = useState(false);
   const [scale, setScale] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(() => new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => new Set());
@@ -62,8 +60,6 @@ export function RecipeDetailSections({
       return next;
     });
   };
-  const canCollapse = stepList.length > STEPS_PREVIEW;
-  const visibleSteps = stepsExpanded ? stepList : stepList.slice(0, STEPS_PREVIEW);
 
   const scaledIngredients = useMemo(
     () => ingList.map((ing) => scaleIngredient(ing, scale)),
@@ -85,24 +81,11 @@ export function RecipeDetailSections({
                 </span>
               ) : null}
             </h2>
-            <div className="flex gap-1" role="group" aria-label="調整份量">
-              {SCALE_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setScale(opt)}
-                  aria-pressed={scale === opt}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs tabular-nums transition-colors",
-                    scale === opt
-                      ? "bg-brand-primary text-brand-greenText"
-                      : "bg-surface-muted text-text-muted hover:bg-surface-default",
-                  )}
-                >
-                  {opt}x
-                </button>
-              ))}
-            </div>
+            <ServingToggle
+              value={scale}
+              options={SCALE_OPTIONS}
+              onChange={setScale}
+            />
           </div>
           <ul className="mt-2 space-y-1.5 text-text-body">
             {scaledIngredients.map((ing, i) => {
@@ -132,8 +115,8 @@ export function RecipeDetailSections({
             <h2 className="font-serif text-lg text-text-ink">步驟</h2>
             <span className="text-xs text-text-muted">共 {stepList.length} 步</span>
           </div>
-          <ol className="mt-2 space-y-2 text-text-body">
-            {visibleSteps.map((step, i) => {
+          <ol className="mt-2 space-y-3 text-text-body">
+            {stepList.map((step, i) => {
               const checked = checkedSteps.has(i);
               return (
                 <li key={i}>
@@ -147,14 +130,23 @@ export function RecipeDetailSections({
                       />
                       <span
                         className={cn(
-                          "flex-1",
-                          checked && "text-text-muted line-through",
+                          "flex flex-1 gap-3",
+                          checked && "text-fg-tertiary line-through transition-colors duration-200",
                         )}
                       >
-                        <span className="mr-2 font-medium tabular-nums text-text-muted">
-                          {i + 1}.
+                        <span
+                          className={cn(
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+                            checked
+                              ? "bg-surface-muted text-text-muted"
+                              : "bg-accent-100 text-accent-700",
+                          )}
+                        >
+                          {i + 1}
                         </span>
-                        {formatStep(step)}
+                        <span className="flex-1 text-base leading-relaxed">
+                          {formatStep(step)}
+                        </span>
                       </span>
                     </label>
                     {recipeId && (
@@ -167,33 +159,9 @@ export function RecipeDetailSections({
               );
             })}
           </ol>
-          {canCollapse && (
-            <button
-              type="button"
-              onClick={() => setStepsExpanded((v) => !v)}
-              className={cn(
-                "mt-3 inline-flex items-center gap-1 rounded-lg border border-border-default px-3 py-1.5 text-xs text-text-muted",
-                "hover:border-brand-primary hover:text-brand-primaryDark",
-              )}
-            >
-              {stepsExpanded ? (
-                <>
-                  收合步驟
-                  <ChevronUp className="size-3" aria-hidden />
-                </>
-              ) : (
-                <>
-                  看完整 {stepList.length} 步
-                  <ChevronDown className="size-3" aria-hidden />
-                </>
-              )}
-            </button>
-          )}
-          {!stepsExpanded && canCollapse && (
-            <p className="mt-3 text-xs text-text-muted">
-              邊做邊看？直接點下方「進入烹飪模式」，一步一畫面、可語音、附計時器。
-            </p>
-          )}
+          <p className="mt-3 text-xs text-text-muted">
+            邊做邊看？點「進入烹飪模式」，一步一畫面、可語音、附計時器。
+          </p>
         </section>
       )}
     </>

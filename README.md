@@ -101,6 +101,8 @@ pnpm -F @chef/web test
 | [`CHANGELOG.md`](CHANGELOG.md) | 變更紀錄 |
 | [`TODOS.md`](TODOS.md) | Backlog |
 | [`AGENTS.md`](AGENTS.md) | Agent 維運 |
+| [`docs/ux-spec.md`](docs/ux-spec.md) | App UX/UI 實作規格（Tonight、食譜、烹飪、錯誤態） |
+| [`docs/design-tokens.md`](docs/design-tokens.md) | 設計 token 對照 |
 
 ---
 

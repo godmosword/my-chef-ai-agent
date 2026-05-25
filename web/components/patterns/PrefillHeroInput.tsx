@@ -1,9 +1,9 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { HeroInput, type HeroInputProps } from "@/components/patterns/HeroInput";
+import { InputHero, type InputHeroProps } from "@/components/app-home/InputHero";
 
-export function PrefillHeroInput(props: Omit<HeroInputProps, "defaultValue">) {
+export function PrefillHeroInput(props: Omit<InputHeroProps, "defaultValue" | "error"> & { error?: string | null }) {
   const searchParams = useSearchParams();
   const raw = searchParams.get("prefill");
   let defaultValue = "";
@@ -15,5 +15,5 @@ export function PrefillHeroInput(props: Omit<HeroInputProps, "defaultValue">) {
     }
   }
 
-  return <HeroInput {...props} defaultValue={defaultValue} />;
+  return <InputHero {...props} defaultValue={defaultValue} />;
 }

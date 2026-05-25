@@ -57,7 +57,7 @@ export function RecipeDetailLayout({
           <Button asChild size="lg" className="w-full">
             <Link href={`/app/library/${recipe.id}/cook`}>
               <ChefHat className="size-5" aria-hidden />
-              進入烹飪模式
+              進入烹飪模式 →
             </Link>
           </Button>
         </div>

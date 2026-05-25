@@ -2,6 +2,8 @@
 
 import { MeProfileSection } from "@/components/profile/MeProfileSection";
 import { MeSettingsPanel } from "@/components/settings/MeSettingsPanel";
+import { QuotaIndicator } from "@/components/patterns/QuotaIndicator";
+import { DinnerReminderCard } from "@/components/me/DinnerReminderCard";
 
 export default function MePage() {
   return (
@@ -14,6 +16,13 @@ export default function MePage() {
       </header>
 
       <MeProfileSection />
+
+      <section aria-label="今日配額">
+        <h2 className="mb-3 font-serif text-lg text-text-ink">今日配額</h2>
+        <QuotaIndicator />
+      </section>
+
+      <DinnerReminderCard />
 
       <div>
         <h2 className="mb-4 font-serif text-lg text-text-ink">偏好設定</h2>

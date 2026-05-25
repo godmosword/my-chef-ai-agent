@@ -23,7 +23,7 @@ export function NetworkStatus() {
       role="status"
       className="fixed left-0 right-0 top-0 z-[60] bg-brand-primary py-2 text-center text-sm text-text-ink"
     >
-      離線中 · 部分功能受限
+      目前離線。已存的食譜仍可查看
     </div>
   );
 }

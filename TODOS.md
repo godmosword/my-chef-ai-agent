@@ -30,6 +30,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-22 | **UX 規格 Phase 1–7**：`docs/ux-spec.md`；Tonight 主頁重組、食譜 CTA／份量／錯誤態、晚餐提醒卡、設計 token 別名；規格見 [`docs/ux-spec.md`](docs/ux-spec.md)。 |
 | 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`web`、`@chef/design-tokens`、`@chef/shared-types`）；`web-ci.yml`；規格已核准並實作。 |
 | 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、 HTML 海報、legal）。 |
 | 2026-05-23 | **移除 LINE Bot 與 Render**：刪除 `apps/line-bot/`、`line-bot-ci.yml`、相關部署文件；產品僅 Web。 |

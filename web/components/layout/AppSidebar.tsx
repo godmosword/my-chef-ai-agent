@@ -9,7 +9,6 @@ import { fetchUserProfile, type ProfileResponse } from "@/lib/api/profile";
 import { useDisplayName } from "@/lib/profile/display-name";
 import { cookedToday } from "@/lib/profile/title";
 import { Avatar } from "@/components/primitives/Avatar";
-import { QuotaIndicator } from "@/components/patterns/QuotaIndicator";
 import { useToast } from "@/components/providers/ToastProvider";
 import { cn } from "@/lib/utils/cn";
 
@@ -103,7 +102,6 @@ export function AppSidebar() {
             profile={profile}
           />
         )}
-        <QuotaIndicator />
       </div>
     </aside>
   );

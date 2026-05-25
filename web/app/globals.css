@@ -6,6 +6,25 @@
 
 /* Bridge: typography / spacing from tokens.json (components use var() only) */
 :root {
+  /* UX spec aliases → existing design tokens */
+  --bg-base: var(--color-background-default);
+  --bg-raised: var(--color-surface-muted);
+  --bg-sunken: var(--color-surface-alt);
+  --fg-primary: var(--color-text-ink);
+  --fg-secondary: var(--color-text-body);
+  --fg-tertiary: var(--color-text-muted);
+  --fg-inverse: var(--color-brand-greenText);
+  --accent-50: var(--color-brand-primaryLight);
+  --accent-100: var(--color-brand-primaryLight);
+  --accent-200: #dcc09a;
+  --accent-500: var(--color-brand-primary);
+  --accent-600: var(--color-brand-primaryDark);
+  --accent-700: #6b3d1f;
+  --success: var(--color-brand-green);
+  --warning: var(--color-brand-primary);
+  --danger: var(--color-cuisine-taiwanese);
+  --info: #4a6fa5;
+
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei",
     sans-serif;
   --font-serif: "Noto Serif TC", ui-serif, serif;
@@ -21,6 +40,16 @@
   --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
   --motion-duration-normal: 200ms;
   --font-scale: 1;
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {

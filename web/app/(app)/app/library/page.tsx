@@ -10,6 +10,7 @@ import { ViewToggle, type LibraryView } from "@/components/patterns/ViewToggle";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { LibraryEmpty } from "@/components/empty-states/LibraryEmpty";
 import { BookOpen, Sparkles } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
@@ -135,6 +136,8 @@ export default function LibraryPage() {
             <RecipeCardSkeleton key={i} className={view === "gallery" ? "" : "min-w-0"} />
           ))}
         </div>
+      ) : items.length === 0 && !q.trim() && !cuisine ? (
+        <LibraryEmpty />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<BookOpen className="size-10" />}

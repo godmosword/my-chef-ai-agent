@@ -17,6 +17,7 @@ import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
 import { RecipeNotes } from "@/components/recipe/RecipeNotes";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
+import { RecipeActionsMenu } from "@/components/recipe/RecipeActionsMenu";
 import { capture } from "@/lib/analytics/events";
 
 export default function RecipeDetailPage() {
@@ -90,6 +91,7 @@ export default function RecipeDetailPage() {
             />
           </Button>
         )}
+        <RecipeActionsMenu recipe={recipe} />
         {FLAGS.sharing && recipe.id && (
           <RecipeShareMenu
             recipeId={recipe.id}
@@ -101,7 +103,7 @@ export default function RecipeDetailPage() {
           <Button asChild size="lg" className="hidden md:inline-flex">
             <Link href={`/app/library/${recipe.id}/cook`}>
               <ChefHat className="size-5" aria-hidden />
-              進入烹飪模式
+              進入烹飪模式 →
             </Link>
           </Button>
         )}
