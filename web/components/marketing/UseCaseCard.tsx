@@ -7,7 +7,6 @@ export type UseCaseCardModel = {
   title: string;
   quote: string;
   prefill: string;
-  image: string;
   gradient: [string, string];
 };
 

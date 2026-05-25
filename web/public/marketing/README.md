@@ -1,18 +1,19 @@
 # Marketing 靜態圖片
 
-預設 Landing 使用 **CSS 漸層占位**（不請求 `/marketing/*`）。
+**Landing 首頁**已改為純 UI mock，**不會**請求本目錄檔案。
 
-本 repo 已含 **`pnpm -F @chef/web marketing:images`** 產生的漸層占位圖（可提交）。在 Vercel 設 **`NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1`** 即改以 `<img>` 顯示下列檔案。
+## API 主圖備援
 
-若要換成真實攝影／截圖，覆寫同名檔案即可。
+`hero-three-cup-chicken.jpg` 仍供生圖 API fallback（`lib/media/hero-image.ts`），與 Landing 無關。
 
-| 檔名 | 尺寸建議 |
-|------|----------|
-| `hero-three-cup-chicken.jpg` | 800×600 |
-| `usecase-fridge-tomato-eggs.jpg` | 800×600 |
-| `usecase-kids-rice-bowl.jpg` | 800×600 |
-| `usecase-guest-beef-stew.jpg` | 800×600 |
-| `screenshot-library.png` | 1200×800 |
-| `screenshot-cooking-mode.png` | 1200×800 |
+## 其餘檔案（legacy）
+
+下列檔案可由 `pnpm -F @chef/web marketing:images` 產生漸層占位圖；目前 **無** Landing 元件引用。保留僅供日後行銷或腳本使用。
+
+| 檔名 | 備註 |
+|------|------|
+| `hero-three-cup-chicken.jpg` | API placeholder |
+| `usecase-*.jpg` | 已自 Landing 移除 |
+| `screenshot-*.png` | 已自 Landing 移除 |
 
 OG 分享卡由 `app/opengraph-image.tsx` 動態產生，無需 `og-image.png`。

@@ -37,7 +37,6 @@ pnpm dev:web
 5. **Build Command**（建議）：`cd .. && pnpm tokens:build && pnpm -F @chef/web build`
 6. 設定 `GEMINI_API_KEY`；Neon 連結後有 `DATABASE_URL`
 7. （建議）`NEXT_PUBLIC_NEW_UI=1`、`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`、`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`、`NEXT_PUBLIC_SITE_URL`
-8. （可選）`NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1`（需先 `pnpm marketing:images` 或放入 `public/marketing/` 檔案）
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 

@@ -9,6 +9,14 @@
 
 ### Added
 
+- **Landing 三步驟帶**：「從一句話到上桌」— 輸入、料理書、廚房模式純 UI mock（無行銷 PNG）。
+
+### Changed
+
+- **Landing Hero**：手機框內改為產品示意（輸入 + 無圖食譜卡），移除假主圖／`NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES` 依賴；刪未使用之行銷元件（`DemoRecipeCard`、`FeatureSplit` 等）。
+
+### Added
+
 - **烹飪步驟 AI 插圖**：`openai_compatible` + API key 時，新食譜背景為前 N 步（`MAX_STEP_IMAGES`，預設 6）生成教學用過程照；Cook 頁輪詢更新；`AUTO_STEP_IMAGES=0` 可關閉。
 - **主圖備援**：`placeholder` 或無金鑰時改用站內 `/marketing/hero-three-cup-chicken.jpg`，避免 `placehold.co` 在瀏覽器被擋。
 

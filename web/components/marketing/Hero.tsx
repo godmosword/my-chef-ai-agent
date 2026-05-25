@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
-import { DemoRecipeCard } from "@/components/marketing/DemoRecipeCard";
+import { LandingHeroMock } from "@/components/marketing/LandingHeroMock";
 import { appPrefillHref, MARKETING_SECTION } from "@/lib/marketing/content";
 
 const { hero } = MARKETING_SECTION;
@@ -42,7 +42,7 @@ export function Hero() {
 
       <div className="order-1 flex justify-center lg:order-2 lg:col-span-6">
         <PhoneFrame>
-          <DemoRecipeCard />
+          <LandingHeroMock />
         </PhoneFrame>
       </div>
     </section>

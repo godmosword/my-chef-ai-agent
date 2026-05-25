@@ -39,7 +39,7 @@ pnpm dev:web
 
 **主圖與步驟插圖（Prompt 8）**：新食譜背景生成**主圖**與**烹飪步驟 AI 插圖**（Cook 模式逐步顯示；最多 `MAX_STEP_IMAGES`，預設 6 步）。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0`／`AUTO_STEP_IMAGES=0` 可關閉；「我的」可關閉個人主圖偏好。每張圖各計入每日 **image** 配額（主圖 1 次 + 每步 1 次）。
 
-**行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為新版 Landing；情境卡片連 `/app?prefill=…`。占位圖：`pnpm -F @chef/web marketing:images`；Vercel 設 `NEXT_PUBLIC_MARKETING_USE_REAL_IMAGES=1` 啟用（見 `web/public/marketing/README.md`）。
+**行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為 Landing（Hero 產品 mock + 三步驟 + 情境卡）；情境卡片連 `/app?prefill=…`。`public/marketing/hero-three-cup-chicken.jpg` 僅供 API 主圖備援（見 `web/public/marketing/README.md`）。
 
 **PWA 真機驗收**：見 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)（飛航模式、Cook 計時、收藏離線同步）。
 
