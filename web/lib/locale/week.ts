@@ -1,21 +1,24 @@
-/** zh-TW week calendar: Monday as week start, local timezone dates. */
+/** zh-TW week calendar: Monday as week start, user display timezone. */
+
+import {
+  DEFAULT_DISPLAY_TIMEZONE,
+  localDateKeyInTimeZone,
+  parseIsoDateLocal,
+} from "@/lib/locale/datetime";
 
 export function formatIsoDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return localDateKeyInTimeZone(d, DEFAULT_DISPLAY_TIMEZONE);
 }
 
-export function parseIsoDateLocal(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
+export { parseIsoDateLocal };
 
-/** Floor any date to Monday of that week (local). */
+/** Floor any date to Monday of that week (in display TZ). */
 export function floorToWeekMonday(isoOrDate: string | Date): string {
-  const d =
-    typeof isoOrDate === "string" ? parseIsoDateLocal(isoOrDate) : new Date(isoOrDate);
+  const iso =
+    typeof isoOrDate === "string"
+      ? isoOrDate
+      : localDateKeyInTimeZone(isoOrDate, DEFAULT_DISPLAY_TIMEZONE);
+  const d = parseIsoDateLocal(iso);
   const day = d.getDay();
   const diff = (day + 6) % 7;
   d.setDate(d.getDate() - diff);
@@ -46,7 +49,7 @@ export function isToday(iso: string, now = new Date()): boolean {
 }
 
 export function isPastDate(iso: string, now = new Date()): boolean {
-  return parseIsoDateLocal(iso) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return parseIsoDateLocal(iso) < parseIsoDateLocal(formatIsoDate(now));
 }
 
 export function currentWeekMonday(now = new Date()): string {

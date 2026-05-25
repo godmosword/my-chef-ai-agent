@@ -5,7 +5,7 @@ import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
 import { isBrowserOnline } from "@/lib/offline/network";
 import { offlineGenerationMessage } from "@/lib/offline/recipes";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };
@@ -41,12 +41,13 @@ export function useRecipeGeneration() {
 
   const generate = useCallback(async (body: GenerateRecipeRequest) => {
     if (!isBrowserOnline()) {
-      setError(offlineGenerationMessage());
+      setError("目前沒有網路，已收藏的食譜仍可查看。");
       return;
     }
     setStreaming(true);
     setError(null);
     setRecipe(null);
+    capture("recipe_generation_started", { source: "today" });
     let partial: RecipePayload = {};
 
     try {
@@ -60,17 +61,23 @@ export function useRecipeGeneration() {
         } else if (ev.type === "done") {
           setRecipe(ev.recipe);
           if (ev.recipe.id) {
-            track("recipe_generated", {
-              recipe_id: ev.recipe.id,
-              source: "today",
-            });
+            capture("recipe_generation_succeeded", { source: "today" });
           }
         } else if (ev.type === "error") {
-          setError(ev.message);
+          const msg =
+            ev.message.includes("額度") || ev.message.includes("429")
+              ? "今天的文字食譜額度已用完，明日 0 點（台灣時間）重置。"
+              : "這次沒有成功產生食譜，請重新試一次，或換個食材組合。";
+          setError(msg);
+          capture("recipe_generation_failed", {
+            source: "today",
+            reason: ev.message.includes("額度") ? "quota" : "error",
+          });
         }
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "生成失敗");
+      setError("這次沒有成功產生食譜，請重新試一次，或換個食材組合。");
+      capture("recipe_generation_failed", { source: "today", reason: "exception" });
     } finally {
       setStreaming(false);
     }

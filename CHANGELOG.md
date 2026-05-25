@@ -9,6 +9,21 @@
 
 ### Added
 
+- **家庭晚餐定位**：Landing／metadata 改為「冰箱有什麼，今晚就煮什麼」；Tonight 快捷 chips 改為家庭情境。
+- **示範食譜**：`/demo/recipe` 靜態完整食譜（不扣配額、不寫 DB）；可選 `/demo/recipe/cook` 試用烹飪模式。
+- **飲食偏好 MVP**：設定頁可選需避開食材；生成 prompt 套用；結果頁安全提示。
+- **步驟插圖按需**：`POST /api/recipes/[id]/steps/[stepIndex]/image`；預設不再背景自動產生多張步驟圖（`AUTO_STEP_IMAGES=0`）。
+- **日期工具**：`lib/locale/datetime.ts`（`Asia/Taipei`）；Today 問候改 client 顯示避免 hydration 錯日。
+- **Analytics**：Landing／demo／生成漏斗事件（不含 prompt 與過敏原文）。
+
+### Changed
+
+- **圖片策略**：新食譜預設僅自動 1 張主圖；步驟圖由使用者在詳情頁主動觸發（提示消耗 1 次圖片額度）。
+- **誠實文案**：改「永久保存」為「本裝置料理書」；更新隱私權與免責聲明。
+- **配額「今日」**：以 `Asia/Taipei` 日曆日計算（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫）。
+
+### Added
+
 - **烹飪步驟 AI 插圖**：`openai_compatible` + API key 時，新食譜背景為前 N 步（`MAX_STEP_IMAGES`，預設 6）生成教學用過程照；Cook 頁輪詢更新；`AUTO_STEP_IMAGES=0` 可關閉。
 - **主圖備援**：`placeholder` 或無金鑰時改用站內 `/marketing/hero-three-cup-chicken.jpg`，避免 `placehold.co` 在瀏覽器被擋。
 

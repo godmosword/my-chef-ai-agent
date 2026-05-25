@@ -4,11 +4,14 @@ export type QuickPrompt = {
   value: string;
 };
 
+/** Tonight quick chips — family dinner oriented. */
 export const QUICK_PROMPTS: QuickPrompt[] = [
-  { key: "fridge", label: "清冰箱", value: "冰箱裡有 " },
-  { key: "kids", label: "兒童餐", value: "小孩不吃辣的 " },
-  { key: "quick", label: "30 分鐘", value: "30 分鐘內可以完成的 " },
-  { key: "guests", label: "招待客人", value: "招待 4 個人的 " },
-  { key: "one-pot", label: "一鍋料理", value: "一鍋到底的 " },
-  { key: "healthy", label: "低油", value: "低油少鹽的 " },
+  { key: "time-20", label: "我只有 20 分鐘", value: "我只有 20 分鐘，" },
+  { key: "no-spicy", label: "孩子不吃辣", value: "孩子不吃辣，" },
+  { key: "fridge", label: "冰箱剩蛋與青菜", value: "冰箱有雞蛋和青菜，" },
+  { key: "one-pot", label: "少洗鍋子", value: "想少洗鍋子，一鍋完成，" },
+  { key: "lunchbox", label: "明天帶便當", value: "明天要帶便當，" },
+  { key: "family", label: "兩大一小的晚餐", value: "兩大一小的晚餐，" },
+  { key: "light", label: "低油低鹽", value: "低油低鹽，" },
+  { key: "allergy", label: "避開過敏食材", value: "請避開過敏食材，" },
 ];

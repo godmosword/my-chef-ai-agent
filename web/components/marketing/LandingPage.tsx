@@ -1,5 +1,6 @@
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 import { Hero } from "@/components/marketing/Hero";
+import { LandingHowItWorks } from "@/components/marketing/LandingHowItWorks";
 import { UseCaseGrid } from "@/components/marketing/UseCaseGrid";
 import { Footer } from "@/components/marketing/Footer";
 
@@ -12,6 +13,9 @@ export function LandingPage() {
       <main className="mx-auto max-w-[70rem] px-6">
         <div className={sectionY}>
           <Hero />
+        </div>
+        <div className={sectionY}>
+          <LandingHowItWorks />
         </div>
         <div className={sectionY}>
           <UseCaseGrid />

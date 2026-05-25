@@ -19,7 +19,7 @@ export function HeroInput({
   onSubmit,
   disabled,
   streaming = false,
-  placeholder = "今晚想吃什麼？冰箱有什麼？想試試什麼風味？",
+  placeholder = "冰箱有什麼？孩子口味？想幾分鐘內上桌？",
   className,
   defaultValue = "",
 }: HeroInputProps) {

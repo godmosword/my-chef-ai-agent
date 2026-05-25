@@ -1,11 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Chip } from "@/components/primitives/Chip";
 import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
+import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
+import { dietaryAvoidDisplayLabels } from "@/lib/db/dietary-preferences";
+import type { DietaryPreferences } from "@/lib/db/dietary-preferences";
 
 function isQuotaError(message: string): boolean {
   return message.includes("額度") || message.includes("429");
@@ -18,6 +22,28 @@ export type StreamingRecipeProps = {
 };
 
 export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipeProps) {
+  const [avoidLabels, setAvoidLabels] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!recipe?.id || streaming) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/me/dietary-preferences");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { preferences: DietaryPreferences };
+        if (!cancelled) {
+          setAvoidLabels(dietaryAvoidDisplayLabels(data.preferences));
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [recipe?.id, streaming]);
+
   if (error) {
     return (
       <div
@@ -38,7 +64,12 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
 
   if (!recipe && streaming) {
     return (
-      <div className="space-y-3 rounded-lg border border-border-default bg-surface-default p-4">
+      <div
+        className="space-y-3 rounded-lg border border-border-default bg-surface-default p-4"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="text-sm text-text-body">正在幫你安排今晚的料理，稍等一下就好。</p>
         <Skeleton className="h-6 w-2/3" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-5/6" />
@@ -60,6 +91,9 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
         <div className="mt-2">
           <Chip label={recipe.cuisine} />
         </div>
+      )}
+      {!streaming && recipe.id && (
+        <RecipeSafetyNotice avoidLabels={avoidLabels} />
       )}
       {recipe.ingredients && recipe.ingredients.length > 0 && (
         <section className="mt-4">

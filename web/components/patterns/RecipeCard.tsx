@@ -47,7 +47,7 @@ export function RecipeCard({
             (recipe.heroStatus === "ready" ||
               recipe.heroUrl.startsWith("/") ||
               recipe.heroUrl.startsWith("data:"))
-              ? "主圖已永久儲存"
+              ? "主圖已儲存"
               : undefined
           }
         >
