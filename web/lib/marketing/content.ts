@@ -2,16 +2,19 @@
 
 export const MARKETING_SECTION = {
   hero: {
-    eyebrow: "AI · 料理書 · 廚房模式",
-    headline: "用一句話，換一桌剛好的晚餐",
-    body: "告訴 AI 冰箱裡有什麼、家裡誰要吃，得到完整食譜、主圖與採買清單。每一道都會留在你的料理書裡。",
+    eyebrow: "30 分鐘 · 家庭晚餐 · AI 助手",
+    headline: "冰箱有什麼，今晚就煮什麼",
+    body: "輸入食材、孩子口味與時間限制，快速得到今天真的煮得出來的一餐。生成的食譜會保存在這台裝置的料理書中，方便下次查看。",
     demoRecipe: {
-      title: "三杯雞",
-      cuisine: "台式",
-      ingredientCount: 4,
-      stepCount: 5,
+      title: "電鍋雞肉蔬菜炊飯",
+      cuisine: "家常",
+      ingredientCount: 9,
+      stepCount: 6,
     },
-    demoPrefill: "台式三杯雞，30 分鐘內",
+    demoPrefill: "電鍋雞肉蔬菜炊飯，兩大一小，30 分鐘，不辣",
+    primaryCta: "用冰箱食材生成晚餐",
+    secondaryCta: "先看看完成的食譜",
+    secondaryHref: "/demo/recipe",
   },
   howItWorks: {
     heading: "從一句話到上桌",
@@ -23,7 +26,7 @@ export const MARKETING_SECTION = {
       },
       {
         title: "存入料理書",
-        body: "累積每道做過的食譜，可搜尋、可標籤，下次重做不必重問 AI。",
+        body: "食譜會留在這台裝置，可搜尋、可重做，不必重問 AI。",
       },
       {
         title: "廚房模式",
@@ -50,17 +53,17 @@ export const MARKETING_SECTION = {
     },
     {
       id: "guests",
-      label: "招待客人",
-      title: "紅酒燉牛肉",
-      quote: "週末 6 個人的晚餐",
-      prefill: "週末 6 個人的晚餐",
+      label: "兩大一小",
+      title: "電鍋雞肉蔬菜炊飯",
+      quote: "30 分鐘內的一鍋晚餐",
+      prefill: "兩大一小的晚餐，30 分鐘，不辣",
       gradient: ["#FAC775", "#BA7517"] as [string, string],
     },
   ],
   features: {
     library: {
       title: "你的料理書",
-      body: "累積每道做過的食譜，可搜尋、可標籤，下次重做不必重問 AI。",
+      body: "食譜會留在這台裝置，可搜尋、可標籤，下次重做不必重問 AI。",
     },
     cooking: {
       title: "廚房模式",

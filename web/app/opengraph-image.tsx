@@ -54,7 +54,7 @@ export default function OpenGraphImage() {
           <div style={{ fontSize: 22, color: "#3D3530", lineHeight: 1.6, maxWidth: 480 }}>
             完整食譜、主圖與採買清單。
             <br />
-            每一道都會留在你的料理書裡。
+            食譜會保存在這台裝置的料理書中。
           </div>
         </div>
       </div>

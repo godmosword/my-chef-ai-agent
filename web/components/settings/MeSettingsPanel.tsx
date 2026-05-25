@@ -226,7 +226,7 @@ export function MeSettingsPanel() {
           <div>
             <h2 className="text-sm font-medium text-text-ink">自動生成主圖</h2>
             <p className="mt-1 text-sm text-text-muted">
-              每道新食譜會自動配一張 AI 成品圖（使用每日圖片配額，每道僅生成一次）
+              每道新食譜預設只自動產生 1 張成品主圖。步驟插圖需在食譜內手動產生，每次使用 1 次圖片額度。
             </p>
           </div>
           <label className="flex shrink-0 items-center gap-2 text-sm">

@@ -20,7 +20,7 @@ export type QuotaDecision = {
   image: QuotaBucket;
 };
 
-function utcToday(): string {
+function quotaToday(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
@@ -202,7 +202,7 @@ export async function checkQuota(
   const sub = await getSubscription(userId, tenantId);
   const planKey = sub.status === "active" ? sub.plan_key : "free";
   const planLimit = resolvePlanLimit(planKey);
-  const usage = await getDailyUsageBreakdown(userId, tenantId, utcToday());
+  const usage = await getDailyUsageBreakdown(userId, tenantId, quotaToday());
   const decision = buildDecision(
     planKey,
     planLimit,
@@ -233,7 +233,7 @@ export async function consumeQuota(
   const after = await incrementDailyUsage(
     userId,
     tenantId,
-    utcToday(),
+    quotaToday(),
     units,
     kind,
   );

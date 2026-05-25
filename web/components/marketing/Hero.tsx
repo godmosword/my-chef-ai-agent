@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
 import { LandingHeroMock } from "@/components/marketing/LandingHeroMock";
 import { appPrefillHref, MARKETING_SECTION } from "@/lib/marketing/content";
+import { capture } from "@/lib/analytics/events";
 
 const { hero } = MARKETING_SECTION;
 
@@ -27,15 +30,17 @@ export function Hero() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link
             href="/app"
+            onClick={() => capture("landing_primary_cta_clicked")}
             className="inline-flex h-[var(--spacing-btn-lg)] items-center justify-center rounded-lg bg-brand-primary px-6 text-lg font-medium text-brand-greenText transition-colors duration-200 hover:bg-brand-primaryDark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
           >
-            開始料理
+            {hero.primaryCta}
           </Link>
           <Link
-            href={appPrefillHref(hero.demoPrefill)}
+            href={hero.secondaryHref}
+            onClick={() => capture("landing_demo_cta_clicked")}
             className="inline-flex h-[var(--spacing-btn-lg)] items-center justify-center rounded-lg border border-border-default bg-surface-default px-6 text-lg font-medium text-text-ink transition-colors duration-200 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
           >
-            看示範食譜
+            {hero.secondaryCta}
           </Link>
         </div>
       </div>

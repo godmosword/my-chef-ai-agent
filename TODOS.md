@@ -6,6 +6,25 @@
 
 ---
 
+## P1 — 驗證留存與下廚流程（確認 P0 後）
+
+- [ ] iPhone 真機驗收烹飪模式（Wake Lock、背景計時、提示音）
+- [ ] 分享至 LINE／Threads OG 預覽
+- [ ] 週菜單加入食譜流程優化
+- [ ] 收藏後再次料理流程
+- [ ] 7 天回訪漏斗（PostHog dashboard）
+- [ ] Playwright E2E：生成 → 收藏 → 烹飪 → 完成 → 分享
+
+## P2 — 確認留存後再評估
+
+- [ ] OAuth 登入與跨裝置同步
+- [ ] 付費方案與圖片額度策略
+- [ ] 家庭多人共享週菜單
+- [ ] 食材照片辨識
+- [ ] 社群料理卡片自動生成
+
+---
+
 ## 里程碑摘要（近期已交付，供對齊／查帳）
 
 | 時間 | 內容 |
@@ -23,7 +42,6 @@
 | 2026-05-23 | **Prompt 9 — Marketing Landing**：五段式首頁、prefill、OG image、情境卡片；圖片放 `public/marketing/`。 |
 | 2026-05-23 | **Prompt 10 — Today Polish**：Hero quick prompts、配額 sidebar 樣式、Greeting subtitle、空狀態引導。 |
 | 2026-05-24 | **Frontend Wave 4a–4b**：暗色 token、Today 結果主圖、詳情／公開版面、烹飪 polish；規格 [`2026-05-24-frontend-wave4-design.md`](docs/superpowers/specs/2026-05-24-frontend-wave4-design.md)。 |
-| 2026-05-25 | **Landing 精緻化**：Hero 產品 mock、三步驟帶、移除假主圖與死碼；規格 [`2026-05-25-landing-refine-design.md`](docs/superpowers/specs/2026-05-25-landing-refine-design.md)。 |
 | 2026-04-26 | **UX Playbook 補齊**：新增 `docs/UX_PLAYBOOK.md`，落地互動狀態矩陣、A11y 基線、microcopy 規範與使用者流程圖，作為後續 UI 驗收基準。 |
 | 2026-04-26 | **全域 UI/UX 視覺一致化**：新增 `design_tokens.py` 與 `ui_contracts.py`，Flex/海報 HTML/Pillow/圖卡/法規頁全部改為共享語義色票；新增 `UI_COMPONENT_CONTRACT.md` 與 token 一致性測試。 |
 | 2026-04-24 | **生圖與 Token 優化**：Deep Research 併入 system 前截斷（`DEEP_RESEARCH_MAX_CHARS_IN_SYSTEM`）；圖卡 Stage A prompt 精簡；hero 下載與底圖並行；`MAX_COMPLETION_TOKENS` 註解與截斷測試；全量 **140 passed**。 |

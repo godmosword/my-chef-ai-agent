@@ -74,7 +74,7 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
               unoptimized
             />
             <span
-              title="主圖已永久儲存到你的料理書，不會自動消失"
+              title="主圖已儲存於這台裝置的料理書"
               className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-green/85 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm backdrop-blur"
             >
               <Check className="size-3" aria-hidden />

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/lib/config";
+import { addDaysIsoLocal, todayDateKeyInTimeZone } from "@/lib/locale/datetime";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { countFavoritesForUser } from "@/lib/db/favorites";
 import { getRecipeActivityForUser } from "@/lib/db/queries/recipes";
@@ -25,20 +26,13 @@ function computeStreaks(activeDates: string[]): {
   if (activeDates.length === 0) return { current: 0, longest: 0 };
 
   const sorted = Array.from(new Set(activeDates)).sort();
-  const toIso = (d: Date) => d.toISOString().slice(0, 10);
-  const addDays = (d: Date, n: number) => {
-    const next = new Date(d);
-    next.setUTCDate(next.getUTCDate() + n);
-    return next;
-  };
 
-  // longest run
   let longest = 1;
   let run = 1;
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(`${sorted[i - 1]}T00:00:00Z`);
-    const curr = new Date(`${sorted[i]}T00:00:00Z`);
-    if (toIso(addDays(prev, 1)) === toIso(curr)) {
+    const prev = sorted[i - 1]!;
+    const curr = sorted[i]!;
+    if (addDaysIsoLocal(prev, 1) === curr) {
       run += 1;
       if (run > longest) longest = run;
     } else {
@@ -46,24 +40,21 @@ function computeStreaks(activeDates: string[]): {
     }
   }
 
-  // current streak: walk back from today (or yesterday) through consecutive days
   const setOfDates = new Set(sorted);
-  const today = new Date();
-  const todayIso = toIso(today);
-  const yesterdayIso = toIso(addDays(today, -1));
-  let cursor: Date;
-  if (setOfDates.has(todayIso)) {
-    cursor = today;
-  } else if (setOfDates.has(yesterdayIso)) {
-    cursor = addDays(today, -1);
-  } else {
+  const todayIso = todayDateKeyInTimeZone();
+  const yesterdayIso = addDaysIsoLocal(todayIso, -1);
+  let cursor = todayIso;
+  if (!setOfDates.has(todayIso) && !setOfDates.has(yesterdayIso)) {
     return { current: 0, longest };
+  }
+  if (!setOfDates.has(todayIso)) {
+    cursor = yesterdayIso;
   }
 
   let current = 0;
-  while (setOfDates.has(toIso(cursor))) {
+  while (setOfDates.has(cursor)) {
     current += 1;
-    cursor = addDays(cursor, -1);
+    cursor = addDaysIsoLocal(cursor, -1);
   }
   return { current, longest };
 }

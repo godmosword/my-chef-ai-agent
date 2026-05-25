@@ -52,7 +52,11 @@ export function buildSystemPrompt(
   base +=
     "\n若涉及「心情點餐」，請副主廚針對該心情提供具情緒價值與儀式感的料理建議。";
   base += "\n步驟請保持精簡：steps 最多 6 步，每步儘量不超過 24 字。";
-  if (prefs) base += `\n飲食禁忌：${prefs}。`;
+  if (prefs) {
+    base += `\n【家庭飲食限制】${prefs}。`;
+    base +=
+      "\n主要食材、調味料、醬料、裝飾與替代建議皆不可包含上述需避開項目。";
+  }
   if (currentCuisine && currentCuisine !== "不拘") {
     base += `\n料理情境：${currentCuisine}。聚焦此風格。`;
   }

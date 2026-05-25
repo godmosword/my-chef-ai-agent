@@ -6,6 +6,7 @@ import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { scaleIngredient } from "@/lib/recipe-scale";
 import { readProgress, writeProgress } from "@/lib/recipe-progress";
 import { cn } from "@/lib/utils/cn";
+import { StepImageButton } from "@/components/recipe/StepImageButton";
 
 type RecipeDetailSectionsProps = {
   recipeId?: string;

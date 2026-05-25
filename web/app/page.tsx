@@ -7,13 +7,13 @@ import { getSiteUrl } from "@/lib/site-url";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "職人料理大腦 — 用一句話，換一桌剛好的晚餐",
+  title: "職人料理大腦 — 冰箱有什麼，今晚就煮什麼",
   description:
-    "告訴 AI 冰箱裡有什麼、家裡誰要吃，得到完整食譜、主圖與採買清單。每一道都會留在你的料理書裡。",
+    "忙碌家庭的 30 分鐘晚餐 AI 助手。輸入食材、孩子口味與時間，快速得到今天煮得出來的一餐。",
   robots: { index: true, follow: true },
   openGraph: {
     title: "職人料理大腦",
-    description: "用一句話，換一桌剛好的晚餐",
+    description: "冰箱有什麼，今晚就煮什麼 — 30 分鐘家庭晚餐",
     type: "website",
     url: siteUrl,
     locale: "zh_TW",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "職人料理大腦",
-    description: "用一句話，換一桌剛好的晚餐",
+    description: "冰箱有什麼，今晚就煮什麼 — 30 分鐘家庭晚餐",
     images: ["/opengraph-image"],
   },
 };

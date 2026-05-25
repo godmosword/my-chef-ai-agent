@@ -121,12 +121,6 @@ export async function POST(request: Request) {
                 tenantId: DEFAULT_TENANT_ID,
                 recipe,
               });
-              await triggerStepImagesGeneration({
-                recipeId,
-                userId,
-                tenantId: DEFAULT_TENANT_ID,
-                recipe,
-              });
             })(),
           );
         } else {
