@@ -37,7 +37,11 @@ pnpm dev:web
 
 **分析（Prompt 7）**：選填 `NEXT_PUBLIC_POSTHOG_KEY`（與 `NEXT_PUBLIC_POSTHOG_HOST`）；設 `NEXT_PUBLIC_ANALYTICS_ENABLED=0` 關閉。使用者在「我的」可關閉匿名事件。
 
-**主圖與步驟插圖（Prompt 8）**：新食譜背景生成**主圖**與**烹飪步驟 AI 插圖**（Cook 模式逐步顯示；最多 `MAX_STEP_IMAGES`，預設 6 步）。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0`／`AUTO_STEP_IMAGES=0` 可關閉；「我的」可關閉個人主圖偏好。每張圖各計入每日 **image** 配額（主圖 1 次 + 每步 1 次）。
+**主圖與步驟插圖（Prompt 8）**：新食譜預設只背景生成或提供 **1 張成品主圖**；烹飪步驟插圖改由使用者在食譜詳情主動按「產生這一步的示意圖」，每次清楚提示使用 1 次 **image** 配額。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0` 可關閉主圖；`AUTO_STEP_IMAGES=1` 才會恢復背景批次步驟圖（不建議免費預設）。
+
+**家庭飲食偏好**：在「我的／偏好」可設定不吃辣、兒童餐、低油低鹽與需避開食材。設定存於 `user_preferences.preferences`，只用於生成 prompt 與結果提示，不送入 analytics。
+
+**日期與配額日界線**：UI 日期、週菜單與每日配額預設以 `Asia/Taipei` 判斷（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫）；資料庫 timestamp 仍維持 UTC 儲存。
 
 **行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為 Landing（Hero 產品 mock + 三步驟 + 情境卡）；情境卡片連 `/app?prefill=…`。`public/marketing/hero-three-cup-chicken.jpg` 僅供 API 主圖備援（見 `web/public/marketing/README.md`）。
 
@@ -84,7 +88,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test   # Vitest（30 tests：recipe、migration、cooking、meal-plan 單位／解析）
+pnpm -F @chef/web test
 ```
 
 ---

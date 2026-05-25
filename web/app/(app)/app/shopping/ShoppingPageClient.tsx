@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
 import { ShoppingListView } from "./_components/ShoppingListView";
+import { capture } from "@/lib/analytics/events";
 
 export function ShoppingPageClient() {
   const searchParams = useSearchParams();
@@ -32,6 +33,9 @@ export function ShoppingPageClient() {
     try {
       const data = await fetchShoppingList(weekOf);
       setList(data);
+      capture("shopping_list_viewed", {
+        has_items: data.items.length > 0,
+      });
       const normalized = floorToWeekMonday(data.week_of);
       if (normalized !== weekOf) setWeekOf(normalized);
       router.replace(`/app/shopping?week_of=${normalized}`, { scroll: false });

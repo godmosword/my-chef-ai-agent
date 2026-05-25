@@ -29,6 +29,7 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
 
   const heroStatus = status as HeroStatus;
   const heroUrl = url ?? recipe.photo_url;
+  const imageError = error ?? recipe.hero_error ?? null;
 
   useEffect(() => {
     if (heroStatus === "ready" && heroUrl) {
@@ -78,15 +79,20 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
               className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-brand-green/85 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm backdrop-blur"
             >
               <Check className="size-3" aria-hidden />
-              已永久保存
+              已保存主圖
             </span>
           </>
         ) : (
           <HeroPlaceholder status={heroStatus} cuisine={recipe.cuisine ?? recipe.theme} />
         )}
       </div>
-      {error === "image_quota_exceeded" && (
-        <p className="text-sm text-text-muted">今日圖片配額已用完</p>
+      {imageError === "image_quota_exceeded" && (
+        <p className="text-sm text-text-muted">今天的圖片額度已用完，但你仍可以繼續使用文字食譜。</p>
+      )}
+      {imageError && imageError !== "image_quota_exceeded" && imageError !== "hero_auto_disabled" && (
+        <p className="text-sm text-text-muted">
+          食譜已完成，但圖片暫時無法產生，你仍可以開始料理。
+        </p>
       )}
       {recipe.id && (
         <Button

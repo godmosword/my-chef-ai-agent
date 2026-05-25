@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeDietaryPreferences,
   dietaryPreferencesPromptText,
   type DietaryPreferences,
 } from "./dietary-preferences";
@@ -18,5 +19,17 @@ describe("dietaryPreferencesPromptText", () => {
 
   it("returns null when empty", () => {
     expect(dietaryPreferencesPromptText({ tags: [], avoid_custom: "" })).toBeNull();
+  });
+
+  it("normalizes multiple saved avoid ingredients and ignores invalid preset keys", () => {
+    expect(
+      normalizeDietaryPreferences({
+        tags: ["no_kiwi", "unknown", "no_nuts"],
+        avoid_custom: " 香菜、蝦、花生 ",
+      }),
+    ).toEqual({
+      tags: ["no_kiwi", "no_nuts"],
+      avoid_custom: "香菜、蝦、花生",
+    });
   });
 });

@@ -10,7 +10,7 @@ import {
   revokeShareLink,
 } from "@/lib/api/sharing";
 import { buildShareUrl } from "@/lib/site-url";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 type Props = {
   recipeId: string;
@@ -40,7 +40,7 @@ export function RecipeShareMenu({
         const res = await createShareLink(recipeId, republish);
         setToken(res.share_token);
         setPublishedAt(res.published_at);
-        track("recipe_shared", { recipe_id: recipeId });
+        capture("recipe_shared", { republish });
         toast({ title: republish ? "已重新發布" : "公開連結已建立" });
         setConfirm(null);
       } catch (e) {

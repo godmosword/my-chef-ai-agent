@@ -22,6 +22,7 @@
 - [ ] 家庭多人共享週菜單
 - [ ] 食材照片辨識
 - [ ] 社群料理卡片自動生成
+- [ ] 食材選物或合作導購
 
 ---
 
@@ -66,7 +67,7 @@
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
 - [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
-- [x] **主圖 + 步驟插圖**：新食譜自動 AI 主圖與 Cook 步驟圖（`IMAGE_PROVIDER=openai_compatible` + API key）；`AUTO_STEP_IMAGES=0` 關步驟圖
+- [x] **主圖 + 按需步驟插圖**：新食譜預設只處理成品主圖；步驟圖需使用者主動按鈕觸發並使用 1 次 image 配額
 - [ ] **海報**：「下載海報」取得 HTML 且可列印
 
 ---
@@ -189,6 +190,7 @@
 ## 三、產品與文件
 
 - [ ] **偏好編輯**：讓使用者在聊天中改寫 `user_preferences`（指令或小流程）。
+- [ ] **家庭飲食偏好驗收**：在 Vercel production 設定避開食材，確認生成 prompt 套用且分享頁不公開私人偏好。
 - [ ] **版本策略**：是否 semver + git tag、release 與 `CHANGELOG` 日期的對應方式。
 - [ ] **README 雙語**：若對象以英文讀者為主，可另增 `README.en.md` 或分區塊英譯。
 
@@ -199,6 +201,7 @@
 ### Web（Vercel）
 
 - 未設 **`DATABASE_URL`** 時：無多輪記憶、收藏、配額、菜系；僅單次聊天與 placeholder 主圖。
+- 每日配額與 UI 日期預設以 **Asia/Taipei** 判斷；跨時區正式支援需後續加入使用者時區設定或 cookie。
 - **Serverless** 函式有執行時間上限；極長 AI 請求可能逾時（見規格風險表）。
 - **主圖**：`IMAGE_PROVIDER=placeholder` 為備援圖；真實生圖需 `openai_compatible` 與對應金鑰。
 - **海報**：下載為 HTML（尚無伺服端 PNG 截圖）。

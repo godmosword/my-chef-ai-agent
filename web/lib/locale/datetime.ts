@@ -19,10 +19,17 @@ export function localDateKeyInTimeZone(
   }).format(date);
 }
 
+export function displayDateKey(
+  date: Date = new Date(),
+  timeZone: string = DEFAULT_DISPLAY_TIMEZONE,
+): string {
+  return localDateKeyInTimeZone(date, timeZone);
+}
+
 export function todayDateKeyInTimeZone(
   timeZone: string = DEFAULT_DISPLAY_TIMEZONE,
 ): string {
-  return localDateKeyInTimeZone(new Date(), timeZone);
+  return displayDateKey(new Date(), timeZone);
 }
 
 /** zh-TW long date + weekday for headers. */

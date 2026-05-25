@@ -14,6 +14,7 @@ import type {
   RecipeWithLatestVersion,
 } from "@chef/shared-types";
 import { ensureStoredSteps } from "@/lib/hero/step-storage";
+import { displayDateKey } from "@/lib/locale/datetime";
 import { getDb } from "../drizzle";
 import {
   favoritesV2,
@@ -571,7 +572,7 @@ export async function getRecipeActivityForUser(
 
   const dateSet = new Set<string>();
   for (const row of rows) {
-    dateSet.add(row.createdAt.toISOString().slice(0, 10));
+    dateSet.add(displayDateKey(row.createdAt));
   }
 
   return {

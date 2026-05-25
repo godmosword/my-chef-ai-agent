@@ -4,7 +4,7 @@ export const MARKETING_SECTION = {
   hero: {
     eyebrow: "30 分鐘 · 家庭晚餐 · AI 助手",
     headline: "冰箱有什麼，今晚就煮什麼",
-    body: "輸入食材、孩子口味與時間限制，快速得到今天真的煮得出來的一餐。生成的食譜會保存在這台裝置的料理書中，方便下次查看。",
+    body: "輸入食材、孩子口味與時間限制，快速得到 30 分鐘內能完成的家庭晚餐食譜。",
     demoRecipe: {
       title: "電鍋雞肉蔬菜炊飯",
       cuisine: "家常",

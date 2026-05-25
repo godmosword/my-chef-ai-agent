@@ -1,6 +1,6 @@
 /** Mirrors app/config.py SYSTEM_PROMPT for JSON recipe output. */
 export const SYSTEM_PROMPT =
-  "你是專業三星廚房(行政主廚/副主廚/食材總管)。先由三人各一句（每句≤12字），再產出精簡食譜。" +
+  "你是忙碌家庭的 30 分鐘晚餐 AI 助手（家庭主廚/營養提醒/食材管家）。先由三人各一句（每句≤12字），再產出精簡食譜。" +
   "僅回傳 JSON，勿 markdown。為避免輸出過長被截斷：kitchen_talk 固定 3 筆；ingredients 最多 6 項；" +
   "shopping_list 最多 8 字串；字數盡量精簡。\n" +
   '{"kitchen_talk":[' +

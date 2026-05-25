@@ -19,6 +19,31 @@ import {
 } from "@/lib/media/hero-image";
 
 const IMAGE_TIMEOUT_MS = 55_000;
+const inFlightStepImages = new Set<string>();
+
+type StepImageLockKey = {
+  recipeId: string;
+  stepIndex: number;
+};
+
+function stepImageLockKey(key: StepImageLockKey): string {
+  return `${key.recipeId}:${key.stepIndex}`;
+}
+
+export function reserveStepImageRequest(key: StepImageLockKey): boolean {
+  const id = stepImageLockKey(key);
+  if (inFlightStepImages.has(id)) return false;
+  inFlightStepImages.add(id);
+  return true;
+}
+
+export function releaseStepImageRequest(key: StepImageLockKey): void {
+  inFlightStepImages.delete(stepImageLockKey(key));
+}
+
+export function isStepImageRequestInFlight(key: StepImageLockKey): boolean {
+  return inFlightStepImages.has(stepImageLockKey(key));
+}
 
 function maxStepImages(): number {
   const n = parseInt(process.env.MAX_STEP_IMAGES || "6", 10);
@@ -176,14 +201,24 @@ export async function generateStepImageAtIndex(
     return { ok: false, error: "步驟插圖功能未啟用", code: "disabled" };
   }
 
+  const lockKey = { recipeId: opts.recipeId, stepIndex: opts.stepIndex };
+  if (!reserveStepImageRequest(lockKey)) {
+    return { ok: false, error: "正在生成中", code: "busy" };
+  }
+
+  try {
+    return await generateStepImageAtIndexUnlocked(opts);
+  } finally {
+    releaseStepImageRequest(lockKey);
+  }
+}
+
+async function generateStepImageAtIndexUnlocked(
+  opts: TriggerStepImagesOptions & { stepIndex: number },
+): Promise<GenerateStepImageResult> {
   const tenantId = opts.tenantId ?? DEFAULT_TENANT_ID;
   const db = getDb();
   if (!db) return { ok: false, error: "資料庫未設定", code: "no_db" };
-
-  const quota = await checkQuota(opts.userId, tenantId, "image");
-  if (!quota.image.remaining) {
-    return { ok: false, error: "今天的圖片額度已用完", code: "quota" };
-  }
 
   const [recipeRow] = await db
     .select({
@@ -226,6 +261,11 @@ export async function generateStepImageAtIndex(
   }
   if (step.image_status === "ready" && step.image_url?.trim()) {
     return { ok: true, image_url: step.image_url };
+  }
+
+  const quota = await checkQuota(opts.userId, tenantId, "image");
+  if (!quota.image.remaining) {
+    return { ok: false, error: "今天的圖片額度已用完", code: "quota" };
   }
 
   let recipe = opts.recipe;

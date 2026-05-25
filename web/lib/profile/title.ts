@@ -1,3 +1,5 @@
+import { displayDateKey } from "@/lib/locale/datetime";
+
 export function daysSinceIso(iso: string | null): number {
   if (!iso) return 0;
   const then = new Date(iso).getTime();
@@ -17,10 +19,7 @@ export function chefTitle(daysCooking: number): string {
 
 /** "yyyy-mm-dd" in local time, NOT UTC. */
 export function localDateKey(date: Date = new Date()): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return displayDateKey(date);
 }
 
 export function cookedToday(lastRecipeAt: string | null): boolean {

@@ -25,7 +25,11 @@ export function StepImageButton({ recipeId, stepIndex, disabled }: Props) {
         `/api/recipes/${recipeId}/steps/${stepIndex}/image`,
         { method: "POST" },
       );
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        image_url?: string;
+      };
       if (!res.ok) {
         const err =
           data.error ??
@@ -36,7 +40,11 @@ export function StepImageButton({ recipeId, stepIndex, disabled }: Props) {
         capture("hero_image_generation_failed", { kind: "step" });
         return;
       }
-      setMessage("已送出，請重新整理或稍後查看步驟圖。");
+      setMessage(
+        data.image_url
+          ? "步驟圖已產生，重新整理後可在烹飪模式查看。"
+          : "已送出，請稍後查看步驟圖。",
+      );
       capture("hero_image_generation_succeeded", { kind: "step" });
     } catch {
       setMessage("圖片暫時無法產生，食譜文字仍可正常使用。");

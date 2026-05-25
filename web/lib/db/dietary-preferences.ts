@@ -22,10 +22,13 @@ export type DietaryPreferences = {
 
 const EMPTY: DietaryPreferences = { tags: [], avoid_custom: "" };
 
-function parsePreferences(raw: unknown): DietaryPreferences {
+export function normalizeDietaryPreferences(raw: unknown): DietaryPreferences {
   if (!raw || typeof raw !== "object") {
     if (Array.isArray(raw)) {
-      return { tags: [], avoid_custom: raw.map(String).join("、") };
+      return {
+        tags: [],
+        avoid_custom: raw.map(String).map((s) => s.trim()).filter(Boolean).join("、"),
+      };
     }
     return EMPTY;
   }
@@ -54,7 +57,7 @@ export async function getDietaryPreferences(
   `;
   const row = asRows<{ preferences?: unknown }>(rows)[0];
   if (!row?.preferences) return EMPTY;
-  return parsePreferences(row.preferences);
+  return normalizeDietaryPreferences(row.preferences);
 }
 
 export async function saveDietaryPreferences(
@@ -64,10 +67,11 @@ export async function saveDietaryPreferences(
 ): Promise<void> {
   const sql = getSql();
   if (!sql) return;
+  const normalized = normalizeDietaryPreferences(prefs);
 
   await sql`
     INSERT INTO user_preferences (tenant_id, user_id, preferences, updated_at)
-    VALUES (${tenantId}, ${userId}, ${JSON.stringify(prefs)}::jsonb, now())
+    VALUES (${tenantId}, ${userId}, ${JSON.stringify(normalized)}::jsonb, now())
     ON CONFLICT (tenant_id, user_id)
     DO UPDATE SET preferences = EXCLUDED.preferences, updated_at = now()
   `;

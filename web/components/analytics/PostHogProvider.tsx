@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { FLAGS } from "@/lib/flags";
 import { setAnalyticsEnabled } from "@/lib/analytics/track";
+import { capture, sanitizeAnalyticsPath } from "@/lib/analytics/events";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     if (!FLAGS.analytics) return;
 
@@ -23,7 +27,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         posthog.init(key, {
           api_host: host,
           person_profiles: "identified_only",
-          capture_pageview: true,
+          capture_pageview: false,
           disable_session_recording: true,
         });
 
@@ -37,6 +41,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!FLAGS.analytics || !pathname) return;
+    capture("page_viewed", { path: sanitizeAnalyticsPath(pathname) });
+  }, [pathname]);
 
   return <>{children}</>;
 }

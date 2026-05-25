@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/primitives/Button";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 const STORAGE_KEY = "chef_onboarded_v1";
 
@@ -25,7 +25,7 @@ export function AppOnboardingOverlay() {
 
   const finish = () => {
     markAppOnboarded();
-    track("onboarding_completed", { version: "v1" });
+    capture("onboarding_completed", { version: "v1" });
     setOpen(false);
   };
 
@@ -37,8 +37,8 @@ export function AppOnboardingOverlay() {
       body: "在首頁輸入想法，AI 會幫你生成完整食譜與採買建議。",
     },
     {
-      title: "料理書保存一切",
-      body: "食譜會自動存入料理書，離線也能查看已快取的版本。",
+      title: "這台裝置的料理書",
+      body: "已生成的食譜會保存在這台裝置，已快取的版本離線也能查看。",
     },
     {
       title: "分享與烹飪",

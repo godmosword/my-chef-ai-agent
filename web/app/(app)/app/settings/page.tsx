@@ -12,7 +12,7 @@ export default function SettingsPage() {
       <BackLink href="/app" label="返回今晚吃什麼" className="md:hidden" />
       <header>
         <h1 className="font-serif text-2xl text-text-ink">偏好</h1>
-        <p className="mt-1 text-sm text-text-muted">外觀、語音、帳號設定</p>
+        <p className="mt-1 text-sm text-text-muted">飲食偏好、外觀、語音與帳號設定</p>
       </header>
       <MeSettingsPanel />
     </div>

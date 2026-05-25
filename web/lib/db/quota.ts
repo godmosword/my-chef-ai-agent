@@ -1,4 +1,5 @@
 import { resolvePlanLimit } from "@/lib/config";
+import { displayDateKey } from "@/lib/locale/datetime";
 import { asRows, getSql, isDatabaseConfigured } from "./client";
 
 export type QuotaKind = "text" | "image";
@@ -21,7 +22,7 @@ export type QuotaDecision = {
 };
 
 function quotaToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  return displayDateKey();
 }
 
 function isMissingRelationError(err: unknown): boolean {

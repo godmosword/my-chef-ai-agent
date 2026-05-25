@@ -20,6 +20,7 @@ import {
   saveLocalSettings,
 } from "@/lib/settings/apply";
 import { FLAGS } from "@/lib/flags";
+import { DietaryPreferencesPanel } from "@/components/settings/DietaryPreferencesPanel";
 
 export function MeSettingsPanel() {
   const router = useRouter();
@@ -154,6 +155,8 @@ export function MeSettingsPanel() {
           onChange={(e) => handleDisplayNameChange(e.target.value)}
         />
       </section>
+
+      <DietaryPreferencesPanel />
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="text-sm font-medium text-text-ink">外觀</h2>

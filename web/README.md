@@ -36,7 +36,7 @@ pnpm dev:web
 4. **Install Command**（建議）：`cd .. && pnpm install --frozen-lockfile`
 5. **Build Command**（建議）：`cd .. && pnpm tokens:build && pnpm -F @chef/web build`
 6. 設定 `GEMINI_API_KEY`；Neon 連結後有 `DATABASE_URL`
-7. （建議）`NEXT_PUBLIC_NEW_UI=1`、`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`、`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`、`NEXT_PUBLIC_SITE_URL`
+7. （建議）`NEXT_PUBLIC_NEW_UI=1`、`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`、`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`、`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_DISPLAY_TIMEZONE=Asia/Taipei`
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 
@@ -47,8 +47,10 @@ pnpm dev:web
 - `GET|PATCH|DELETE /api/recipes/[id]`（PATCH：`rating`、`record_cook`）、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
 - `POST /api/recipes/hero`（legacy 手動主圖；**image** 配額）
 - `GET /api/recipes/[id]/hero-status`（主圖狀態 polling）、`POST /api/recipes/[id]/hero`（重生主圖）
+- `POST /api/recipes/[id]/steps/[stepIndex]/image`（按需產生單一步驟插圖；**image** 配額 1 次）
 - `POST /api/recipes/poster`
 - `GET|PUT /api/cuisine`、`DELETE /api/memory`
+- `GET|PATCH /api/me/dietary-preferences`（家庭飲食偏好與需避開食材）
 - `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
 - `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag）
 
@@ -57,15 +59,22 @@ pnpm dev:web
 ## 資料庫
 
 ```bash
-# 初次或升級（**必須含 0001 Phase1**：subscriptions / usage_daily；或跑完整 migrate 至 0007）
+# 初次或升級（建議跑完整 migrate 至最新；至少需含 0001、0003、0008、0009）
 pnpm -F @chef/web db:migrate
 ```
 
 `db:migrate` 會自動讀取 `web/.env.local` 的 `DATABASE_URL`（Neon URL 請用雙引號包住，避免 `&` 被 shell 誤解析）。
 
 ```bash
-pnpm -F @chef/web test   # Vitest（30 tests：cooking、unit-normalizer、shopping-parse、migration 等）
+pnpm -F @chef/web test
 ```
+
+## 圖片與配額策略
+
+- 免費預設：文字食譜完成後只自動處理 1 張成品主圖。
+- 步驟插圖：使用者在食譜詳情或烹飪流程需要時才按需產生，每一步使用 1 次 image 配額。
+- `AUTO_STEP_IMAGES=0` 是成本友善預設；只有設為 `1` 才會背景批次產生最多 `MAX_STEP_IMAGES` 張步驟圖。
+- 圖片生成失敗不會阻斷文字食譜，UI 會提示仍可開始料理。
 
 ## 設計 token
 

@@ -15,12 +15,13 @@
 - **步驟插圖按需**：`POST /api/recipes/[id]/steps/[stepIndex]/image`；預設不再背景自動產生多張步驟圖（`AUTO_STEP_IMAGES=0`）。
 - **日期工具**：`lib/locale/datetime.ts`（`Asia/Taipei`）；Today 問候改 client 顯示避免 hydration 錯日。
 - **Analytics**：Landing／demo／生成漏斗事件（不含 prompt 與過敏原文）。
+- **隱私安全追蹤**：analytics props 過濾完整 prompt、自訂過敏原、session id 與分享 token；公開分享 view 不再送出 token。
 
 ### Changed
 
 - **圖片策略**：新食譜預設僅自動 1 張主圖；步驟圖由使用者在詳情頁主動觸發（提示消耗 1 次圖片額度）。
-- **誠實文案**：改「永久保存」為「本裝置料理書」；更新隱私權與免責聲明。
-- **配額「今日」**：以 `Asia/Taipei` 日曆日計算（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫）。
+- **誠實文案**：改「永久保存」為「本裝置料理書／已保存主圖」；更新隱私權與免責聲明。
+- **配額與活躍日期「今日」**：以 `Asia/Taipei` 日曆日計算（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫），不再用 UTC 切日。
 
 ### Added
 

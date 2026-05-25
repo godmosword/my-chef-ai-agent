@@ -132,6 +132,16 @@ export async function POST(request: Request) {
           };
         }
       }
+      if (recipeId) {
+        waitUntil(
+          triggerStepImagesGeneration({
+            recipeId,
+            userId,
+            tenantId: DEFAULT_TENANT_ID,
+            recipe,
+          }),
+        );
+      }
     } else {
       recipe = aiRecipeToPayload(result.recipe);
     }

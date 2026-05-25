@@ -7,6 +7,7 @@ import {
 } from "@/lib/api/recipes";
 import { enqueueMutation } from "@/lib/offline/mutations";
 import { isBrowserOnline } from "@/lib/offline/network";
+import { capture } from "@/lib/analytics/events";
 
 export function useFavoriteToggle(initialIds: Set<string>) {
   const [favoriteIds, setFavoriteIds] = useState(initialIds);
@@ -42,6 +43,7 @@ export function useFavoriteToggle(initialIds: Set<string>) {
             payload: { recipe_id: recipeId },
           });
         }
+        if (!wasFavorited) capture("recipe_favorited", { offline: !isBrowserOnline() });
       } catch {
         setFavoriteIds((prev) => {
           const next = new Set(prev);

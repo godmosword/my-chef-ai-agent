@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import { recordShareView } from "@/lib/api/sharing";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 export function ShareViewTracker({ token }: { token: string }) {
   useEffect(() => {
     void recordShareView(token);
-    track("shared_recipe_viewed", { token });
+    capture("shared_recipe_viewed", { source: "public_recipe" });
   }, [token]);
 
   return null;

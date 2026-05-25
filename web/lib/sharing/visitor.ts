@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
+import { displayDateKey } from "@/lib/locale/datetime";
 
-export function daySaltUtc(): string {
-  return new Date().toISOString().slice(0, 10);
+export function daySaltLocal(): string {
+  return displayDateKey();
 }
 
 export function computeVisitorId(ip: string, userAgent: string): string {
-  const salt = daySaltUtc();
+  const salt = daySaltLocal();
   return createHash("sha256")
     .update(`${ip}|${userAgent}|${salt}`)
     .digest("hex");

@@ -25,7 +25,7 @@ import { CompletionScreen } from "./CompletionScreen";
 import { ExitConfirmDialog } from "./ExitConfirmDialog";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/primitives/Button";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 export type CookingModeClientProps = {
   recipe: CookingRecipe;
@@ -81,7 +81,7 @@ export function CookingModeClient({
 
   useEffect(() => {
     enterFullscreen();
-    track("cooking_mode_entered", { recipe_id: recipe.id });
+    capture("cooking_mode_started", { is_demo: recipe.id === "demo" });
     const snap = loadCookingSession(recipe.id);
     if (snap && snap.currentStep > 0) {
       setResumePrompt(true);
@@ -96,7 +96,7 @@ export function CookingModeClient({
 
   useEffect(() => {
     if (!completed) return;
-    track("cooking_mode_completed", { recipe_id: recipe.id });
+    capture("cooking_mode_completed", { is_demo: recipe.id === "demo" });
     showRecordToast();
   }, [completed, recipe.id, showRecordToast]);
 
@@ -165,7 +165,7 @@ export function CookingModeClient({
       });
       toast({
         title: "儲存評分失敗",
-        description: "已暫存，連線後會自動同步",
+        description: "已暫存，連線後會自動送出",
         variant: "error",
       });
     }

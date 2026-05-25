@@ -17,7 +17,7 @@ import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
 import { RecipeNotes } from "@/components/recipe/RecipeNotes";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
-import { track } from "@/lib/analytics/track";
+import { capture } from "@/lib/analytics/events";
 
 export default function RecipeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -54,8 +54,7 @@ export default function RecipeDetailPage() {
           setRecipe(res.recipe);
           setFromCache(res.fromCache);
           if (res.recipe.id) {
-            track("recipe_viewed", {
-              recipe_id: res.recipe.id,
+            capture("recipe_viewed", {
               source: res.fromCache ? "library_offline" : "library",
             });
           }

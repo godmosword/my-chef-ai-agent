@@ -29,7 +29,6 @@ function toCookingRecipe(): CookingRecipe {
 export default function DemoCookPage() {
   useEffect(() => {
     capture("demo_recipe_cook_mode_clicked", { source: "demo_cook_page" });
-    capture("cooking_mode_started", { is_demo: true });
   }, []);
 
   return (

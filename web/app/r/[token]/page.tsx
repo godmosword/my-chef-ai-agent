@@ -9,6 +9,7 @@ import { ShareTargets } from "@/components/sharing/ShareTargets";
 import { Button } from "@/components/primitives/Button";
 import { Chip } from "@/components/primitives/Chip";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
+import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
 import { ShareViewTracker } from "./ShareViewTracker";
 
 type PageProps = { params: Promise<{ token: string }> };
@@ -86,6 +87,7 @@ export default async function PublicRecipePage({ params }: PageProps) {
             {recipe.summary ? (
               <p className="text-text-muted">{recipe.summary}</p>
             ) : null}
+            <RecipeSafetyNotice className="mt-4 space-y-2 text-sm text-text-body" />
           </div>
 
           <div className="mt-6 space-y-6">

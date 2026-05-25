@@ -4,8 +4,7 @@ import { useCallback, useState } from "react";
 import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
 import { isBrowserOnline } from "@/lib/offline/network";
-import { offlineGenerationMessage } from "@/lib/offline/recipes";
-import { capture } from "@/lib/analytics/events";
+import { capture, recipeGenerationCoarseProps } from "@/lib/analytics/events";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };
@@ -47,7 +46,11 @@ export function useRecipeGeneration() {
     setStreaming(true);
     setError(null);
     setRecipe(null);
-    capture("recipe_generation_started", { source: "today" });
+    const analyticsProps = {
+      source: "today",
+      ...recipeGenerationCoarseProps(body.message),
+    };
+    capture("recipe_generation_started", analyticsProps);
     let partial: RecipePayload = {};
 
     try {
@@ -61,7 +64,7 @@ export function useRecipeGeneration() {
         } else if (ev.type === "done") {
           setRecipe(ev.recipe);
           if (ev.recipe.id) {
-            capture("recipe_generation_succeeded", { source: "today" });
+            capture("recipe_generation_succeeded", analyticsProps);
           }
         } else if (ev.type === "error") {
           const msg =

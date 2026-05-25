@@ -29,6 +29,7 @@ import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { WeekGrid } from "./_components/WeekGrid";
 import { PickRecipeSheet } from "./_components/PickRecipeSheet";
 import { SlotInspector } from "./_components/SlotInspector";
+import { capture } from "@/lib/analytics/events";
 function parseCellId(id: string): { date: string; slot: Slot } | null {
   const [date, slot] = id.split("|");
   if (!date || !slot) return null;
@@ -99,6 +100,9 @@ export function PlanPageClient() {
     body: { recipe_id: string | null; servings?: number; notes?: string | null },
   ) => {
     const updated = await putMealPlanSlot(date, slot, body);
+    if (body.recipe_id) {
+      capture("meal_plan_recipe_added", { slot });
+    }
     upsertLocal(updated);
     return updated;
   };

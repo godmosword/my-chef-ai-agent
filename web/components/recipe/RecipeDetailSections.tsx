@@ -137,25 +137,32 @@ export function RecipeDetailSections({
               const checked = checkedSteps.has(i);
               return (
                 <li key={i}>
-                  <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleStep(i)}
-                      className="mt-1 size-4 shrink-0 rounded border-border-default text-brand-primary focus:ring-brand-primary"
-                    />
-                    <span
-                      className={cn(
-                        "flex-1",
-                        checked && "text-text-muted line-through",
-                      )}
-                    >
-                      <span className="mr-2 font-medium tabular-nums text-text-muted">
-                        {i + 1}.
+                  <div className="space-y-1.5">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleStep(i)}
+                        className="mt-1 size-4 shrink-0 rounded border-border-default text-brand-primary focus:ring-brand-primary"
+                      />
+                      <span
+                        className={cn(
+                          "flex-1",
+                          checked && "text-text-muted line-through",
+                        )}
+                      >
+                        <span className="mr-2 font-medium tabular-nums text-text-muted">
+                          {i + 1}.
+                        </span>
+                        {formatStep(step)}
                       </span>
-                      {formatStep(step)}
-                    </span>
-                  </label>
+                    </label>
+                    {recipeId && (
+                      <div className="pl-7">
+                        <StepImageButton recipeId={recipeId} stepIndex={i} />
+                      </div>
+                    )}
+                  </div>
                 </li>
               );
             })}

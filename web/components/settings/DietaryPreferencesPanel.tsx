@@ -62,7 +62,10 @@ export function DietaryPreferencesPanel() {
   }
 
   return (
-    <section className="space-y-4" aria-labelledby="dietary-prefs-heading">
+    <section
+      className="space-y-4 rounded-lg border border-border-default bg-surface-default p-4"
+      aria-labelledby="dietary-prefs-heading"
+    >
       <div>
         <h2 id="dietary-prefs-heading" className="font-serif text-lg text-text-ink">
           家庭飲食偏好與需避開食材
@@ -95,7 +98,7 @@ export function DietaryPreferencesPanel() {
       <label className="block text-sm text-text-body">
         自訂需避開食材
         <textarea
-          className="mt-1 w-full rounded-lg border border-border-default bg-surface-default px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-border-default bg-surface-muted px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           rows={2}
           placeholder="例如：香菜、蝦（以逗號或頓號分隔）"
           value={prefs.avoid_custom}
