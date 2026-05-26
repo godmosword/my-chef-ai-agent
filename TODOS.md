@@ -6,9 +6,16 @@
 
 ---
 
+## 產品進化 Wave 1 — 煮成功（[`spec`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) · [`plan`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)）
+
+- [ ] **決策卡**：生成結果頂部顯示時間／人數／需購買 N 樣
+- [ ] **烹飪漏斗**：`cooking_mode_*` 補 `source`／duration；PostHog 6 步漏斗（[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)）
+- [ ] **晚餐推播 SW**：`periodicsync` + 同日 dedupe（見 Wave 1 plan Task 5）
+- [ ] **烹飪 GA**：iPhone 真機清單（擴充 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md) §3.5）
+
 ## UX 規格後續（[`docs/ux-spec.md`](docs/ux-spec.md)）
 
-- [ ] **PWA 晚餐提醒**：Service Worker 定時推播（目前僅「我的」設定卡 + localStorage）
+- [ ] **PWA 晚餐提醒**：Service Worker 定時推播（併入 Wave 1 plan；client timer 已有）
 - [ ] **Landing 視覺**：與 App token 完全對齊（P2-2 收尾）
 - [ ] **⌘K CommandBar**（spec 暫緩，側欄已移除頂部搜尋占位）
 
@@ -36,6 +43,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-26 | **產品進化規格**：[`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)；Wave 1 實作計畫 [`2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。 |
 | 2026-05-26 | **料理書刪除 + DB 韌性**：`DELETE /api/recipes/:id` UI；`recipe_versions` 缺 `0009` 欄位時自動降級；`.gitignore` 加入 `web/.env.local`。 |
 | 2026-05-26 | **桌面側欄**：個人區塊（美食家）移至 Logo 下方，不再貼底。 |
 | 2026-05-22 | **UX 規格 Phase 1–7**：`docs/ux-spec.md`；Tonight 主頁重組、食譜 CTA／份量／錯誤態、晚餐提醒卡、設計 token 別名；規格見 [`docs/ux-spec.md`](docs/ux-spec.md)。 |

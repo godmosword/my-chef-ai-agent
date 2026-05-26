@@ -31,6 +31,7 @@
 
 ### Added
 
+- **產品路線**：[`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)（四情境、Wave 0–4）；Wave 1 實作計畫 [`docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。
 - **料理書刪除**：卡片垃圾桶、列表刪除鈕、食譜詳情 `⋯` 選單「刪除食譜」（`DELETE /api/recipes/:id` 軟刪除 + 清除離線快取）。
 - **UX 規格缺口補齊**：`StickyCookCTA`（滾過 hero 後顯示）、demo 食譜 sticky 烹飪 CTA、desktop 烹飪主按鈕；生成錯誤分類（`lib/api/error-types.ts` / `error-handler.ts`）；步驟勾選後自動捲動；烹飪完成頁用時與 👍／👎 回饋；晚餐提醒 client 排程 + SW metadata／通知點擊。
 - **UX 規格 Phase 1–7**（[`docs/ux-spec.md`](docs/ux-spec.md)）：Tonight 主頁（placeholder 輪播、Quick Chips、今晚靈感、最近食譜、問候列）；配額移至「我的」；食譜詳情份量切換、步驟 badge、行動選單與 mobile sticky 烹飪 CTA；生成／配額／離線錯誤態；料理書空狀態；晚餐提醒設定卡（localStorage + 通知權限）；設計 token 別名（`bg-*` / `fg-*` / `accent-*`）。
