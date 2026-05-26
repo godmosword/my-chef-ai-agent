@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { Skeleton } from "@/components/primitives/Skeleton";
@@ -20,6 +20,7 @@ import { RecipeActionsMenu } from "@/components/recipe/RecipeActionsMenu";
 import { capture } from "@/lib/analytics/events";
 
 export default function RecipeDetailPage() {
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [recipe, setRecipe] = useState<RecipePayload | null>(null);
@@ -90,7 +91,10 @@ export default function RecipeDetailPage() {
             />
           </Button>
         )}
-        <RecipeActionsMenu recipe={recipe} />
+        <RecipeActionsMenu
+          recipe={recipe}
+          onDeleted={() => router.push("/app/library")}
+        />
         {FLAGS.sharing && recipe.id && (
           <RecipeShareMenu
             recipeId={recipe.id}

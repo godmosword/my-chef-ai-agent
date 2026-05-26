@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Trash2 } from "lucide-react";
 import { HeroPlaceholder } from "@/components/recipe/HeroPlaceholder";
 import { RecipeImageFallback } from "@/components/recipe/RecipeImageFallback";
 import { Card } from "@/components/primitives/Card";
@@ -19,6 +19,7 @@ export type RecipeCardProps = {
   compact?: boolean;
   onFavoriteToggle?: () => void;
   favorited?: boolean;
+  onDelete?: () => void;
   className?: string;
 };
 
@@ -28,6 +29,7 @@ export function RecipeCard({
   compact,
   onFavoriteToggle,
   favorited,
+  onDelete,
   className,
 }: RecipeCardProps) {
   const [heroImageError, setHeroImageError] = useState(false);
@@ -94,22 +96,39 @@ export function RecipeCard({
               {recipe.cuisine}
             </span>
           )}
-          {onFavoriteToggle && (
-            <button
-              type="button"
-              aria-label={favorited ? "取消收藏" : "收藏"}
-              className="absolute right-2 top-2 rounded-full bg-surface-default/90 p-1.5 shadow-card"
-              onClick={(e) => {
-                e.preventDefault();
-                onFavoriteToggle();
-              }}
-            >
-              <Heart
-                className={cn("size-4", favorited && "fill-brand-primary text-brand-primary")}
-                aria-hidden
-              />
-            </button>
-          )}
+          <div className="absolute right-2 top-2 flex gap-1">
+            {onDelete ? (
+              <button
+                type="button"
+                aria-label="刪除食譜"
+                className="rounded-full bg-surface-default/90 p-1.5 shadow-card text-text-muted hover:text-danger"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            ) : null}
+            {onFavoriteToggle ? (
+              <button
+                type="button"
+                aria-label={favorited ? "取消收藏" : "收藏"}
+                className="rounded-full bg-surface-default/90 p-1.5 shadow-card"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onFavoriteToggle();
+                }}
+              >
+                <Heart
+                  className={cn("size-4", favorited && "fill-brand-primary text-brand-primary")}
+                  aria-hidden
+                />
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="flex flex-1 flex-col p-3">
           <h3 className="line-clamp-2 font-serif text-lg leading-snug text-text-ink">

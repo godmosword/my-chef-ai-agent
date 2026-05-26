@@ -11,7 +11,8 @@ import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
 import { EmptyState } from "@/components/patterns/EmptyState";
 import { LibraryEmpty } from "@/components/empty-states/LibraryEmpty";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles, Trash2 } from "lucide-react";
+import { DeleteRecipeDialog } from "@/components/recipe/DeleteRecipeDialog";
 import { formatRelativeTime } from "@/lib/utils/format";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { appPrefillHref } from "@/lib/marketing/content";
@@ -35,6 +36,10 @@ export default function LibraryPage() {
   const { favoriteIds, toggle, syncInitial } = useFavoriteToggle(new Set());
   const [loading, setLoading] = useState(true);
   const [offlineOnly, setOfflineOnly] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -158,6 +163,9 @@ export default function LibraryPage() {
               href={`/app/library/${r.id}`}
               favorited={favoriteIds.has(r.id)}
               onFavoriteToggle={() => void toggle(r.id)}
+              onDelete={() =>
+                setDeleteTarget({ id: r.id, title: r.title })
+              }
             />
           ))}
         </div>
@@ -169,6 +177,9 @@ export default function LibraryPage() {
                 <th className="px-4 py-2 font-medium text-text-ink">名稱</th>
                 <th className="px-4 py-2 font-medium text-text-ink">菜系</th>
                 <th className="px-4 py-2 font-medium text-text-ink">最近</th>
+                <th className="px-4 py-2 font-medium text-text-ink w-16">
+                  <span className="sr-only">操作</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -186,12 +197,37 @@ export default function LibraryPage() {
                   <td className="px-4 py-3 text-text-muted">
                     {r.lastCookedAt ? formatRelativeTime(r.lastCookedAt) : "—"}
                   </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      aria-label={`刪除 ${r.title}`}
+                      className="rounded-lg p-2 text-text-muted hover:bg-surface-muted hover:text-danger"
+                      onClick={() =>
+                        setDeleteTarget({ id: r.id, title: r.title })
+                      }
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <DeleteRecipeDialog
+        recipeId={deleteTarget?.id ?? null}
+        recipeTitle={deleteTarget?.title ?? ""}
+        open={deleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        onDeleted={(id) => {
+          setItems((prev) => prev.filter((item) => item.id !== id));
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

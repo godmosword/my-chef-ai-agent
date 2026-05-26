@@ -85,6 +85,12 @@ async function pruneOfflineRecipes(): Promise<void> {
   await db.recipes.bulkDelete(toDrop.map((r) => r.id));
 }
 
+export async function removeOfflineRecipe(id: string): Promise<void> {
+  const db = getOfflineDb();
+  if (!db) return;
+  await db.recipes.delete(id);
+}
+
 export async function getOfflineRecipe(id: string): Promise<RecipePayload | null> {
   const db = getOfflineDb();
   if (!db) return null;

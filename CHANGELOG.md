@@ -16,8 +16,13 @@
 
 ### Fixed
 
+- **生成食譜寫入失敗**：Neon 未套用 migration `0009` 時，`recipe_versions` 插入自動降級（略過 `prep_minutes` 等欄位）；API 錯誤提示執行 `pnpm -F @chef/web db:migrate`。
 - **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
 - **P1-1 demo CTA 收斂**：`/demo/recipe` 移除底部雙鈕，改 `RecipeActionsMenu`（⋯）收次要動作；主 CTA 僅 sticky／desktop「進入烹飪模式」。
+
+### Added
+
+- **料理書刪除**：卡片垃圾桶、列表刪除鈕、食譜詳情 `⋯` 選單「刪除食譜」（軟刪除 + 清除離線快取）。
 
 ### Added
 

@@ -15,6 +15,7 @@ import type {
 } from "@chef/shared-types";
 import { ensureStoredSteps } from "@/lib/hero/step-storage";
 import { displayDateKey } from "@/lib/locale/datetime";
+import { isMissingRecipeVersionStatsColumns } from "../relation-errors";
 import { getDb } from "../drizzle";
 import {
   favoritesV2,
@@ -131,24 +132,40 @@ export async function createRecipeFromAi(
       })
       .returning();
 
-    const [versionRow] = await tx
-      .insert(recipeVersions)
-      .values({
-        recipeId: recipeRow.id,
-        versionNo: 1,
-        ingredients: input.aiRecipe.ingredients ?? [],
-        steps: ensureStoredSteps(input.aiRecipe.steps ?? []),
-        shoppingList: input.aiRecipe.shopping_list ?? [],
-        kitchenTalk: serializeKitchenTalk(input.aiRecipe.kitchen_talk),
-        costEstimate: costToJsonb(input.aiRecipe.estimated_total_cost),
-        sourcePrompt: input.sourcePrompt,
-        modelUsed: input.modelUsed ?? null,
-        deepResearch: input.deepResearch ?? false,
-        prepMinutes: input.aiRecipe.prep_minutes ?? null,
-        cookMinutes: input.aiRecipe.cook_minutes ?? null,
-        servings: input.aiRecipe.servings ?? null,
-      })
-      .returning();
+    const versionBase = {
+      recipeId: recipeRow.id,
+      versionNo: 1,
+      ingredients: input.aiRecipe.ingredients ?? [],
+      steps: ensureStoredSteps(input.aiRecipe.steps ?? []),
+      shoppingList: input.aiRecipe.shopping_list ?? [],
+      kitchenTalk: serializeKitchenTalk(input.aiRecipe.kitchen_talk),
+      costEstimate: costToJsonb(input.aiRecipe.estimated_total_cost),
+      sourcePrompt: input.sourcePrompt,
+      modelUsed: input.modelUsed ?? null,
+      deepResearch: input.deepResearch ?? false,
+    };
+
+    let versionRow: typeof recipeVersions.$inferSelect;
+    try {
+      [versionRow] = await tx
+        .insert(recipeVersions)
+        .values({
+          ...versionBase,
+          prepMinutes: input.aiRecipe.prep_minutes ?? null,
+          cookMinutes: input.aiRecipe.cook_minutes ?? null,
+          servings: input.aiRecipe.servings ?? null,
+        })
+        .returning();
+    } catch (err) {
+      if (!isMissingRecipeVersionStatsColumns(err)) throw err;
+      console.warn(
+        "[recipes] recipe_versions stats columns missing — run pnpm -F @chef/web db:migrate (0009)",
+      );
+      [versionRow] = await tx
+        .insert(recipeVersions)
+        .values(versionBase)
+        .returning();
+    }
 
     await tx
       .update(recipes)

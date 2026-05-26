@@ -163,7 +163,10 @@ export async function POST(request: Request) {
       );
     }
     const msg = err instanceof Error ? err.message : "AI request failed";
-    console.error("recipe generation failed:", msg);
-    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+    console.error("recipe generation failed:", err);
+    const hint = msg.includes("recipe_versions")
+      ? "食譜無法寫入資料庫。若為新環境，請在 Neon 執行：pnpm -F @chef/web db:migrate"
+      : msg;
+    return NextResponse.json({ ok: false, error: hint }, { status: 502 });
   }
 }

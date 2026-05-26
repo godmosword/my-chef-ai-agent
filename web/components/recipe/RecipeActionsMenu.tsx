@@ -9,6 +9,7 @@ import {
   Share2,
   ShoppingCart,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { Sheet } from "@/components/primitives/Sheet";
 import { IconButton } from "@/components/primitives/IconButton";
@@ -16,9 +17,10 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { addIngredientsToShoppingDraft } from "@/lib/shopping/add-from-recipe";
 import { formatIngredient } from "@/lib/recipe-steps";
 import type { RecipePayload } from "@chef/shared-types";
+import { DeleteRecipeDialog } from "@/components/recipe/DeleteRecipeDialog";
 import { cn } from "@/lib/utils/cn";
 
-type ActionId = "remake" | "shopping" | "copy" | "share" | "home";
+type ActionId = "remake" | "shopping" | "copy" | "share" | "delete" | "home";
 
 const ACTIONS: Array<{
   id: ActionId;
@@ -30,7 +32,8 @@ const ACTIONS: Array<{
   { id: "shopping", label: "加入採買清單", icon: ShoppingCart },
   { id: "copy", label: "複製食材清單", icon: Copy },
   { id: "share", label: "分享", icon: Share2 },
-  { id: "home", label: "回到首頁", icon: Home, dividerAbove: true },
+  { id: "delete", label: "刪除食譜", icon: Trash2, dividerAbove: true },
+  { id: "home", label: "回到首頁", icon: Home },
 ];
 
 export type RecipeActionsMenuProps = {
@@ -38,6 +41,7 @@ export type RecipeActionsMenuProps = {
   /** Override default「{name}，類似料理」prefill (e.g. demo page). */
   remakePrefill?: string;
   onRemakeClick?: () => void;
+  onDeleted?: () => void;
   className?: string;
 };
 
@@ -45,9 +49,11 @@ export function RecipeActionsMenu({
   recipe,
   remakePrefill,
   onRemakeClick,
+  onDeleted,
   className,
 }: RecipeActionsMenuProps) {
   const [open, setOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -92,6 +98,9 @@ export function RecipeActionsMenu({
         }
         break;
       }
+      case "delete":
+        setDeleteOpen(true);
+        break;
       case "home":
         router.push("/app");
         break;
@@ -107,7 +116,10 @@ export function RecipeActionsMenu({
           ) : null}
           <button
             type="button"
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-text-body hover:bg-surface-muted"
+            className={cn(
+              "flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-surface-muted",
+              action.id === "delete" ? "text-danger" : "text-text-body",
+            )}
             onClick={() => void run(action.id)}
           >
             <action.icon className="size-4 shrink-0 text-text-muted" aria-hidden />
@@ -147,6 +159,16 @@ export function RecipeActionsMenu({
           {menuBody}
         </Sheet>
       </div>
+      <DeleteRecipeDialog
+        recipeId={recipe.id ?? null}
+        recipeTitle={recipe.recipe_name ?? "食譜"}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => {
+          onDeleted?.();
+          router.push("/app/library");
+        }}
+      />
     </div>
   );
 }
