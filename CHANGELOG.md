@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Fixed
+
+- **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
+
 ### Added
 
 - **UX 規格缺口補齊**：`StickyCookCTA`（滾過 hero 後顯示）、demo 食譜 sticky 烹飪 CTA、desktop 烹飪主按鈕；生成錯誤分類（`lib/api/error-types.ts` / `error-handler.ts`）；步驟勾選後自動捲動；烹飪完成頁用時與 👍／👎 回饋；晚餐提醒 client 排程 + SW metadata／通知點擊。

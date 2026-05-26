@@ -362,6 +362,8 @@ function getGreeting(date: Date): string {
 
 # 🟡 P1-1｜食譜頁 CTA 收斂
 
+> **Demo 頁例外（2026-05-26）**：`/demo/recipe` 任務是「試用產品、導向生成」，與料理書詳情不同。已實作 **StickyCookCTA + desktop「進入烹飪模式」**（主 CTA）；**刻意保留**底部 inline「用我的食材生成類似料理」「回到首頁」以提升轉化，**不要求** `RecipeActionsMenu`（無真實 recipe id／採買寫入）。已移除重複的第三顆「試用烹飪模式」。真實食譜詳情（`/app/library/[id]`）仍以 overflow ⋯ + 單一主烹飪 CTA 為準。
+
 ## 1. Mobile Sticky Bottom Bar 規格
 
 ### 視覺
