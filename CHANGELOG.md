@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Changed
+
+- **PWA／主畫面圖示**：重設 `icon-source.svg`（琥珀金漸層 + 廚師帽），重新產生 `public/icons/*` 與 `app/icon.png`、`app/apple-icon.png`；執行 `pnpm -F @chef/web icons:generate` 可再生成。
+
 ### Fixed
 
 - **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
