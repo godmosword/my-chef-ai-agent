@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { recipePayloadToCooking } from "@/lib/cooking/normalizeSteps";
 import type { CookingRecipe } from "@/lib/cooking/types";
 import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
+import { parseCookSource } from "@/lib/cooking/cook-source";
 import { CookPageClient } from "./CookPageClient";
 
 export default function CookPageLoader() {
@@ -103,12 +104,14 @@ export default function CookPageLoader() {
 
   const initialStep = Math.max(0, parseInt(searchParams.get("step") ?? "0", 10) || 0);
   const initialVoice = searchParams.get("voice") === "1";
+  const cookSource = parseCookSource(searchParams.get("source"));
 
   return (
     <CookPageClient
       recipe={recipe}
       initialStep={initialStep}
       initialVoice={initialVoice}
+      cookSource={cookSource}
     />
   );
 }

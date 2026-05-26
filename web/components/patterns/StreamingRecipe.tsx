@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Chip } from "@/components/primitives/Chip";
+import { RecipeDecisionCard } from "@/components/recipe/RecipeDecisionCard";
 import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
 import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
+import { buildDecisionSummary } from "@/lib/recipe/decision-summary";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { dietaryAvoidDisplayLabels } from "@/lib/db/dietary-preferences";
@@ -83,6 +85,9 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
   return (
     <article className="rounded-lg border border-border-default bg-surface-default p-4 shadow-card">
       {!streaming && recipe.id && <RecipeResultHero recipe={recipe} />}
+      {!streaming && recipe.id && (
+        <RecipeDecisionCard summary={buildDecisionSummary(recipe)} />
+      )}
       <h2 className="font-serif text-2xl text-text-ink">
         {recipe.recipe_name ?? (streaming ? "生成中…" : "未命名食譜")}
       </h2>

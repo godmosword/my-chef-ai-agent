@@ -40,30 +40,56 @@ pnpm -F @chef/web build && pnpm -F @chef/web start
 |---|------|------|
 | 3.1 | 線上進入 `/app/library/[id]/cook` | 步驟與計時器正常 |
 | 3.2 | 飛航模式下開**已快取**食譜的 cook | 可讀步驟、可切換 |
-| 3.3 | 完成並評分（1–5） | 離線時提示已暫存；恢復網路後評分同步成功 |
+| 3.3 | 完成並評分（1–5） | 離線時「評分稍後同步」；恢復網路後評分同步成功 |
 
----
-
-## 4. 離線 — 收藏
+### 3.5 烹飪 GA（Wave 1，產線 build）
 
 | # | 步驟 | 預期 |
 |---|------|------|
-| 4.1 | 離線在料理書點 ♥ 收藏 | UI 立即切換（optimistic） |
-| 4.2 | 恢復網路 | Dexie `mutations` flush；重整後收藏狀態正確 |
+| 3.5.1 | 詳情頁主按鈕進入 cook（`?source=detail`） | `cooking_mode_started` 含 `source: detail` |
+| 3.5.2 | 滾動後 sticky CTA 進入 cook（`?source=sticky_cta`） | `source: sticky_cta` |
+| 3.5.3 | 螢幕鎖定約 5 分鐘（Wake Lock） | 計時持續 |
+| 3.5.4 | 切到背景再回前景 | 計時／步驟狀態仍正確 |
+| 3.5.5 | 語音朗讀 toggle | 可開關，不中斷步驟 |
+| 3.5.6 | 走完步驟並評分 | `cooking_mode_completed` 含 `duration_bucket`、`rating_bucket` |
+| 3.5.7 | 生成結果頂部決策卡 | 顯示分鐘／人數／需購買或「不必採買」 |
 
 ---
 
-## 5. 廚房計時（線上）
+## 4. 晚餐推播（Periodic Sync + client timer）
 
 | # | 步驟 | 預期 |
 |---|------|------|
-| 5.1 | 步驟內啟動計時器 | 倒數正確 |
-| 5.2 | 螢幕鎖定約 5 分鐘（Wake Lock） | 計時持續（機型允許時） |
-| 5.3 | 計時結束 | 震動／提示音（若瀏覽器允許） |
+| 4.1 | `/app/me` 開啟晚餐提醒並允許通知 | 設定寫入 Cache + SW |
+| 4.2 | 設定時間為數分鐘後（測試用） | client timer 或 SW `periodicsync` 觸發 |
+| 4.3 | 關閉 PWA／分頁後到點 | 收到「今晚想吃什麼？」通知（同日僅一次） |
+| 4.4 | 點擊通知 | 開啟 `/app` |
+| 4.5 | PostHog（可選） | `dinner_reminder_fired` 含 `channel: sw` 或 `client` |
+
+> `periodicSync` 需 Chromium 系瀏覽器且已安裝 PWA；不支援時仍依 client `setTimeout` 與 SW `activate` 備援。
 
 ---
 
-## 6. 刻意不支援（已知）
+## 5. 離線 — 收藏
+
+| # | 步驟 | 預期 |
+|---|------|------|
+| 5.1 | 離線在料理書點 ♥ 收藏 | UI 立即切換（optimistic） |
+| 5.2 | 恢復網路 | Dexie `mutations` flush；重整後收藏狀態正確 |
+
+---
+
+## 6. 廚房計時（線上）
+
+| # | 步驟 | 預期 |
+|---|------|------|
+| 6.1 | 步驟內啟動計時器 | 倒數正確 |
+| 6.2 | 螢幕鎖定約 5 分鐘（Wake Lock） | 計時持續（機型允許時） |
+| 6.3 | 計時結束 | 震動／提示音（若瀏覽器允許） |
+
+---
+
+## 7. 刻意不支援（已知）
 
 - 離線 **POST 生成食譜**（NetworkOnly）
 - 離線 **週曆 PUT**（未入佇列）

@@ -104,7 +104,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test   # 目前 57 項（15 個測試檔）
+pnpm -F @chef/web test   # 目前 64 項（18 個測試檔）
 ```
 
 ---
@@ -119,6 +119,8 @@ pnpm -F @chef/web test   # 目前 57 項（15 個測試檔）
 | [`AGENTS.md`](AGENTS.md) | Agent 維運 |
 | [`docs/ux-spec.md`](docs/ux-spec.md) | App UX/UI 實作規格（Tonight、食譜、烹飪、錯誤態） |
 | [`docs/design-tokens.md`](docs/design-tokens.md) | 設計 token 對照 |
+| [`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md) | PostHog 煮成功漏斗（Wave 1） |
+| [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) | 產品進化路線（已核准） |
 
 ---
 

@@ -8,14 +8,14 @@
 
 ## 產品進化 Wave 1 — 煮成功（[`spec`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) · [`plan`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)）
 
-- [ ] **決策卡**：生成結果頂部顯示時間／人數／需購買 N 樣
-- [ ] **烹飪漏斗**：`cooking_mode_*` 補 `source`／duration；PostHog 6 步漏斗（[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)）
-- [ ] **晚餐推播 SW**：`periodicsync` + 同日 dedupe（見 Wave 1 plan Task 5）
-- [ ] **烹飪 GA**：iPhone 真機清單（擴充 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md) §3.5）
+- [x] **決策卡**：生成結果頂部顯示時間／人數／需購買 N 樣
+- [x] **烹飪漏斗**：`cooking_mode_*` 補 `source`／duration；PostHog 6 步漏斗（[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)）
+- [x] **晚餐推播 SW**：`periodicsync` + 同日 dedupe（見 Wave 1 plan Task 5）
+- [ ] **烹飪 GA**：iPhone 真機清單（擴充 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md) §3.5、§4 — 待人工勾選）
 
 ## UX 規格後續（[`docs/ux-spec.md`](docs/ux-spec.md)）
 
-- [ ] **PWA 晚餐提醒**：Service Worker 定時推播（併入 Wave 1 plan；client timer 已有）
+- [x] **PWA 晚餐提醒**：Service Worker `periodicsync` + client timer + 同日 dedupe
 - [ ] **Landing 視覺**：與 App token 完全對齊（P2-2 收尾）
 - [ ] **⌘K CommandBar**（spec 暫緩，側欄已移除頂部搜尋占位）
 

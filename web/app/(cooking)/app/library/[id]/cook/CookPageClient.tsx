@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { CookingRecipe } from "@/lib/cooking/types";
+import type { CookAnalyticsSource } from "@/lib/cooking/cook-source";
 
 const CookingModeClient = dynamic(
   () =>
@@ -20,6 +21,7 @@ export type CookPageClientProps = {
   recipe: CookingRecipe;
   initialStep: number;
   initialVoice: boolean;
+  cookSource?: CookAnalyticsSource;
 };
 
 export function CookPageClient(props: CookPageClientProps) {

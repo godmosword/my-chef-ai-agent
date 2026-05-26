@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  cookDurationBucket,
+  cookRatingBucket,
   sanitizeAnalyticsPath,
   sanitizeAnalyticsProps,
   timeCategoryFromMinutes,
@@ -23,6 +25,14 @@ describe("analytics event sanitization", () => {
     expect(timeCategoryFromMinutes(20)).toBe("under_20");
     expect(timeCategoryFromMinutes(30)).toBe("under_30");
     expect(timeCategoryFromMinutes(45)).toBe("over_30");
+  });
+
+  it("buckets cook duration and rating", () => {
+    expect(cookDurationBucket(15)).toBe("under_20");
+    expect(cookDurationBucket(35)).toBe("under_40");
+    expect(cookRatingBucket(5)).toBe("positive");
+    expect(cookRatingBucket(2)).toBe("neutral");
+    expect(cookRatingBucket(null)).toBe("none");
   });
 
   it("redacts public share tokens from analytics paths", () => {

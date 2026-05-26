@@ -46,6 +46,17 @@ export function timeCategoryFromMinutes(minutes?: number | null): string | undef
   return "over_30";
 }
 
+export function cookDurationBucket(elapsedMinutes: number): string {
+  if (elapsedMinutes <= 20) return "under_20";
+  if (elapsedMinutes <= 40) return "under_40";
+  return "over_40";
+}
+
+export function cookRatingBucket(stars: number | null | undefined): string {
+  if (stars == null || stars <= 0) return "none";
+  return stars >= 4 ? "positive" : "neutral";
+}
+
 export function recipeGenerationCoarseProps(message: string): AnalyticsProps {
   const match = message.match(/(\d{1,3})\s*分/);
   const minutes = match ? Number(match[1]) : undefined;

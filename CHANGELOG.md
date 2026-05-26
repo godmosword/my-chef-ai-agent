@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Added
+
+- **Wave 1 — 煮成功**：食譜**決策卡**（時間／人數／需購買）；烹飪模式 analytics 補 `source`、`duration_bucket`、`rating_bucket`；`recipe_generation_succeeded` 含 `has_decision_card`；晚餐推播 **Periodic Sync** + 同日 dedupe；[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)；產品規格 [`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) **已核准**。
+
 ### Changed
 
 - **桌面側欄**：「我的」個人區塊（顯示名稱，預設「美食家」）改到 Logo 下方，不再貼在側欄最底部。

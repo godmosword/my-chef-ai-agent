@@ -80,7 +80,10 @@ export function useRecipeGeneration() {
         } else if (ev.type === "done") {
           setRecipe(ev.recipe);
           if (ev.recipe.id) {
-            capture("recipe_generation_succeeded", analyticsProps);
+            capture("recipe_generation_succeeded", {
+              ...analyticsProps,
+              has_decision_card: true,
+            });
           }
         } else if (ev.type === "error") {
           const view = classifyStreamErrorMessage(ev.message);

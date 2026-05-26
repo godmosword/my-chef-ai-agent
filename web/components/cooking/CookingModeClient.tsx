@@ -25,18 +25,25 @@ import { CompletionScreen } from "./CompletionScreen";
 import { ExitConfirmDialog } from "./ExitConfirmDialog";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/primitives/Button";
-import { capture } from "@/lib/analytics/events";
+import {
+  capture,
+  cookDurationBucket,
+  cookRatingBucket,
+} from "@/lib/analytics/events";
+import type { CookAnalyticsSource } from "@/lib/cooking/cook-source";
 
 export type CookingModeClientProps = {
   recipe: CookingRecipe;
   initialStep?: number;
   initialVoice?: boolean;
+  cookSource?: CookAnalyticsSource;
 };
 
 export function CookingModeClient({
   recipe,
   initialStep = 0,
   initialVoice = false,
+  cookSource = "detail",
 }: CookingModeClientProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -57,6 +64,7 @@ export function CookingModeClient({
   const [resumePrompt, setResumePrompt] = useState(false);
   const recordToastShown = useRef(false);
   const startedAtRef = useRef<number>(Date.now());
+  const lastRatingRef = useRef<number | null>(null);
   const [elapsedMinutes, setElapsedMinutes] = useState<number | null>(null);
 
   const showRecordToast = useCallback(() => {
@@ -73,17 +81,21 @@ export function CookingModeClient({
       const params = new URLSearchParams();
       if (step > 0) params.set("step", String(step));
       if (voice) params.set("voice", "1");
+      if (cookSource) params.set("source", cookSource);
       const qs = params.toString();
       router.replace(`/app/library/${recipe.id}/cook${qs ? `?${qs}` : ""}`, {
         scroll: false,
       });
     },
-    [recipe.id, router],
+    [recipe.id, router, cookSource],
   );
 
   useEffect(() => {
     enterFullscreen();
-    capture("cooking_mode_started", { is_demo: recipe.id === "demo" });
+    capture("cooking_mode_started", {
+      is_demo: recipe.id === "demo",
+      source: cookSource,
+    });
     const snap = loadCookingSession(recipe.id);
     if (snap?.startedAt) {
       startedAtRef.current = snap.startedAt;
@@ -99,13 +111,22 @@ export function CookingModeClient({
     return () => {
       exitFullscreen();
     };
-  }, [recipe.id, enterFullscreen, exitFullscreen]);
+  }, [recipe.id, cookSource, enterFullscreen, exitFullscreen]);
 
   useEffect(() => {
     if (!completed) return;
-    capture("cooking_mode_completed", { is_demo: recipe.id === "demo" });
+    const mins = Math.max(
+      1,
+      Math.round((Date.now() - startedAtRef.current) / 60_000),
+    );
+    capture("cooking_mode_completed", {
+      is_demo: recipe.id === "demo",
+      source: cookSource,
+      duration_bucket: cookDurationBucket(mins),
+      rating_bucket: cookRatingBucket(lastRatingRef.current),
+    });
     showRecordToast();
-  }, [completed, recipe.id, showRecordToast]);
+  }, [completed, recipe.id, cookSource, showRecordToast]);
 
   useEffect(() => {
     syncUrl(currentStep, voiceEnabled);
@@ -182,6 +203,7 @@ export function CookingModeClient({
   });
 
   const handleRate = async (stars: number) => {
+    lastRatingRef.current = stars;
     try {
       await recordRecipeCook(recipe.id, { rating: stars, record_cook: true });
       dequeuePendingRating(recipe.id);
@@ -192,7 +214,7 @@ export function CookingModeClient({
         payload: { recipe_id: recipe.id, rating: stars },
       });
       toast({
-        title: "儲存評分失敗",
+        title: "評分稍後同步",
         description: "已暫存，連線後會自動送出",
         variant: "error",
       });
