@@ -25,7 +25,19 @@ pnpm dev:web
 
 → http://localhost:3000
 
-**新 UI（Prompt 3）**：在 `web/.env.local` 設 `NEXT_PUBLIC_NEW_UI=1` 後重啟 dev，造訪 `/`（Landing）與 `/app`（Today）。未設時根路徑仍為經典聊天；`/legacy` 永遠可用。
+**新 UI（Prompt 3）**：在 `web/.env.local` 設 `NEXT_PUBLIC_NEW_UI=1` 後重啟 dev，造訪 `/`（Landing）與 `/app`（今晚吃什麼／Tonight 主頁）。未設時根路徑仍為經典聊天；`/legacy` 永遠可用。
+
+**App 主流程（`NEXT_PUBLIC_NEW_UI=1`）**：
+
+| 路由 | 說明 |
+|------|------|
+| `/app` | 輸入區（placeholder 輪播、Quick Chips、今晚靈感、最近食譜）；配額在「我的」 |
+| `/app/library` | 我的食譜（可刪除、收藏、離線快取） |
+| `/app/library/:id` | 食譜詳情（份量切換、⋯ 選單、mobile sticky 烹飪 CTA） |
+| `/app/library/:id/cook` | 烹飪模式（需 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`） |
+| `/app/me` | 個人檔案、配額、晚餐提醒設定 |
+
+桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。
 
 **烹飪模式（Prompt 4）**：另設 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`，於食譜詳情頁顯示「進入烹飪模式」（路由 `/app/library/:id/cook` 亦可直連）。
 
@@ -38,6 +50,8 @@ pnpm dev:web
 **分析（Prompt 7）**：選填 `NEXT_PUBLIC_POSTHOG_KEY`（與 `NEXT_PUBLIC_POSTHOG_HOST`）；設 `NEXT_PUBLIC_ANALYTICS_ENABLED=0` 關閉。使用者在「我的」可關閉匿名事件。
 
 **主圖與步驟插圖（Prompt 8）**：新食譜預設只背景生成或提供 **1 張成品主圖**；烹飪步驟插圖改由使用者在食譜詳情主動按「產生這一步的示意圖」，每次清楚提示使用 1 次 **image** 配額。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0` 可關閉主圖；`AUTO_STEP_IMAGES=1` 才會恢復背景批次步驟圖（不建議免費預設）。
+
+**Neon migration**：部署或本機連線 DB 後執行 `pnpm -F @chef/web db:migrate`（含 `0008` 分享／設定、`0009` 食譜版本 `prep_minutes`／`servings` 等）。未跑 `0009` 時生成仍會降級寫入，但建議補齊 schema。
 
 **家庭飲食偏好**：在「我的／偏好」可設定不吃辣、兒童餐、低油低鹽與需避開食材。設定存於 `user_preferences.preferences`，只用於生成 prompt 與結果提示，不送入 analytics。
 
@@ -90,7 +104,7 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test
+pnpm -F @chef/web test   # 目前 57 項（15 個測試檔）
 ```
 
 ---

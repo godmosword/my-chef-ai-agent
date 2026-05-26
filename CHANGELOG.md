@@ -9,23 +9,29 @@
 
 ### Changed
 
+- **桌面側欄**：「我的」個人區塊（顯示名稱，預設「美食家」）改到 Logo 下方，不再貼在側欄最底部。
 - **文字生成 token 精簡**：情境 prompt 改為短標籤 + 只在命中時加入精簡 system 規則；重試時只送單一修復提示；`MAX_COMPLETION_TOKENS` production 預設由 `1024` 降為 `896`。
 - **對話記憶瘦身**：AI 回覆寫入 `user_memory` 前改存「上次食譜」摘要，避免把完整 JSON 長期塞回記憶流程；新增 `prompt-helpers` 單元測試。
 - **程式庫清理**：刪除未引用的舊 pattern components、prompt lists、timer hook 與多餘 API helper/export；移除未使用的前端依賴。
 - **PWA／主畫面圖示**：重設 `icon-source.svg`（琥珀金漸層 + 廚師帽），重新產生 `public/icons/*` 與 `app/icon.png`、`app/apple-icon.png`；執行 `pnpm -F @chef/web icons:generate` 可再生成。
+- **圖片策略**：新食譜預設僅自動 1 張主圖；步驟圖由使用者在詳情頁主動觸發（提示消耗 1 次圖片額度）。
+- **誠實文案**：改「永久保存」為「本裝置料理書／已保存主圖」；更新隱私權與免責聲明。
+- **配額與活躍日期「今日」**：以 `Asia/Taipei` 日曆日計算（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫），不再用 UTC 切日。
+- **部署／出貨規則**：新增 Cursor 規則 `.cursor/rules/vercel-main-ship.mdc`；`AGENTS.md`、`CONTRIBUTING.md`、`README.md`、`web/README.md` 明訂僅 **Vercel** 為正式環境、**`push main`** 出貨、不以 **localhost** 作 deploy 或驗收目標。
+- **`web/vercel.json`**：預設 `IMAGE_PROVIDER=openai_compatible`（仍須在 Vercel 設定 `IMAGE_OPENAI_API_KEY` 才會真生圖）。
+- **OpenAI 圖像模型**：預設改為 **`gpt-image-2`**（主圖與烹飪步驟圖共用；可 `OPENAI_GPT_IMAGE_MODEL_ID` 覆寫）。
 
 ### Fixed
 
 - **生成食譜寫入失敗**：Neon 未套用 migration `0009` 時，`recipe_versions` 插入自動降級（略過 `prep_minutes` 等欄位）；API 錯誤提示執行 `pnpm -F @chef/web db:migrate`。
 - **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
 - **P1-1 demo CTA 收斂**：`/demo/recipe` 移除底部雙鈕，改 `RecipeActionsMenu`（⋯）收次要動作；主 CTA 僅 sticky／desktop「進入烹飪模式」。
+- **GCP Cloud Build**：新增根目錄 **`Dockerfile`**（Next.js `standalone`）與 **`.dockerignore`**，修正 `lstat /workspace/Dockerfile: no such file`（舊 LINE Bot 映像已不在 repo）。
+- **主圖不顯示**：`gpt-image-2` 改為正確 Images API 參數（移除不支援的 `response_format`、JPEG 輸出）；生圖失敗或關閉自動主圖時改顯示 `/marketing/hero-three-cup-chicken.jpg`，不再卡在廚師帽占位；延長生圖 timeout 與 polling。
 
 ### Added
 
-- **料理書刪除**：卡片垃圾桶、列表刪除鈕、食譜詳情 `⋯` 選單「刪除食譜」（軟刪除 + 清除離線快取）。
-
-### Added
-
+- **料理書刪除**：卡片垃圾桶、列表刪除鈕、食譜詳情 `⋯` 選單「刪除食譜」（`DELETE /api/recipes/:id` 軟刪除 + 清除離線快取）。
 - **UX 規格缺口補齊**：`StickyCookCTA`（滾過 hero 後顯示）、demo 食譜 sticky 烹飪 CTA、desktop 烹飪主按鈕；生成錯誤分類（`lib/api/error-types.ts` / `error-handler.ts`）；步驟勾選後自動捲動；烹飪完成頁用時與 👍／👎 回饋；晚餐提醒 client 排程 + SW metadata／通知點擊。
 - **UX 規格 Phase 1–7**（[`docs/ux-spec.md`](docs/ux-spec.md)）：Tonight 主頁（placeholder 輪播、Quick Chips、今晚靈感、最近食譜、問候列）；配額移至「我的」；食譜詳情份量切換、步驟 badge、行動選單與 mobile sticky 烹飪 CTA；生成／配額／離線錯誤態；料理書空狀態；晚餐提醒設定卡（localStorage + 通知權限）；設計 token 別名（`bg-*` / `fg-*` / `accent-*`）。
 - **家庭晚餐定位**：Landing／metadata 改為「冰箱有什麼，今晚就煮什麼」；Tonight 快捷 chips 改為家庭情境。
@@ -35,28 +41,8 @@
 - **日期工具**：`lib/locale/datetime.ts`（`Asia/Taipei`）；Today 問候改 client 顯示避免 hydration 錯日。
 - **Analytics**：Landing／demo／生成漏斗事件（不含 prompt 與過敏原文）。
 - **隱私安全追蹤**：analytics props 過濾完整 prompt、自訂過敏原、session id 與分享 token；公開分享 view 不再送出 token。
-
-### Changed
-
-- **圖片策略**：新食譜預設僅自動 1 張主圖；步驟圖由使用者在詳情頁主動觸發（提示消耗 1 次圖片額度）。
-- **誠實文案**：改「永久保存」為「本裝置料理書／已保存主圖」；更新隱私權與免責聲明。
-- **配額與活躍日期「今日」**：以 `Asia/Taipei` 日曆日計算（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫），不再用 UTC 切日。
-
-### Added
-
 - **烹飪步驟 AI 插圖**：`openai_compatible` + API key 時，新食譜背景為前 N 步（`MAX_STEP_IMAGES`，預設 6）生成教學用過程照；Cook 頁輪詢更新；`AUTO_STEP_IMAGES=0` 可關閉。
 - **主圖備援**：`placeholder` 或無金鑰時改用站內 `/marketing/hero-three-cup-chicken.jpg`，避免 `placehold.co` 在瀏覽器被擋。
-
-### Changed
-
-- **部署／出貨規則**：新增 Cursor 規則 `.cursor/rules/vercel-main-ship.mdc`；`AGENTS.md`、`CONTRIBUTING.md`、`README.md`、`web/README.md` 明訂僅 **Vercel** 為正式環境、**`push main`** 出貨、不以 **localhost** 作 deploy 或驗收目標。
-- **`web/vercel.json`**：預設 `IMAGE_PROVIDER=openai_compatible`（仍須在 Vercel 設定 `IMAGE_OPENAI_API_KEY` 才會真生圖）。
-- **OpenAI 圖像模型**：預設改為 **`gpt-image-2`**（主圖與烹飪步驟圖共用；可 `OPENAI_GPT_IMAGE_MODEL_ID` 覆寫）。
-
-### Fixed
-
-- **GCP Cloud Build**：新增根目錄 **`Dockerfile`**（Next.js `standalone`）與 **`.dockerignore`**，修正 `lstat /workspace/Dockerfile: no such file`（舊 LINE Bot 映像已不在 repo）。
-- **主圖不顯示**：`gpt-image-2` 改為正確 Images API 參數（移除不支援的 `response_format`、JPEG 輸出）；生圖失敗或關閉自動主圖時改顯示 `/marketing/hero-three-cup-chicken.jpg`，不再卡在廚師帽占位；延長生圖 timeout 與 polling。
 
 ---
 ## [0.2.0] — 2026-05-24 — Web 產品線（Prompt 2–10、Wave 4）

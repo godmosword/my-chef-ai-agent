@@ -63,6 +63,16 @@ export function AppSidebar() {
         </div>
       </Link>
 
+      {meItem ? (
+        <div className="border-b border-border-default/60 px-3 py-3">
+          <MeProfileChip
+            item={meItem}
+            active={isActive(meItem.href)}
+            profile={profile}
+          />
+        </div>
+      ) : null}
+
       <nav className="flex-1 space-y-3 px-2 py-3" aria-label="主選單">
         {SECTION_ORDER.filter((s) => s !== "帳號").map((section) => {
           const items = grouped.get(section) ?? [];
@@ -93,16 +103,6 @@ export function AppSidebar() {
           );
         })}
       </nav>
-
-      <div className="space-y-2 border-t border-border-default/60 p-3">
-        {meItem && (
-          <MeProfileChip
-            item={meItem}
-            active={isActive(meItem.href)}
-            profile={profile}
-          />
-        )}
-      </div>
     </aside>
   );
 }

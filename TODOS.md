@@ -6,6 +6,12 @@
 
 ---
 
+## UX 規格後續（[`docs/ux-spec.md`](docs/ux-spec.md)）
+
+- [ ] **PWA 晚餐提醒**：Service Worker 定時推播（目前僅「我的」設定卡 + localStorage）
+- [ ] **Landing 視覺**：與 App token 完全對齊（P2-2 收尾）
+- [ ] **⌘K CommandBar**（spec 暫緩，側欄已移除頂部搜尋占位）
+
 ## P1 — 驗證留存與下廚流程（確認 P0 後）
 
 - [ ] iPhone 真機驗收烹飪模式（Wake Lock、背景計時、提示音）
@@ -30,6 +36,8 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-26 | **料理書刪除 + DB 韌性**：`DELETE /api/recipes/:id` UI；`recipe_versions` 缺 `0009` 欄位時自動降級；`.gitignore` 加入 `web/.env.local`。 |
+| 2026-05-26 | **桌面側欄**：個人區塊（美食家）移至 Logo 下方，不再貼底。 |
 | 2026-05-22 | **UX 規格 Phase 1–7**：`docs/ux-spec.md`；Tonight 主頁重組、食譜 CTA／份量／錯誤態、晚餐提醒卡、設計 token 別名；規格見 [`docs/ux-spec.md`](docs/ux-spec.md)。 |
 | 2026-05-22 | **Monorepo + Design Tokens**：pnpm workspace（`web`、`@chef/design-tokens`、`@chef/shared-types`）；`web-ci.yml`；規格已核准並實作。 |
 | 2026-05-23 | **Web 遷移 Phase 0–3**：`web/` Next.js on Vercel（聊天、Neon 記憶／收藏／配額、菜系、主圖、 HTML 海報、legal）。 |
@@ -60,8 +68,8 @@
 
 ## 零、Neon 資料庫（部署後若 API 500）
 
-- [ ] **執行 migration**：`pnpm -F @chef/web db:migrate`（含 `0008` 補 `user_settings`、分享表、`meal_plans`）
-- [ ] 或 Neon SQL Editor 貼 `web/migrations/0008_ensure_user_settings_and_sharing.sql`
+- [ ] **執行 migration**：`pnpm -F @chef/web db:migrate`（含 `0008` 補 `user_settings`、分享表、`meal_plans`、**`0009` `recipe_versions` 統計欄位**）
+- [ ] 或 Neon SQL Editor 依序貼 `web/migrations/0008_ensure_user_settings_and_sharing.sql`、`0009_recipe_version_stats.sql`
 - [ ] 確認：`SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1;`
 
 ## 零點一、部署後建議手動驗收（Web · Vercel）
@@ -94,7 +102,7 @@
 
 > 規格：[`docs/superpowers/specs/2026-05-23-public-sharing.md`](docs/superpowers/specs/2026-05-23-public-sharing.md)
 
-- [ ] **Neon**：執行 `0005_public_sharing.sql`
+- [ ] **Neon**：執行 `0005_public_sharing.sql`（若尚未跑過，建議改跑完整 `db:migrate`）
 - [ ] **Vercel**：`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_POSTHOG_KEY`（選填 `POSTHOG_HOST`）
 - [ ] **真機**：LINE／FB 連結預覽 OG；重新發布／撤銷 curl 或 UI 驗收
 - [ ] **Analytics**：PostHog 儀表板對照事件清單
