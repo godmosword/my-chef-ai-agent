@@ -35,10 +35,18 @@ const ACTIONS: Array<{
 
 export type RecipeActionsMenuProps = {
   recipe: RecipePayload;
+  /** Override default「{name}，類似料理」prefill (e.g. demo page). */
+  remakePrefill?: string;
+  onRemakeClick?: () => void;
   className?: string;
 };
 
-export function RecipeActionsMenu({ recipe, className }: RecipeActionsMenuProps) {
+export function RecipeActionsMenu({
+  recipe,
+  remakePrefill,
+  onRemakeClick,
+  className,
+}: RecipeActionsMenuProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -48,7 +56,8 @@ export function RecipeActionsMenu({ recipe, className }: RecipeActionsMenuProps)
     const name = recipe.recipe_name ?? "料理";
     switch (id) {
       case "remake": {
-        const q = encodeURIComponent(`${name}，類似料理`);
+        onRemakeClick?.();
+        const q = encodeURIComponent(remakePrefill ?? `${name}，類似料理`);
         router.push(`/app?prefill=${q}`);
         break;
       }

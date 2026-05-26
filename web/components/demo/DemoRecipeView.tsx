@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useMemo } from "react";
 import { capture } from "@/lib/analytics/events";
 import {
   DEMO_CHILD_TIP,
@@ -12,16 +11,31 @@ import {
 } from "@/lib/demo/demo-recipe";
 import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
 import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
-import { Button } from "@/components/primitives/Button";
+import { RecipeActionsMenu } from "@/components/recipe/RecipeActionsMenu";
 import { MarketingHeader } from "@/components/marketing/MarketingHeader";
 
 const DEMO_PREFILL =
   "電鍋雞肉蔬菜炊飯，兩大一小，30 分鐘，不辣，一鍋完成";
 
 export function DemoRecipeView() {
+  const recipe = useMemo(
+    () => ({ ...DEMO_RECIPE, id: DEMO_RECIPE_ID }),
+    [],
+  );
+
   useEffect(() => {
     capture("demo_recipe_viewed", { source: "demo_page" });
   }, []);
+
+  const headerActions = (
+    <RecipeActionsMenu
+      recipe={recipe}
+      remakePrefill={DEMO_PREFILL}
+      onRemakeClick={() =>
+        capture("demo_recipe_generate_clicked", { source: "demo_page" })
+      }
+    />
+  );
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -32,8 +46,9 @@ export function DemoRecipeView() {
         </p>
 
         <RecipeDetailLayout
-          recipe={{ ...DEMO_RECIPE, id: DEMO_RECIPE_ID }}
+          recipe={recipe}
           cookHref="/demo/recipe/cook"
+          headerActions={headerActions}
         >
           <div className="space-y-3 text-sm text-text-body">
             <p>
@@ -53,22 +68,6 @@ export function DemoRecipeView() {
             servings={DEMO_RECIPE.servings}
           />
         </RecipeDetailLayout>
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button asChild className="flex-1">
-            <Link
-              href={`/app?prefill=${encodeURIComponent(DEMO_PREFILL)}`}
-              onClick={() =>
-                capture("demo_recipe_generate_clicked", { source: "demo_page" })
-              }
-            >
-              用我的食材生成類似料理
-            </Link>
-          </Button>
-          <Button asChild variant="secondary" className="flex-1">
-            <Link href="/">回到首頁</Link>
-          </Button>
-        </div>
       </main>
     </div>
   );

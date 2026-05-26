@@ -10,6 +10,7 @@
 ### Fixed
 
 - **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
+- **P1-1 demo CTA 收斂**：`/demo/recipe` 移除底部雙鈕，改 `RecipeActionsMenu`（⋯）收次要動作；主 CTA 僅 sticky／desktop「進入烹飪模式」。
 
 ### Added
 
