@@ -5,6 +5,7 @@ export type CookingSessionSnapshot = {
   voiceEnabled: boolean;
   timers: ActiveTimer[];
   savedAt: number;
+  startedAt?: number;
 };
 
 const key = (recipeId: string) => `cooking_session_${recipeId}`;

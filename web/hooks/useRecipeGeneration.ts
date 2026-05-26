@@ -5,6 +5,12 @@ import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
 import { isBrowserOnline } from "@/lib/offline/network";
 import { capture, recipeGenerationCoarseProps } from "@/lib/analytics/events";
+import {
+  classifyGenerationError,
+  classifyStreamErrorMessage,
+  validatePromptLength,
+} from "@/lib/api/error-handler";
+import type { GenerationErrorView } from "@/lib/api/error-types";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };
@@ -37,14 +43,24 @@ export function useRecipeGeneration() {
   const [recipe, setRecipe] = useState<RecipePayload | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorView, setErrorView] = useState<GenerationErrorView | null>(null);
 
   const generate = useCallback(async (body: GenerateRecipeRequest) => {
+    const short = validatePromptLength(body.message);
+    if (short) {
+      setErrorView(short);
+      setError(short.message);
+      return;
+    }
     if (!isBrowserOnline()) {
-      setError("目前沒有網路，已收藏的食譜仍可查看。");
+      const view = classifyGenerationError(new Error("offline"));
+      setErrorView(view);
+      setError(view.message);
       return;
     }
     setStreaming(true);
     setError(null);
+    setErrorView(null);
     setRecipe(null);
     const analyticsProps = {
       source: "today",
@@ -67,20 +83,23 @@ export function useRecipeGeneration() {
             capture("recipe_generation_succeeded", analyticsProps);
           }
         } else if (ev.type === "error") {
-          const msg =
-            ev.message.includes("額度") || ev.message.includes("429")
-              ? "今天的文字食譜額度已用完，明日 0 點（台灣時間）重置。"
-              : "這次沒有成功產生食譜，請重新試一次，或換個食材組合。";
-          setError(msg);
+          const view = classifyStreamErrorMessage(ev.message);
+          setErrorView(view);
+          setError(view.message);
           capture("recipe_generation_failed", {
             source: "today",
-            reason: ev.message.includes("額度") ? "quota" : "error",
+            reason: view.kind,
           });
         }
       }
     } catch (e) {
-      setError("這次沒有成功產生食譜，請重新試一次，或換個食材組合。");
-      capture("recipe_generation_failed", { source: "today", reason: "exception" });
+      const view = classifyGenerationError(e);
+      setErrorView(view);
+      setError(view.message);
+      capture("recipe_generation_failed", {
+        source: "today",
+        reason: view.kind,
+      });
     } finally {
       setStreaming(false);
     }
@@ -89,7 +108,8 @@ export function useRecipeGeneration() {
   const reset = useCallback(() => {
     setRecipe(null);
     setError(null);
+    setErrorView(null);
   }, []);
 
-  return { recipe, streaming, error, generate, reset };
+  return { recipe, streaming, error, errorView, generate, reset };
 }
