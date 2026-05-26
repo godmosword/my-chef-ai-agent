@@ -27,7 +27,7 @@ function stepTimerSeconds(step: unknown, text: string): number | undefined {
   return parseTimerFromText(text);
 }
 
-export function normalizeCookingSteps(steps: unknown[] | undefined): CookingStep[] {
+function normalizeCookingSteps(steps: unknown[] | undefined): CookingStep[] {
   if (!steps?.length) return [];
   return steps.map((raw, index) => {
     const text = stepText(raw);

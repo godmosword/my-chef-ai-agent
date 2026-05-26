@@ -619,33 +619,3 @@ export async function getRecipeHeroStatus(
     hero_error: row.heroError,
   };
 }
-
-export async function updateRecipeHeroUrl(
-  userId: string,
-  tenantId: string,
-  recipeId: string,
-  heroUrl: string,
-): Promise<boolean> {
-  const db = getDb();
-  if (!db) return false;
-
-  const result = await db
-    .update(recipes)
-    .set({
-      heroUrl,
-      heroStatus: "ready",
-      heroError: null,
-      heroUpdatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(recipes.id, recipeId),
-        eq(recipes.userId, userId),
-        eq(recipes.tenantId, tenantId),
-        isNull(recipes.deletedAt),
-      ),
-    )
-    .returning({ id: recipes.id });
-
-  return result.length > 0;
-}

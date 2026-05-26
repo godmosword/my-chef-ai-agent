@@ -9,6 +9,9 @@
 
 ### Changed
 
+- **文字生成 token 精簡**：情境 prompt 改為短標籤 + 只在命中時加入精簡 system 規則；重試時只送單一修復提示；`MAX_COMPLETION_TOKENS` production 預設由 `1024` 降為 `896`。
+- **對話記憶瘦身**：AI 回覆寫入 `user_memory` 前改存「上次食譜」摘要，避免把完整 JSON 長期塞回記憶流程；新增 `prompt-helpers` 單元測試。
+- **程式庫清理**：刪除未引用的舊 pattern components、prompt lists、timer hook 與多餘 API helper/export；移除未使用的前端依賴。
 - **PWA／主畫面圖示**：重設 `icon-source.svg`（琥珀金漸層 + 廚師帽），重新產生 `public/icons/*` 與 `app/icon.png`、`app/apple-icon.png`；執行 `pnpm -F @chef/web icons:generate` 可再生成。
 
 ### Fixed

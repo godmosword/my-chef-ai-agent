@@ -40,6 +40,12 @@ pnpm dev:web
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 
+### 文字生成成本
+
+- `MAX_COMPLETION_TOKENS` production 預設 `896`，可在 Vercel Dashboard 覆寫。
+- 情境提示只在命中「清冰箱／兒童餐／預算／心情」時加入短 system 規則。
+- `user_memory` 只保存上次食譜摘要，完整食譜仍由 `recipes` / `recipe_versions` 持久化。
+
 ## API
 
 - `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）

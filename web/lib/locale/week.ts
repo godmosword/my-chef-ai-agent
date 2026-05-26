@@ -6,7 +6,7 @@ import {
   parseIsoDateLocal,
 } from "@/lib/locale/datetime";
 
-export function formatIsoDate(d: Date): string {
+function formatIsoDate(d: Date): string {
   return localDateKeyInTimeZone(d, DEFAULT_DISPLAY_TIMEZONE);
 }
 

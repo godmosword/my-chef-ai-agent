@@ -1,6 +1,6 @@
 /** Runtime config from environment (mirrors app/config.py defaults). */
 
-export const DEFAULT_MODEL_NAME = "gemini-3.1-flash-lite";
+const DEFAULT_MODEL_NAME = "gemini-3.1-flash-lite";
 
 export function resolveModelName(): string {
   const raw = process.env.MODEL_NAME?.trim() || DEFAULT_MODEL_NAME;
@@ -15,7 +15,7 @@ export const MAX_HISTORY_TURNS = Math.max(
   parseInt(process.env.MAX_HISTORY_TURNS || "2", 10) || 2,
 );
 
-export const PLAN_DAILY_LIMITS: Record<string, number> = {
+const PLAN_DAILY_LIMITS: Record<string, number> = {
   free: parseInt(process.env.PLAN_FREE_DAILY_LIMIT || "20", 10) || 20,
   pro: parseInt(process.env.PLAN_PRO_DAILY_LIMIT || "200", 10) || 200,
   enterprise:

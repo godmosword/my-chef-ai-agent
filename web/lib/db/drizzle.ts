@@ -1,6 +1,5 @@
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { isDatabaseConfigured } from "./client";
 import * as schema from "./schema";
 
 let _pool: Pool | null = null;
@@ -20,5 +19,3 @@ export function getDb() {
   if (!pool) return null;
   return drizzle(pool, { schema });
 }
-
-export { schema, isDatabaseConfigured };

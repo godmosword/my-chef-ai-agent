@@ -86,7 +86,3 @@ export async function listRecipesWithOffline(params?: {
 
   return { items, favoriteIds: new Set(), offlineOnly: true };
 }
-
-export function offlineGenerationMessage(): string {
-  return "目前離線，無法生成新食譜。請連上網路後再試。";
-}

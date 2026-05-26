@@ -77,12 +77,6 @@ export async function recordRecipeCook(
   });
 }
 
-export async function deleteRecipe(id: string): Promise<{ ok: true; deleted: boolean }> {
-  return apiFetch<{ ok: true; deleted: boolean }>(`/api/recipes/${id}`, {
-    method: "DELETE",
-  });
-}
-
 export type FavoriteItem = {
   id: number;
   recipe_id?: string;
@@ -108,23 +102,10 @@ export async function addFavoriteByRecipeId(recipeId: string): Promise<{ ok: tru
   });
 }
 
-export async function removeFavoriteById(id: number): Promise<{ ok: true; deleted: boolean }> {
-  return apiFetch(`/api/favorites/${id}`, { method: "DELETE" });
-}
-
 export async function removeFavoriteByRecipeId(
   recipeId: string,
 ): Promise<{ ok: true; deleted: boolean }> {
   return apiFetch(`/api/favorites/by-recipe/${encodeURIComponent(recipeId)}`, {
     method: "DELETE",
   });
-}
-
-export async function fetchCuisine(): Promise<{
-  ok: true;
-  active_cuisine: string | null;
-  label: string;
-  options: Array<{ key: string; label: string }>;
-}> {
-  return apiFetch("/api/cuisine");
 }

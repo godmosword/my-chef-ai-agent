@@ -1,15 +1,6 @@
 import type { RecipePayload as AiRecipePayload } from "@/lib/ai/generate-recipe";
 import type { RecipePayload, RecipeTag, TagSource } from "@chef/shared-types";
 
-export function kitchenTalkToText(
-  talks: AiRecipePayload["kitchen_talk"],
-): string | null {
-  if (!talks?.length) return null;
-  return talks
-    .map((t) => `${t.role}: ${t.content}`)
-    .join("\n");
-}
-
 export function costToJsonb(
   cost: string | undefined,
 ): unknown | null {

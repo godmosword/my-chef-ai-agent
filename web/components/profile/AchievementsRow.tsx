@@ -20,7 +20,7 @@ interface AchievementSpec {
   hint: string;
 }
 
-export interface AchievementInput {
+interface AchievementInput {
   recipeCount: number;
   favoritesCount: number;
   sharedCount: number;

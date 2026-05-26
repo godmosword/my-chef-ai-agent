@@ -9,7 +9,7 @@
  */
 export type Theme = "light" | "dark" | "system";
 
-export const THEME_STORAGE_KEY = "chef-theme";
+const THEME_STORAGE_KEY = "chef-theme";
 
 export function readLocalTheme(): Theme {
   if (typeof window === "undefined") return "system";

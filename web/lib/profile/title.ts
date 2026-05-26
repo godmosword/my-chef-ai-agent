@@ -18,7 +18,7 @@ export function chefTitle(daysCooking: number): string {
 }
 
 /** "yyyy-mm-dd" in local time, NOT UTC. */
-export function localDateKey(date: Date = new Date()): string {
+function localDateKey(date: Date = new Date()): string {
   return displayDateKey(date);
 }
 

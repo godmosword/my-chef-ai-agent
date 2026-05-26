@@ -1,9 +1,9 @@
 import type { RecipePayload, RecipeWithLatestVersion } from "@chef/shared-types";
 import { getOfflineDb, OFFLINE_DEVICE_USER, type OfflineRecipe } from "./db";
 
-export const MAX_OFFLINE_RECIPES = 20;
+const MAX_OFFLINE_RECIPES = 20;
 
-export function listItemToPayload(row: RecipeWithLatestVersion): RecipePayload {
+function listItemToPayload(row: RecipeWithLatestVersion): RecipePayload {
   const v = row.latest_version;
   let kitchen_talk: RecipePayload["kitchen_talk"];
   if (v?.kitchen_talk) {

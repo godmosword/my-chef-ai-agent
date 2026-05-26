@@ -6,12 +6,12 @@ import { capture } from "@/lib/analytics/events";
 
 const STORAGE_KEY = "chef_onboarded_v1";
 
-export function hasAppOnboarded(): boolean {
+function hasAppOnboarded(): boolean {
   if (typeof window === "undefined") return true;
   return localStorage.getItem(STORAGE_KEY) === "1";
 }
 
-export function markAppOnboarded(): void {
+function markAppOnboarded(): void {
   localStorage.setItem(STORAGE_KEY, "1");
 }
 

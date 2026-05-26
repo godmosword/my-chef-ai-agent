@@ -20,7 +20,7 @@ export function resolveImageApiKey(): string | null {
 }
 
 /** Same-origin static asset (committed under public/marketing). Reliable on Vercel. */
-export const DEFAULT_PLACEHOLDER_HERO = "/marketing/hero-three-cup-chicken.jpg";
+const DEFAULT_PLACEHOLDER_HERO = "/marketing/hero-three-cup-chicken.jpg";
 
 export function getPlaceholderHeroUrl(_recipeName?: string): string {
   const custom = process.env.RECIPE_FALLBACK_HERO_IMAGE_URL?.trim();

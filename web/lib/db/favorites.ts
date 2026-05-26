@@ -12,12 +12,6 @@ export type FavoriteRow = {
   recipe_id?: string;
 };
 
-export type FavoriteV2Row = {
-  recipe_id: string;
-  title: string;
-  created_at: string;
-};
-
 export async function countFavoritesForUser(
   userId: string,
   tenantId: string,

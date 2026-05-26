@@ -16,12 +16,6 @@ export function loadPendingRatings(): PendingRating[] {
   }
 }
 
-export function enqueuePendingRating(entry: PendingRating): void {
-  const list = loadPendingRatings().filter((x) => x.recipeId !== entry.recipeId);
-  list.push(entry);
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(list));
-}
-
 export function dequeuePendingRating(recipeId: string): void {
   const list = loadPendingRatings().filter((x) => x.recipeId !== recipeId);
   localStorage.setItem(QUEUE_KEY, JSON.stringify(list));

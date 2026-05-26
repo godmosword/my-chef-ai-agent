@@ -1,7 +1,7 @@
 import type { RecipePayload } from "@chef/shared-types";
 import { generateRecipe } from "./recipes";
 
-export type StreamField =
+type StreamField =
   | "title"
   | "cuisine"
   | "ingredients"
@@ -14,15 +14,6 @@ export type StreamEvent =
   | { type: "field"; path: StreamField; value: unknown }
   | { type: "done"; recipe: RecipePayload; persisted: boolean }
   | { type: "error"; message: string };
-
-const FIELD_ORDER: StreamField[] = [
-  "title",
-  "cuisine",
-  "ingredients",
-  "kitchen_talk",
-  "ingredients",
-  "steps",
-];
 
 function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -66,5 +57,3 @@ export async function* fakeRecipeStream(
     };
   }
 }
-
-export { FIELD_ORDER };

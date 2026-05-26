@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
-import type { PublicRecipe, ShareRecipeResponse } from "@chef/shared-types";
+import type { ShareRecipeResponse } from "@chef/shared-types";
 
 export async function createShareLink(
   recipeId: string,
@@ -22,20 +22,6 @@ export async function createShareLink(
 
 export async function revokeShareLink(recipeId: string): Promise<void> {
   await apiFetch(`/api/recipes/${recipeId}/share`, { method: "DELETE" });
-}
-
-export async function fetchPublicRecipe(
-  token: string,
-): Promise<PublicRecipe | null> {
-  try {
-    const res = await fetch(`/api/r/${token}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { ok: boolean } & PublicRecipe;
-    if (!data.ok) return null;
-    return data;
-  } catch {
-    return null;
-  }
 }
 
 export async function recordShareView(token: string): Promise<void> {

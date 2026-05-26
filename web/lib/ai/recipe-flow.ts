@@ -10,6 +10,7 @@ import { getUserPreferences } from "@/lib/db/preferences";
 import { consumeQuota } from "@/lib/db/quota";
 import {
   buildScenarioPrefix,
+  buildScenarioSystemAddendum,
   buildSystemPrompt,
   condenseAssistantMessage,
   filterHistoryAfterContext,
@@ -53,6 +54,7 @@ export async function runRecipeFlow(
   }
 
   const scenarioPrefix = buildScenarioPrefix(userMessage);
+  const scenarioAddendum = buildScenarioSystemAddendum(userMessage);
   const effectiveMessage = scenarioPrefix
     ? `${scenarioPrefix}${userMessage}`
     : userMessage;
@@ -70,6 +72,7 @@ export async function runRecipeFlow(
   const systemPrompt = buildSystemPrompt(
     prefs,
     cuisineCtx.active_cuisine,
+    scenarioAddendum,
   );
 
   const nowIso = new Date().toISOString();
@@ -107,7 +110,11 @@ export async function runRecipeFlow(
   const toSave: MemoryMessage[] = [
     ...fullHistory,
     { role: "user", content: effectiveMessage, timestamp: nowIso },
-    { role: "assistant", content: raw, timestamp: nowIso },
+    {
+      role: "assistant",
+      content: condenseAssistantMessage(raw),
+      timestamp: nowIso,
+    },
   ];
   let trimmed = toSave;
   if (trimmed.length > MAX_HISTORY_TURNS + 1) {

@@ -12,7 +12,7 @@ export type PlanCellProps = {
   onActivate: () => void;
 };
 
-export function planCellId(date: string, slot: string): string {
+function planCellId(date: string, slot: string): string {
   return `${date}|${slot}`;
 }
 

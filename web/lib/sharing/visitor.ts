@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { displayDateKey } from "@/lib/locale/datetime";
 
-export function daySaltLocal(): string {
+function daySaltLocal(): string {
   return displayDateKey();
 }
 

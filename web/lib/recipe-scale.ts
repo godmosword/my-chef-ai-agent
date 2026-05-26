@@ -14,7 +14,7 @@
  */
 const QUALITATIVE = ["適量", "少許", "依口味", "酌量", "少量", "適中"];
 
-export function scaleAmount(amount: string | undefined, multiplier: number): string | undefined {
+function scaleAmount(amount: string | undefined, multiplier: number): string | undefined {
   if (!amount) return amount;
   if (multiplier === 1) return amount;
   const trimmed = amount.trim();

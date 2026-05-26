@@ -5,7 +5,9 @@ import {
   AI_TRUNCATION_RECOVERY_PROMPT,
 } from "./prompts";
 
-export function formatAiError(err: unknown, model: string): Error {
+const DEFAULT_MAX_COMPLETION_TOKENS = 896;
+
+function formatAiError(err: unknown, model: string): Error {
   if (err instanceof OpenAI.APIError) {
     if (err.status === 404) {
       return new Error(
@@ -28,8 +30,8 @@ export function formatAiError(err: unknown, model: string): Error {
   return new Error(String(err));
 }
 
-export type KitchenTalk = { role: string; content: string };
-export type Ingredient = { name: string; price?: string };
+type KitchenTalk = { role: string; content: string };
+type Ingredient = { name: string; price?: string };
 
 export type RecipePayload = {
   kitchen_talk?: KitchenTalk[];
@@ -78,22 +80,21 @@ export async function generateRecipe(
   const model = resolveModelName();
   const maxTokens = Math.max(
     512,
-    parseInt(process.env.MAX_COMPLETION_TOKENS || "1024", 10) || 1024,
+    parseInt(
+      process.env.MAX_COMPLETION_TOKENS ||
+        String(DEFAULT_MAX_COMPLETION_TOKENS),
+      10,
+    ) || DEFAULT_MAX_COMPLETION_TOKENS,
   );
   const maxRetries = 1;
   const client = getClient();
 
-  const baseMessages = apiMessages;
-
-  const extraUser: OpenAI.Chat.ChatCompletionMessageParam[] = [];
+  let retryPrompt: OpenAI.Chat.ChatCompletionMessageParam | null = null;
   let lastRaw = "";
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const messages = [...baseMessages, ...extraUser];
-    if (attempt > 0) {
-      messages.push({ role: "user", content: AI_RETRY_EXTRA_PROMPT });
-    }
+    const messages = retryPrompt ? [...apiMessages, retryPrompt] : apiMessages;
 
     let response: OpenAI.Chat.ChatCompletion;
     try {
@@ -118,8 +119,14 @@ export async function generateRecipe(
       return { raw: content, recipe };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      if (finish === "length" && attempt < maxRetries) {
-        extraUser.push({ role: "user", content: AI_TRUNCATION_RECOVERY_PROMPT });
+      if (attempt < maxRetries) {
+        retryPrompt = {
+          role: "user",
+          content:
+            finish === "length"
+              ? AI_TRUNCATION_RECOVERY_PROMPT
+              : AI_RETRY_EXTRA_PROMPT,
+        };
         continue;
       }
     }

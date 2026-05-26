@@ -1,4 +1,4 @@
-export type StepImageStatus =
+type StepImageStatus =
   | "pending"
   | "generating"
   | "ready"

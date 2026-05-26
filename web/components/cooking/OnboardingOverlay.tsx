@@ -10,7 +10,7 @@ export function hasCookingOnboarded(): boolean {
   return localStorage.getItem(ONBOARD_KEY) === "1";
 }
 
-export function markCookingOnboarded(): void {
+function markCookingOnboarded(): void {
   localStorage.setItem(ONBOARD_KEY, "1");
 }
 

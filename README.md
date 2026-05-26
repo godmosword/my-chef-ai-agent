@@ -43,6 +43,8 @@ pnpm dev:web
 
 **日期與配額日界線**：UI 日期、週菜單與每日配額預設以 `Asia/Taipei` 判斷（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫）；資料庫 timestamp 仍維持 UTC 儲存。
 
+**文字生成成本**：production `MAX_COMPLETION_TOKENS` 預設 `896`；情境提示只在命中「清冰箱／兒童餐／預算／心情」時加入短規則，對話記憶只保存上次食譜摘要，降低後續請求 token。
+
 **行銷首頁（Prompt 9）**：`NEXT_PUBLIC_NEW_UI=1` 時 `/` 為 Landing（Hero 產品 mock + 三步驟 + 情境卡）；情境卡片連 `/app?prefill=…`。`public/marketing/hero-three-cup-chicken.jpg` 僅供 API 主圖備援（見 `web/public/marketing/README.md`）。
 
 **PWA 真機驗收**：見 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md)（飛航模式、Cook 計時、收藏離線同步）。

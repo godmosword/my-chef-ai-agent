@@ -1,6 +1,6 @@
 /** Cuisine carousel keys (mirrors app/config.py CUISINE_LABELS). */
 
-export const CUISINE_LABELS: Record<string, string> = {
+const CUISINE_LABELS: Record<string, string> = {
   taiwanese: "台灣小吃",
   thai: "泰式料理",
   japanese_ramen: "日式拉麵與定食",
