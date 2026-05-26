@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
-import { ChefHat, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { BackLink } from "@/components/patterns/BackLink";
 import { FLAGS } from "@/lib/flags";
 import { listFavorites } from "@/lib/api/recipes";
@@ -98,14 +97,6 @@ export default function RecipeDetailPage() {
             initialToken={recipe.share_token}
             initialPublishedAt={recipe.published_at}
           />
-        )}
-        {FLAGS.cookingMode && recipe.id && (
-          <Button asChild size="lg" className="hidden md:inline-flex">
-            <Link href={`/app/library/${recipe.id}/cook`}>
-              <ChefHat className="size-5" aria-hidden />
-              進入烹飪模式 →
-            </Link>
-          </Button>
         )}
       </>
     ) : null;

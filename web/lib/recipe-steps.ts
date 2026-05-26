@@ -9,11 +9,37 @@ export function formatStep(step: unknown): string {
   return String(step);
 }
 
+type IngredientRow = {
+  name: string;
+  amount?: string;
+  unit?: string;
+  price?: string;
+};
+
+/** e.g. `白米 — 1.5 杯` (unit omitted when empty). */
+export function formatIngredientQuantity(
+  amount?: string,
+  unit?: string,
+): string | null {
+  const a = amount?.trim();
+  const u = unit?.trim();
+  if (a && u) return `${a} ${u}`;
+  if (a) return a;
+  if (u) return u;
+  return null;
+}
+
 export function formatIngredient(ing: unknown): string {
   if (typeof ing === "string") return ing;
   if (ing && typeof ing === "object" && "name" in ing) {
-    const row = ing as { name: string; amount?: string };
-    return row.amount ? `${row.name} — ${row.amount}` : row.name;
+    const row = ing as IngredientRow;
+    const qty = formatIngredientQuantity(row.amount, row.unit);
+    if (qty && row.price) {
+      return `${row.name} — ${qty}（${row.price}）`;
+    }
+    if (qty) return `${row.name} — ${qty}`;
+    if (row.price) return `${row.name}（${row.price}）`;
+    return row.name;
   }
   return String(ing);
 }

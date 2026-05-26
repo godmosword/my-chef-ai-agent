@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { FLAGS } from "@/lib/flags";
 import { capture } from "@/lib/analytics/events";
 import {
   DEMO_CHILD_TIP,
@@ -69,18 +68,6 @@ export function DemoRecipeView() {
           <Button asChild variant="secondary" className="flex-1">
             <Link href="/">回到首頁</Link>
           </Button>
-          {FLAGS.cookingMode && (
-            <Button asChild variant="ghost" className="flex-1">
-              <Link
-                href="/demo/recipe/cook"
-                onClick={() =>
-                  capture("demo_recipe_cook_mode_clicked", { source: "demo_page" })
-                }
-              >
-                試用烹飪模式
-              </Link>
-            </Button>
-          )}
         </div>
       </main>
     </div>

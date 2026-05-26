@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { HeroPlaceholder } from "@/components/recipe/HeroPlaceholder";
+import { RecipeImageFallback } from "@/components/recipe/RecipeImageFallback";
 import { Card } from "@/components/primitives/Card";
 import { Chip } from "@/components/primitives/Chip";
 import { formatRelativeTime } from "@/lib/utils/format";
@@ -28,6 +30,16 @@ export function RecipeCard({
   favorited,
   className,
 }: RecipeCardProps) {
+  const [heroImageError, setHeroImageError] = useState(false);
+  const showHeroImage =
+    recipe.heroUrl &&
+    !heroImageError &&
+    (recipe.heroStatus === "ready" ||
+      recipe.heroUrl.startsWith("/") ||
+      recipe.heroUrl.startsWith("data:"));
+  const heroLoading =
+    recipe.heroStatus === "pending" || recipe.heroStatus === "generating";
+
   return (
     <Card
       as="article"
@@ -51,22 +63,25 @@ export function RecipeCard({
               : undefined
           }
         >
-          {recipe.heroUrl &&
-          (recipe.heroStatus === "ready" ||
-            recipe.heroUrl.startsWith("/") ||
-            recipe.heroUrl.startsWith("data:")) ? (
+          {showHeroImage ? (
             <Image
-              src={recipe.heroUrl}
+              src={recipe.heroUrl!}
               alt=""
               fill
               className="object-cover"
               sizes="(max-width: 640px) 240px, 320px"
               unoptimized
+              onError={() => setHeroImageError(true)}
+            />
+          ) : heroLoading ? (
+            <HeroPlaceholder
+              status={(recipe.heroStatus ?? "pending") as HeroStatus}
+              cuisine={recipe.cuisine}
             />
           ) : (
-            <HeroPlaceholder
-              status={(recipe.heroStatus ?? "skipped") as HeroStatus}
+            <RecipeImageFallback
               cuisine={recipe.cuisine}
+              className="h-full w-full"
             />
           )}
           {recipe.cuisine && (
