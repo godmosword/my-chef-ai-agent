@@ -7,6 +7,7 @@ import { capture } from "@/lib/analytics/events";
 import {
   DEMO_CHILD_TIP,
   DEMO_RECIPE,
+  DEMO_RECIPE_ID,
   DEMO_SAFETY_TIP,
   DEMO_SWAP_TIP,
 } from "@/lib/demo/demo-recipe";
@@ -31,7 +32,10 @@ export function DemoRecipeView() {
           示範食譜 · 不消耗配額 · 不會寫入你的料理書
         </p>
 
-        <RecipeDetailLayout recipe={{ ...DEMO_RECIPE, id: undefined }}>
+        <RecipeDetailLayout
+          recipe={{ ...DEMO_RECIPE, id: DEMO_RECIPE_ID }}
+          cookHref="/demo/recipe/cook"
+        >
           <div className="space-y-3 text-sm text-text-body">
             <p>
               <span className="font-medium text-text-ink">約 30 分鐘</span>

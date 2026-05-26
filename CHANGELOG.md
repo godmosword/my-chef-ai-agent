@@ -9,6 +9,7 @@
 
 ### Added
 
+- **UX 規格缺口補齊**：`StickyCookCTA`（滾過 hero 後顯示）、demo 食譜 sticky 烹飪 CTA、desktop 烹飪主按鈕；生成錯誤分類（`lib/api/error-types.ts` / `error-handler.ts`）；步驟勾選後自動捲動；烹飪完成頁用時與 👍／👎 回饋；晚餐提醒 client 排程 + SW metadata／通知點擊。
 - **UX 規格 Phase 1–7**（[`docs/ux-spec.md`](docs/ux-spec.md)）：Tonight 主頁（placeholder 輪播、Quick Chips、今晚靈感、最近食譜、問候列）；配額移至「我的」；食譜詳情份量切換、步驟 badge、行動選單與 mobile sticky 烹飪 CTA；生成／配額／離線錯誤態；料理書空狀態；晚餐提醒設定卡（localStorage + 通知權限）；設計 token 別名（`bg-*` / `fg-*` / `accent-*`）。
 - **家庭晚餐定位**：Landing／metadata 改為「冰箱有什麼，今晚就煮什麼」；Tonight 快捷 chips 改為家庭情境。
 - **示範食譜**：`/demo/recipe` 靜態完整食譜（不扣配額、不寫 DB）；可選 `/demo/recipe/cook` 試用烹飪模式。

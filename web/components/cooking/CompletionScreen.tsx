@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
-import { cn } from "@/lib/utils/cn";
 
 const CONFETTI_COLORS = [
   "var(--color-brand-primary)",
@@ -15,6 +14,7 @@ const CONFETTI_COLORS = [
 export type CompletionScreenProps = {
   recipeId: string;
   recipeTitle: string;
+  elapsedMinutes?: number | null;
   onRate: (stars: number) => Promise<void>;
   onCookAgain: () => void;
 };
@@ -22,12 +22,13 @@ export type CompletionScreenProps = {
 export function CompletionScreen({
   recipeId,
   recipeTitle,
+  elapsedMinutes,
   onRate,
   onCookAgain,
 }: CompletionScreenProps) {
-  const [hover, setHover] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [skipped, setSkipped] = useState(false);
 
   const pieces = useMemo(
     () =>
@@ -50,12 +51,17 @@ export function CompletionScreen({
     }
   };
 
+  const detailHref =
+    recipeId === "demo" || recipeId.startsWith("demo")
+      ? "/demo/recipe"
+      : `/app/library/${recipeId}`;
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center">
       {pieces.map((p) => (
         <div
           key={p.id}
-          className="cooking-confetti-piece"
+          className="cooking-confetti-piece motion-reduce:hidden"
           style={{
             left: p.left,
             animationDelay: p.delay,
@@ -64,44 +70,54 @@ export function CompletionScreen({
           aria-hidden
         />
       ))}
-      <h2 className="font-serif text-3xl text-text-ink">完成！</h2>
+      <p className="text-5xl" aria-hidden>
+        🎉
+      </p>
+      <h2 className="mt-2 font-serif text-3xl text-text-ink">完成了！</h2>
       <p className="mt-2 text-text-muted">{recipeTitle}</p>
-      <p className="mt-6 text-lg text-text-ink">這道菜怎麼樣？</p>
+      {elapsedMinutes != null && elapsedMinutes > 0 ? (
+        <p className="mt-3 text-sm text-text-body">實際花了 {elapsedMinutes} 分鐘</p>
+      ) : null}
+      <p className="mt-6 text-lg text-text-ink">下次再煮這道嗎？</p>
       <div
-        className="mt-4 flex gap-2"
+        className="mt-4 flex flex-wrap justify-center gap-2"
         role="group"
-        aria-label="評分"
-        onMouseLeave={() => setHover(0)}
+        aria-label="是否再做一次"
       >
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            className={cn(
-              "text-4xl transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary",
-              (hover >= n || submitted) && "scale-110",
-            )}
-            aria-label={`${n} 星`}
-            disabled={submitting || submitted}
-            onMouseEnter={() => setHover(n)}
-            onFocus={() => setHover(n)}
-            onClick={() => submit(n)}
-          >
-            <span className={hover >= n ? "text-brand-primary" : "text-text-muted"}>
-              ★
-            </span>
-          </button>
-        ))}
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={submitting || submitted || skipped}
+          onClick={() => submit(5)}
+        >
+          👍 會
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={submitting || submitted || skipped}
+          onClick={() => submit(1)}
+        >
+          👎 不會
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={submitting || submitted}
+          onClick={() => setSkipped(true)}
+        >
+          稍後再說
+        </Button>
       </div>
-      {submitted && (
-        <p className="mt-2 text-sm text-brand-primary">感謝你的評分！</p>
-      )}
+      {submitted ? (
+        <p className="mt-2 text-sm text-brand-primary">感謝你的回饋！</p>
+      ) : null}
       <div className="mt-8 flex w-full max-w-xs flex-col gap-2">
         <Button asChild variant="secondary">
-          <Link href={`/app/library/${recipeId}`}>回到食譜</Link>
+          <Link href={detailHref}>回到食譜</Link>
         </Button>
         <Button variant="ghost" onClick={onCookAgain}>
-          再做一次
+          回到首頁
         </Button>
       </div>
     </div>

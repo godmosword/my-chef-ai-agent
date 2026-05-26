@@ -10,6 +10,7 @@ import { isRushHour } from "@/lib/utils/greeting";
 import { QuickChips } from "@/components/app-home/QuickChips";
 import { Kbd } from "@/components/primitives/Kbd";
 import { GenerationError } from "@/components/error-states/GenerationError";
+import type { GenerationErrorView } from "@/lib/api/error-types";
 import { QuotaExhausted } from "@/components/error-states/QuotaExhausted";
 import { isBrowserOnline } from "@/lib/offline/network";
 import { cn } from "@/lib/utils/cn";
@@ -19,6 +20,7 @@ export type InputHeroProps = {
   disabled?: boolean;
   streaming?: boolean;
   error?: string | null;
+  errorView?: GenerationErrorView | null;
   className?: string;
   defaultValue?: string;
 };
@@ -28,6 +30,7 @@ export function InputHero({
   disabled,
   streaming = false,
   error = null,
+  errorView = null,
   className,
   defaultValue = "",
 }: InputHeroProps) {
@@ -92,6 +95,12 @@ export function InputHero({
   }, [text, inputDisabled, quotaExhausted, onSubmit]);
 
   useEffect(() => {
+    if (errorView?.focusInput) {
+      textareaRef.current?.focus({ preventScroll: true });
+    }
+  }, [errorView?.focusInput, errorView?.kind]);
+
+  useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -123,7 +132,21 @@ export function InputHero({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {error ? <GenerationError message={error} onRetry={submit} /> : null}
+      {error ? (
+        <GenerationError
+          message={error}
+          onRetry={errorView?.retry ? submit : undefined}
+          onClearInput={
+            errorView?.clearInput
+              ? () => {
+                  setText("");
+                  onTextChange("");
+                  textareaRef.current?.focus();
+                }
+              : undefined
+          }
+        />
+      ) : null}
       <form
         className="overflow-hidden rounded-xl border-2 border-border-default bg-surface-default shadow-card transition-[border-color,box-shadow] focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/15"
         onSubmit={(e) => {

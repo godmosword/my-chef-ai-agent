@@ -129,4 +129,86 @@ const serwist = new Serwist({
   },
 });
 
+const META_CACHE = "chef-meta-v1";
+const META_KEY = "/dinner-reminder-settings";
+
+type DinnerReminderPayload = {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+};
+
+function partsInTimeZone(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { hour: get("hour"), minute: get("minute") };
+}
+
+async function maybeShowDinnerReminder(): Promise<void> {
+  try {
+    const cache = await caches.open(META_CACHE);
+    const res = await cache.match(META_KEY);
+    if (!res) return;
+    const settings = (await res.json()) as DinnerReminderPayload;
+    if (!settings.enabled) return;
+    const tz = "Asia/Taipei";
+    const now = new Date();
+    const p = partsInTimeZone(now, tz);
+    if (p.hour !== settings.hour || p.minute !== settings.minute) return;
+    await self.registration.showNotification("今晚想吃什麼？", {
+      body: "點開職人料理，3 分鐘內想出晚餐",
+      tag: "chef-dinner-reminder",
+      icon: "/icons/icon-192.png",
+      data: { url: "/app" },
+    });
+  } catch {
+    /* optional */
+  }
+}
+
+self.addEventListener("message", (event) => {
+  const data = event.data as { type?: string; settings?: DinnerReminderPayload };
+  if (data?.type !== "ARM_DINNER_REMINDER" || !data.settings) return;
+  event.waitUntil(
+    caches.open(META_CACHE).then((cache) =>
+      cache.put(
+        META_KEY,
+        new Response(JSON.stringify(data.settings), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    ),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url =
+    (event.notification.data as { url?: string } | undefined)?.url ?? "/app";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          void (client as WindowClient).focus();
+          return;
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(maybeShowDinnerReminder());
+});
+
 serwist.addEventListeners();

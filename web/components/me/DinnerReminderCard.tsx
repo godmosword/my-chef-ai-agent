@@ -7,6 +7,10 @@ import {
   writeDinnerReminder,
   type DinnerReminderSettings,
 } from "@/lib/notifications/dinner-reminder";
+import {
+  armDinnerReminderSchedule,
+  disarmDinnerReminderSchedule,
+} from "@/lib/notifications/dinner-reminder-scheduler";
 
 const TIME_OPTIONS = [
   { label: "17:00", hour: 17, minute: 0 },
@@ -18,7 +22,9 @@ export function DinnerReminderCard() {
   const [settings, setSettings] = useState<DinnerReminderSettings | null>(null);
 
   useEffect(() => {
-    setSettings(readDinnerReminder());
+    const s = readDinnerReminder();
+    setSettings(s);
+    if (s.enabled) armDinnerReminderSchedule(s);
   }, []);
 
   if (!settings) return null;
@@ -26,6 +32,8 @@ export function DinnerReminderCard() {
   const persist = (next: DinnerReminderSettings) => {
     setSettings(next);
     writeDinnerReminder(next);
+    if (next.enabled) armDinnerReminderSchedule(next);
+    else disarmDinnerReminderSchedule();
   };
 
   return (

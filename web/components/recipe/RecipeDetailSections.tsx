@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatIngredient, formatStep } from "@/lib/recipe-steps";
 import { ServingToggle } from "@/components/recipe/ServingToggle";
 import { scaleIngredient } from "@/lib/recipe-scale";
@@ -52,11 +52,25 @@ export function RecipeDetailSections({
       return next;
     });
   };
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([]);
+
   const toggleStep = (i: number) => {
     setCheckedSteps((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
+      const wasChecked = next.has(i);
+      if (wasChecked) next.delete(i);
+      else {
+        next.add(i);
+        const nextIndex = i + 1;
+        if (nextIndex < stepList.length) {
+          requestAnimationFrame(() => {
+            stepRefs.current[nextIndex]?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          });
+        }
+      }
       return next;
     });
   };
@@ -119,7 +133,13 @@ export function RecipeDetailSections({
             {stepList.map((step, i) => {
               const checked = checkedSteps.has(i);
               return (
-                <li key={i}>
+                <li
+                  key={i}
+                  ref={(el) => {
+                    stepRefs.current[i] = el;
+                  }}
+                  className="scroll-mt-20"
+                >
                   <div className="space-y-1.5">
                     <label className="flex cursor-pointer items-start gap-3">
                       <input

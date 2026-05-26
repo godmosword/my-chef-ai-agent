@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 
 export default function TodayPage() {
   const router = useRouter();
-  const { recipe, streaming, error, generate, reset } = useRecipeGeneration();
+  const { recipe, streaming, error, errorView, generate, reset } = useRecipeGeneration();
   const [recent, setRecent] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
 
@@ -55,6 +55,7 @@ export default function TodayPage() {
             disabled={streaming}
             streaming={streaming}
             error={error}
+            errorView={errorView}
             onSubmit={(message) => generate({ message })}
           />
         </Suspense>

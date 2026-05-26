@@ -41,7 +41,7 @@ export function StepCard({ step, stepIndex, totalSteps, swipeRef }: StepCardProp
           )}
         </div>
       )}
-      <p className="mt-4 font-serif text-2xl leading-snug text-text-ink md:text-3xl">
+      <p className="mt-4 text-3xl font-medium leading-tight text-fg-primary md:text-5xl">
         {step.text}
       </p>
       {step.tip && (

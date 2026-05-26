@@ -56,6 +56,8 @@ export function CookingModeClient({
   const [flash, setFlash] = useState(false);
   const [resumePrompt, setResumePrompt] = useState(false);
   const recordToastShown = useRef(false);
+  const startedAtRef = useRef<number>(Date.now());
+  const [elapsedMinutes, setElapsedMinutes] = useState<number | null>(null);
 
   const showRecordToast = useCallback(() => {
     if (recordToastShown.current) return;
@@ -83,6 +85,11 @@ export function CookingModeClient({
     enterFullscreen();
     capture("cooking_mode_started", { is_demo: recipe.id === "demo" });
     const snap = loadCookingSession(recipe.id);
+    if (snap?.startedAt) {
+      startedAtRef.current = snap.startedAt;
+    } else {
+      startedAtRef.current = Date.now();
+    }
     if (snap && snap.currentStep > 0) {
       setResumePrompt(true);
     }
@@ -107,6 +114,7 @@ export function CookingModeClient({
       voiceEnabled,
       timers: [],
       savedAt: Date.now(),
+      startedAt: startedAtRef.current,
     });
   }, [currentStep, voiceEnabled, recipe.id, syncUrl]);
 
@@ -117,6 +125,11 @@ export function CookingModeClient({
   const goNext = useCallback(() => {
     setCurrentStep((s) => {
       if (s >= totalSteps - 1) {
+        const mins = Math.max(
+          1,
+          Math.round((Date.now() - startedAtRef.current) / 60_000),
+        );
+        setElapsedMinutes(mins);
         setCompleted(true);
         clearCookingSession(recipe.id);
         return s;
@@ -141,11 +154,26 @@ export function CookingModeClient({
       }
       if (completed) return;
       if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        goNext();
+      }
+      if (e.key === "t" || e.key === "T") {
+        setVoiceEnabled(!voiceEnabled);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showExit, showOnboard, resumePrompt, completed, goPrev, goNext]);
+  }, [
+    showExit,
+    showOnboard,
+    resumePrompt,
+    completed,
+    goPrev,
+    goNext,
+    voiceEnabled,
+    setVoiceEnabled,
+  ]);
 
   const swipeRef = useSwipe((dir) => {
     if (completed) return;
@@ -277,11 +305,10 @@ export function CookingModeClient({
         <CompletionScreen
           recipeId={recipe.id}
           recipeTitle={recipe.title}
+          elapsedMinutes={elapsedMinutes}
           onRate={handleRate}
           onCookAgain={() => {
-            setCompleted(false);
-            setCurrentStep(0);
-            clearCookingSession(recipe.id);
+            router.push("/app");
           }}
         />
       )}
