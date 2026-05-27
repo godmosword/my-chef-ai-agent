@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added personalization data layer (`user_taste_profile`, `household_members` tables + CRUD).
 - **Playwright E2E**：`web/e2e/demo-cook-funnel.spec.ts`、`recipe-funnel-mocked.spec.ts`；CI 於 `web-ci.yml` 執行（需先 `next build` + `NEXT_PUBLIC_NEW_UI`）。
 - **step_tip（Wave 2）**：生成 JSON `steps[].step_tip`；詳情／Tonight 結果／烹飪模式顯示 💡 提示。
 - **剩菜續作**：烹飪完成頁連結至 `/app?prefill=…`（提示消耗 1 次 text 生成）。

@@ -6,6 +6,13 @@
 
 ---
 
+## 個人化記憶（Personalization Memory）
+
+- [x] **PM-1**：`user_taste_profile`／`household_members` migration `0010`、[`web/platform/db/personalization.ts`](web/platform/db/personalization.ts) CRUD、刪除帳戶連動
+- [ ] **PM-2**：從對話自動萃取偏好、入庫
+- [ ] **PM-3**：注入生成 prompt（`ai_service`／recipe flow）
+- [ ] **PM-4**：LINE Flex／Web UI 編輯口味與家庭成員
+
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 
 - [x] **Architecture sprint**：`web/lib` → `domain/` · `application/` · `platform/` **一次搬遷**（2026-05-27）

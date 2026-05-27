@@ -23,6 +23,16 @@ describe("recipe library migration SQL", () => {
     expect(sql).toContain("CREATE TABLE IF NOT EXISTS meal_plans");
   });
 
+  it("0010 ensures personalization tables idempotently", () => {
+    const sql = fs.readFileSync(
+      path.join(migrationsDir, "0010_personalization.sql"),
+      "utf-8",
+    );
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS user_taste_profile");
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS household_members");
+    expect(sql).toContain("CREATE INDEX IF NOT EXISTS idx_household_members_tenant_user");
+  });
+
   it("0003 is idempotent-friendly", () => {
     const sql = fs.readFileSync(
       path.join(migrationsDir, "0003_recipe_library.sql"),

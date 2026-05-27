@@ -2,6 +2,7 @@
  * Drizzle schema for Recipe Library tables (Postgres).
  */
 import {
+  bigint,
   boolean,
   date,
   index,
@@ -9,6 +10,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   smallint,
   text,
   timestamp,
@@ -224,5 +226,63 @@ export const usageDaily = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.tenantId, t.userId, t.usageDate] }),
+  }),
+);
+
+export const userTasteProfile = pgTable("user_taste_profile", {
+  tenantId: text("tenant_id").notNull().default("default"),
+  userId: text("user_id").notNull(),
+  spiceTolerance: smallint("spice_tolerance"),
+  sweetnessPreference: smallint("sweetness_preference"),
+  saltinessPreference: smallint("saltiness_preference"),
+  oilPreference: smallint("oil_preference"),
+  allergies: jsonb("allergies").notNull().default([]),
+  dislikes: jsonb("dislikes").notNull().default([]),
+  lovedIngredients: jsonb("loved_ingredients").notNull().default([]),
+  lovedDishes: jsonb("loved_dishes").notNull().default([]),
+  dietaryRestrictions: jsonb("dietary_restrictions").notNull().default([]),
+  preferredCuisines: jsonb("preferred_cuisines").notNull().default([]),
+  dislikedCuisines: jsonb("disliked_cuisines").notNull().default([]),
+  cookingSkillLevel: smallint("cooking_skill_level"),
+  typicalCookingTimeMin: smallint("typical_cooking_time_min"),
+  notes: text("notes"),
+  confidenceScore: real("confidence_score").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.tenantId, t.userId] }),
+}));
+
+export const householdMembers = pgTable(
+  "household_members",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    tenantId: text("tenant_id").notNull().default("default"),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    relation: text("relation"),
+    ageGroup: text("age_group"),
+    dietaryRestrictions: jsonb("dietary_restrictions").notNull().default([]),
+    allergies: jsonb("allergies").notNull().default([]),
+    dislikes: jsonb("dislikes").notNull().default([]),
+    medicalConditions: jsonb("medical_conditions").notNull().default([]),
+    textureNeeds: jsonb("texture_needs").notNull().default([]),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    tenantUserIdx: index("idx_household_members_tenant_user").on(
+      t.tenantId,
+      t.userId,
+    ),
   }),
 );
