@@ -39,6 +39,16 @@ describe("recipe library migration SQL", () => {
     expect(sql).toContain("ADD COLUMN IF NOT EXISTS regenerated_dishes");
   });
 
+  it("0016 meal planning v2 idempotent", () => {
+    const sql = fs.readFileSync(
+      path.join(migrationsDir, "0016_meal_planning_v2.sql"),
+      "utf-8",
+    );
+    expect(sql).toContain("meal_calendar_entries");
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS meal_slots");
+    expect(sql).toContain("uniq_active_meal_plan_per_user");
+  });
+
   it("0015 ensures notification preferences idempotently", () => {
     const sql = fs.readFileSync(
       path.join(migrationsDir, "0015_notification_preferences.sql"),

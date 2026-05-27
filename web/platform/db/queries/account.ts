@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "../drizzle";
 import {
   favoritesV2,
-  mealPlans,
+  mealCalendarEntries,
   recipes,
   userSettings,
 } from "../schema";
@@ -13,6 +13,7 @@ import {
   hardDeleteNotificationInbox,
 } from "../notification-inbox";
 import { hardDeleteNotificationPrefs } from "../notification-prefs";
+import { deleteAllMealPlanning } from "../meal-planning";
 import { getSql } from "../client";
 
 export async function deleteAllUserData(
@@ -25,7 +26,9 @@ export async function deleteAllUserData(
   if (db) {
     await db.delete(recipes).where(eq(recipes.userId, userId));
     await db.delete(favoritesV2).where(eq(favoritesV2.userId, userId));
-    await db.delete(mealPlans).where(eq(mealPlans.userId, userId));
+    await db.delete(mealCalendarEntries).where(
+      eq(mealCalendarEntries.userId, userId),
+    );
     await db.delete(userSettings).where(eq(userSettings.userId, userId));
   }
 
@@ -35,6 +38,7 @@ export async function deleteAllUserData(
     await hardDeleteAllPantry(tenantId, userId);
     await hardDeleteNotificationPrefs(tenantId, userId);
     await hardDeleteNotificationInbox(tenantId, userId);
+    await deleteAllMealPlanning(tenantId, userId);
     await sql`DELETE FROM usage_daily WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
     await sql`DELETE FROM favorite_recipes WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
   }

@@ -3,9 +3,9 @@ import type { MealPlanSlot, PutMealPlanSlot, Slot, WeekPlan } from "@chef/shared
 import { MEAL_SLOTS } from "@chef/shared-types";
 import { addDaysIso, floorToWeekMonday, weekDates } from "@/lib/locale/week";
 import { getDb } from "../drizzle";
-import { mealPlans, recipeVersions, recipes } from "../schema";
+import { mealCalendarEntries, recipeVersions, recipes } from "../schema";
 
-type PlanRow = typeof mealPlans.$inferSelect;
+type PlanRow = typeof mealCalendarEntries.$inferSelect;
 
 function slotKey(date: string, slot: Slot): string {
   return `${date}|${slot}`;
@@ -65,13 +65,13 @@ export async function getWeekPlan(
 
   const rows = await db
     .select()
-    .from(mealPlans)
+    .from(mealCalendarEntries)
     .where(
       and(
-        eq(mealPlans.userId, userId),
-        eq(mealPlans.tenantId, tenantId),
-        gte(mealPlans.planDate, week_of),
-        lt(mealPlans.planDate, endExclusive),
+        eq(mealCalendarEntries.userId, userId),
+        eq(mealCalendarEntries.tenantId, tenantId),
+        gte(mealCalendarEntries.planDate, week_of),
+        lt(mealCalendarEntries.planDate, endExclusive),
       ),
     );
 
@@ -166,13 +166,13 @@ export async function upsertMealPlanSlot(
 
   if (body.recipe_id === null) {
     await db
-      .delete(mealPlans)
+      .delete(mealCalendarEntries)
       .where(
         and(
-          eq(mealPlans.userId, userId),
-          eq(mealPlans.tenantId, tenantId),
-          eq(mealPlans.planDate, planDate),
-          eq(mealPlans.slot, slot),
+          eq(mealCalendarEntries.userId, userId),
+          eq(mealCalendarEntries.tenantId, tenantId),
+          eq(mealCalendarEntries.planDate, planDate),
+          eq(mealCalendarEntries.slot, slot),
         ),
       );
     return { date: planDate, slot, filled: false };
@@ -210,14 +210,14 @@ export async function upsertMealPlanSlot(
   const notes = body.notes ?? null;
 
   const [existing] = await db
-    .select({ id: mealPlans.id })
-    .from(mealPlans)
+    .select({ id: mealCalendarEntries.id })
+    .from(mealCalendarEntries)
     .where(
       and(
-        eq(mealPlans.userId, userId),
-        eq(mealPlans.tenantId, tenantId),
-        eq(mealPlans.planDate, planDate),
-        eq(mealPlans.slot, slot),
+        eq(mealCalendarEntries.userId, userId),
+        eq(mealCalendarEntries.tenantId, tenantId),
+        eq(mealCalendarEntries.planDate, planDate),
+        eq(mealCalendarEntries.slot, slot),
       ),
     )
     .limit(1);
@@ -225,19 +225,19 @@ export async function upsertMealPlanSlot(
   let planId: string;
   if (existing) {
     const [updated] = await db
-      .update(mealPlans)
+      .update(mealCalendarEntries)
       .set({
         recipeId: recipe.id,
         recipeVersionId: version.id,
         servings,
         notes,
       })
-      .where(eq(mealPlans.id, existing.id))
+      .where(eq(mealCalendarEntries.id, existing.id))
       .returning();
     planId = updated.id;
   } else {
     const [inserted] = await db
-      .insert(mealPlans)
+      .insert(mealCalendarEntries)
       .values({
         userId,
         tenantId,
@@ -290,24 +290,24 @@ export async function listPlansWithShoppingForWeek(
 
   const rows = await db
     .select({
-      planDate: mealPlans.planDate,
-      slot: mealPlans.slot,
-      servings: mealPlans.servings,
+      planDate: mealCalendarEntries.planDate,
+      slot: mealCalendarEntries.slot,
+      servings: mealCalendarEntries.servings,
       recipeTitle: recipes.title,
       shoppingList: recipeVersions.shoppingList,
     })
-    .from(mealPlans)
-    .innerJoin(recipes, eq(mealPlans.recipeId, recipes.id))
+    .from(mealCalendarEntries)
+    .innerJoin(recipes, eq(mealCalendarEntries.recipeId, recipes.id))
     .innerJoin(
       recipeVersions,
-      eq(mealPlans.recipeVersionId, recipeVersions.id),
+      eq(mealCalendarEntries.recipeVersionId, recipeVersions.id),
     )
     .where(
       and(
-        eq(mealPlans.userId, userId),
-        eq(mealPlans.tenantId, tenantId),
-        gte(mealPlans.planDate, week_of),
-        lt(mealPlans.planDate, endExclusive),
+        eq(mealCalendarEntries.userId, userId),
+        eq(mealCalendarEntries.tenantId, tenantId),
+        gte(mealCalendarEntries.planDate, week_of),
+        lt(mealCalendarEntries.planDate, endExclusive),
       ),
     );
 

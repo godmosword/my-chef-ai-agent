@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added meal planning data layer and two-stage planner (candidate generation + constraint validation/repair) with pantry-aware ingredient reuse scoring (migration `0016`; legacy calendar → `meal_calendar_entries`).
 - Added proactive expiry reminders, "Use It Up" reverse recipe recommendation, weekly digest (opt-in), and notification preferences with quiet hours / snooze / backoff (Web inbox + `/app/settings/notifications`; Vercel Cron hourly). P0 (personalization + pantry) complete.
 - Added pantry query/edit UI (Web `/app/pantry` + `/app/pantry/scan`), conversational consume via API, recipe-pantry ingredient annotations, and rewired 清冰箱 to use real pantry data with backward-compatible fallback to Tonight localStorage list.
 - Added fridge photo recognition and receipt OCR with review-first commit flow, image intent classifier, per-user vision quota, and Web `/app/pantry/scan` (migration `0014`).

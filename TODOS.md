@@ -20,8 +20,10 @@
 
 ## P1 — 週菜單與習慣（P0 完成後）
 
-- [ ] **P1-1**：一週菜單規劃 UI（從週報／用完它串接）
-- [ ] **P1-2**：採買清單與冰箱雙向同步優化
+- [x] **MP-1**：`meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`、兩段式規劃演算法、lazy 展開食譜（migration `0016`）
+- [ ] **MP-2**：週菜單規劃 UI（觸發規劃、檢視 slots、啟用計畫）
+- [ ] **MP-3**：採買清單合併與分類（聚合 needs → shopping）
+- [ ] **MP-4**：每日執行追蹤與推播
 - [ ] **P1-3**：通知 Web Push（需使用者授權，補強收件匣）
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）

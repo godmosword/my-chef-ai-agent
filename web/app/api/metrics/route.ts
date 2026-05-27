@@ -3,6 +3,7 @@ import { getPantryMetricsSnapshot } from "@/platform/observability/pantry-metric
 import { getPantryVisionMetricsSnapshot } from "@/platform/observability/pantry-vision-metrics";
 import { getPersonalizationMetricsSnapshot } from "@/platform/observability/personalization-metrics";
 import { getNotificationMetricsSnapshot } from "@/platform/observability/notification-metrics";
+import { getMealPlanningMetricsSnapshot } from "@/platform/observability/meal-planning-metrics";
 
 function metricsToken(): string | null {
   const raw = process.env.METRICS_TOKEN?.trim();
@@ -29,5 +30,6 @@ export async function GET(request: Request) {
     pantry_vision: getPantryVisionMetricsSnapshot(),
     pantry: getPantryMetricsSnapshot(),
     notifications: getNotificationMetricsSnapshot(),
+    meal_planning: getMealPlanningMetricsSnapshot(),
   });
 }

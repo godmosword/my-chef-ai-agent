@@ -175,8 +175,8 @@ export const userSettings = pgTable("user_settings", {
     .defaultNow(),
 });
 
-export const mealPlans = pgTable(
-  "meal_plans",
+export const mealCalendarEntries = pgTable(
+  "meal_calendar_entries",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id").notNull(),
@@ -200,13 +200,13 @@ export const mealPlans = pgTable(
       .defaultNow(),
   },
   (t) => ({
-    userDateSlotUnq: uniqueIndex("meal_plans_user_date_slot_unq").on(
+    userDateSlotUnq: uniqueIndex("meal_calendar_entries_user_date_slot_unq").on(
       t.userId,
       t.tenantId,
       t.planDate,
       t.slot,
     ),
-    userWeek: index("idx_meal_plans_user_week").on(
+    userWeek: index("idx_meal_calendar_entries_user_week").on(
       t.userId,
       t.tenantId,
       t.planDate,

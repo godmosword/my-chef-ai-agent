@@ -206,3 +206,36 @@ Web 海報（`web`）以 CSS `@font-face` + `local()` 橋接系統字型，**不
 - 不對步驟徽章以外的地方使用 `green-light`（#EBF5F0）作為文字底色——僅作為輕量背景面板。
 - 不在 Playwright headless 環境中使用遠端 `@import` Google Fonts——改用 `@font-face` + `local()`。
 - 不在多個 Python 模組中各自重複定義相同色碼；應以 `flex_theme.py` 為 Flex 端的 token 來源，海報端以本文件為設計參考。
+
+---
+
+## Meal planning architecture (MP-1)
+
+```
+User constraints + pantry snapshot
+        │
+        ▼
+┌───────────────────────┐
+│ Stage 1: LLM candidate  │  gemini flash-lite, ~2500 tokens max
+│ (dish titles / slots)   │
+└───────────┬───────────┘
+            ▼
+┌───────────────────────┐
+│ Stage 2: validate     │  allergies, budget, variety, completeness
+│ (deterministic)       │
+└───────────┬───────────┘
+            │ critical violations?
+            ▼
+┌───────────────────────┐
+│ Repair loop (≤2)      │  LLM patch affected slots only
+└───────────┬───────────┘
+            ▼
+   meal_plans + meal_slots + pantry_snapshot (Postgres)
+            │
+            ▼ (on demand, MP-1 lazy)
+┌───────────────────────┐
+│ expand_slot → full    │  reuses generate_recipe + clean-fridge block
+│ recipe JSON           │
+└───────────────────────┘
+
+Legacy weekly calendar UI (`/app/plan`) still uses `meal_calendar_entries` (migration 0004); MP-1 planning sessions use new `meal_plans` / `meal_slots` tables (migration 0016).
