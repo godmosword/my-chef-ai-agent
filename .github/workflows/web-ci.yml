@@ -40,3 +40,15 @@ jobs:
         run: pnpm -F @chef/web build
         env:
           GEMINI_API_KEY: test_key
+
+      - name: Unit tests
+        run: pnpm -F @chef/web test
+
+      - name: Install Playwright Chromium
+        run: pnpm -F @chef/web exec playwright install chromium --with-deps
+
+      - name: E2E (mocked funnel + demo cook)
+        run: pnpm -F @chef/web test:e2e
+        env:
+          GEMINI_API_KEY: test_key
+          CI: "true"

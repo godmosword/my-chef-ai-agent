@@ -11,7 +11,7 @@ import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatStepForPantry } from "@/domain/pantry/step-note";
 import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
-import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
+import { formatIngredient, formatStep, formatStepTip } from "@/domain/recipe/recipe-steps";
 import { dietaryAvoidDisplayLabels } from "@/platform/db/dietary-preferences";
 import type { DietaryPreferences } from "@/platform/db/dietary-preferences";
 
@@ -151,13 +151,19 @@ export function StreamingRecipe({
         <section className="mt-4">
           <h3 className="text-sm font-medium text-text-ink">步驟</h3>
           <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-text-muted">
-            {recipe.steps.map((step, i) => (
-              <li key={i}>
-                {pantryItems.length
-                  ? formatStepForPantry(step, pantryItems)
-                  : formatStep(step)}
-              </li>
-            ))}
+            {recipe.steps.map((step, i) => {
+              const tip = formatStepTip(step);
+              return (
+                <li key={i}>
+                  {pantryItems.length
+                    ? formatStepForPantry(step, pantryItems)
+                    : formatStep(step)}
+                  {tip ? (
+                    <p className="mt-1 text-xs italic text-text-muted">💡 {tip}</p>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
         </section>
       )}

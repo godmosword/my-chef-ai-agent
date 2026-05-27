@@ -17,6 +17,8 @@ export type CompletionScreenProps = {
   elapsedMinutes?: number | null;
   onRate: (stars: number) => Promise<void>;
   onCookAgain: () => void;
+  /** Optional: show「剩菜續作」link to Tonight with prefill (1 text generation). */
+  showLeftoverIdeas?: boolean;
 };
 
 export function CompletionScreen({
@@ -25,6 +27,7 @@ export function CompletionScreen({
   elapsedMinutes,
   onRate,
   onCookAgain,
+  showLeftoverIdeas = false,
 }: CompletionScreenProps) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +58,12 @@ export function CompletionScreen({
     recipeId === "demo" || recipeId.startsWith("demo")
       ? "/demo/recipe"
       : `/app/library/${recipeId}`;
+
+  const leftoverPrefill =
+    recipeTitle.trim().length > 0
+      ? `昨晚剩的「${recipeTitle}」，幫我想一道快速料理，優先用剩菜`
+      : "昨晚剩菜，幫我想一道快速料理";
+  const leftoverHref = `/app?prefill=${encodeURIComponent(leftoverPrefill)}`;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center">
@@ -113,6 +122,11 @@ export function CompletionScreen({
         <p className="mt-2 text-sm text-brand-primary">感謝你的回饋！</p>
       ) : null}
       <div className="mt-8 flex w-full max-w-xs flex-col gap-2">
+        {showLeftoverIdeas && recipeId !== "demo" && !recipeId.startsWith("demo") ? (
+          <Button asChild variant="secondary">
+            <Link href={leftoverHref}>剩菜續作（會用 1 次生成）</Link>
+          </Button>
+        ) : null}
         <Button asChild variant="secondary">
           <Link href={detailHref}>回到食譜</Link>
         </Button>

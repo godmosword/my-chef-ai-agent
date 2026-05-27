@@ -9,6 +9,15 @@ export function formatStep(step: unknown): string {
   return String(step);
 }
 
+export function formatStepTip(step: unknown): string | undefined {
+  if (step && typeof step === "object") {
+    const row = step as { tip?: string; step_tip?: string };
+    const tip = row.step_tip ?? row.tip;
+    return tip?.trim() || undefined;
+  }
+  return undefined;
+}
+
 type IngredientRow = {
   name: string;
   amount?: string;

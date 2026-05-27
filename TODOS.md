@@ -18,7 +18,7 @@
 - [x] **決策卡**：生成結果頂部顯示時間／人數／需購買 N 樣
 - [x] **烹飪漏斗**：`cooking_mode_*` 補 `source`／duration；PostHog 6 步漏斗（[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)）
 - [x] **晚餐推播 SW**：`periodicsync` + 同日 dedupe（見 Wave 1 plan Task 5）
-- [ ] **烹飪 GA**：iPhone 真機清單（擴充 [`docs/PWA_DEVICE_QA.md`](docs/PWA_DEVICE_QA.md) §3.5、§4 — 待人工勾選）
+- [ ] **烹飪 GA**：iPhone 真機清單（§3.5.2–3.5.5、§4 — 待人工；§3.5.6、3.5.8 已由 E2E 覆蓋）
 
 ## UX 規格後續（[`docs/ux-spec.md`](docs/ux-spec.md)）
 
@@ -33,7 +33,7 @@
 - [ ] 週菜單加入食譜流程優化
 - [ ] 收藏後再次料理流程
 - [ ] 7 天回訪漏斗（PostHog dashboard）
-- [ ] Playwright E2E：生成 → 收藏 → 烹飪 → 完成 → 分享
+- [x] Playwright E2E：生成 → 收藏 → 烹飪 → 完成 → 分享（`web/e2e/*`，CI `web-ci.yml`）
 
 ## P2 — 確認留存後再評估
 
@@ -50,6 +50,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-26 | **E2E + step_tip + 剩菜續作**：Playwright 漏斗（mock API + demo cook）；`step_tip` 生成／詳情／烹飪；完成頁剩菜 prefill；`CookingModeClient` 完成後停止 URL sync。 |
 | 2026-05-26 | **產品進化規格**：[`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)；Wave 1 實作計畫 [`2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。 |
 | 2026-05-26 | **料理書刪除 + DB 韌性**：`DELETE /api/recipes/:id` UI；`recipe_versions` 缺 `0009` 欄位時自動降級；`.gitignore` 加入 `web/.env.local`。 |
 | 2026-05-26 | **桌面側欄**：個人區塊（美食家）移至 Logo 下方，不再貼底。 |

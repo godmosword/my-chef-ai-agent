@@ -9,7 +9,8 @@ export const SYSTEM_PROMPT =
   '{"role":"食材總管","content":"≤12字"}],' +
   '"theme":"主題","recipe_name":"菜名",' +
   '"ingredients":[{"name":"食材","price":"NT$XX"}],' +
-  '"steps":["步驟"],"shopping_list":["區塊：品項"],' +
+  '"steps":[{"text":"步驟","step_tip":"常見錯誤或注意（可選，≤20字）"}],"shopping_list":["區塊：品項"],' +
+  "steps 每步必含 text；step_tip 僅在易錯處給一句提醒。" +
   '"estimated_total_cost":"數字",' +
   '"prep_minutes":15,"cook_minutes":20,"servings":2}';
 

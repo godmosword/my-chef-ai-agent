@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatIngredient, formatIngredientQuantity } from "@/domain/recipe/recipe-steps";
+import {
+  formatIngredient,
+  formatIngredientQuantity,
+  formatStepTip,
+} from "@/domain/recipe/recipe-steps";
 
 describe("formatIngredientQuantity", () => {
   it("joins amount and unit", () => {
@@ -8,6 +12,13 @@ describe("formatIngredientQuantity", () => {
 
   it("shows qualitative unit only", () => {
     expect(formatIngredientQuantity("少許", "")).toBe("少許");
+  });
+});
+
+describe("formatStepTip", () => {
+  it("reads step_tip or tip", () => {
+    expect(formatStepTip({ text: "a", step_tip: "別炒焦" })).toBe("別炒焦");
+    expect(formatStepTip({ text: "a", tip: "legacy" })).toBe("legacy");
   });
 });
 

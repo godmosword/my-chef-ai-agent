@@ -76,8 +76,11 @@ export function CookingModeClient({
     });
   }, [toast]);
 
+  const isDemoCook = recipe.id === "demo" || recipe.id.startsWith("demo");
+
   const syncUrl = useCallback(
     (step: number, voice: boolean) => {
+      if (isDemoCook) return;
       const params = new URLSearchParams();
       if (step > 0) params.set("step", String(step));
       if (voice) params.set("voice", "1");
@@ -87,7 +90,7 @@ export function CookingModeClient({
         scroll: false,
       });
     },
-    [recipe.id, router, cookSource],
+    [recipe.id, router, cookSource, isDemoCook],
   );
 
   useEffect(() => {
@@ -129,6 +132,7 @@ export function CookingModeClient({
   }, [completed, recipe.id, cookSource, showRecordToast]);
 
   useEffect(() => {
+    if (completed || isDemoCook) return;
     syncUrl(currentStep, voiceEnabled);
     saveCookingSession(recipe.id, {
       currentStep,
@@ -137,7 +141,7 @@ export function CookingModeClient({
       savedAt: Date.now(),
       startedAt: startedAtRef.current,
     });
-  }, [currentStep, voiceEnabled, recipe.id, syncUrl]);
+  }, [currentStep, voiceEnabled, recipe.id, syncUrl, completed, isDemoCook]);
 
   const goPrev = useCallback(() => {
     setCurrentStep((s) => Math.max(0, s - 1));
@@ -332,6 +336,7 @@ export function CookingModeClient({
           onCookAgain={() => {
             router.push("/app");
           }}
+          showLeftoverIdeas={recipe.id !== "demo" && !recipe.id.startsWith("demo")}
         />
       )}
     </div>

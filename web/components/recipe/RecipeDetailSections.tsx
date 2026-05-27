@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatStepForPantry } from "@/domain/pantry/step-note";
 import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
-import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
+import { formatIngredient, formatStep, formatStepTip } from "@/domain/recipe/recipe-steps";
 import { FLAGS } from "@/platform/config/flags";
 import { useTonightPantry } from "@/hooks/useTonightPantry";
 import { ServingToggle } from "@/components/recipe/ServingToggle";
@@ -160,6 +160,7 @@ export function RecipeDetailSections({
           <ol className="mt-2 space-y-3 text-text-body">
             {stepList.map((step, i) => {
               const checked = checkedSteps.has(i);
+              const stepTipText = formatStepTip(step);
               return (
                 <li
                   key={i}
@@ -196,6 +197,11 @@ export function RecipeDetailSections({
                           {pantry.length
                             ? formatStepForPantry(step, pantry)
                             : formatStep(step)}
+                          {stepTipText ? (
+                            <span className="mt-2 block text-sm font-normal italic text-text-muted">
+                              💡 {stepTipText}
+                            </span>
+                          ) : null}
                         </span>
                       </span>
                     </label>

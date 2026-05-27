@@ -44,15 +44,18 @@ pnpm -F @chef/web build && pnpm -F @chef/web start
 
 ### 3.5 烹飪 GA（Wave 1，產線 build）
 
-| # | 步驟 | 預期 |
-|---|------|------|
-| 3.5.1 | 詳情頁主按鈕進入 cook（`?source=detail`） | `cooking_mode_started` 含 `source: detail` |
-| 3.5.2 | 滾動後 sticky CTA 進入 cook（`?source=sticky_cta`） | `source: sticky_cta` |
-| 3.5.3 | 螢幕鎖定約 5 分鐘（Wake Lock） | 計時持續 |
-| 3.5.4 | 切到背景再回前景 | 計時／步驟狀態仍正確 |
-| 3.5.5 | 語音朗讀 toggle | 可開關，不中斷步驟 |
-| 3.5.6 | 走完步驟並評分 | `cooking_mode_completed` 含 `duration_bucket`、`rating_bucket` |
-| 3.5.7 | 生成結果頂部決策卡 | 顯示分鐘／人數／需購買或「不必採買」 |
+> **CI 自動覆蓋**（不需真機）：`pnpm -F @chef/web test:e2e` 含示範烹飪走完＋mock 完整漏斗（生成→收藏→烹飪→完成→分享）。下列 3.5.3–3.5.5 仍須 **iPhone 真機** 勾選。
+
+| # | 步驟 | 預期 | 自動 |
+|---|------|------|------|
+| 3.5.1 | 詳情頁主按鈕進入 cook（`?source=detail`） | `cooking_mode_started` 含 `source: detail` | 部分（mock 漏斗） |
+| 3.5.2 | 滾動後 sticky CTA 進入 cook（`?source=sticky_cta`） | `source: sticky_cta` | 人工 |
+| 3.5.3 | 螢幕鎖定約 5 分鐘（Wake Lock） | 計時持續 | 人工 |
+| 3.5.4 | 切到背景再回前景 | 計時／步驟狀態仍正確 | 人工 |
+| 3.5.5 | 語音朗讀 toggle | 可開關，不中斷步驟 | 人工 |
+| 3.5.6 | 走完步驟並評分 | `cooking_mode_completed` 含 `duration_bucket`、`rating_bucket` | ✅ E2E |
+| 3.5.7 | 生成結果頂部決策卡 | 顯示分鐘／人數／需購買或「不必採買」 | 人工 |
+| 3.5.8 | 步驟 `step_tip` 一行提示 | 詳情／烹飪／生成結果可見 💡 文案 | ✅ E2E（demo） |
 
 ---
 
@@ -89,7 +92,21 @@ pnpm -F @chef/web build && pnpm -F @chef/web start
 
 ---
 
-## 7. 刻意不支援（已知）
+## 7. Playwright E2E（開發者）
+
+```bash
+pnpm -F @chef/web build
+NEXT_PUBLIC_NEW_UI=1 NEXT_PUBLIC_COOKING_MODE_ENABLED=1 pnpm -F @chef/web test:e2e
+```
+
+| 規格檔 | 涵蓋 |
+|--------|------|
+| `web/e2e/demo-cook-funnel.spec.ts` | 示範烹飪完成 + step_tip |
+| `web/e2e/recipe-funnel-mocked.spec.ts` | 生成→收藏→烹飪→完成→分享（API mock） |
+
+---
+
+## 8. 刻意不支援（已知）
 
 - 離線 **POST 生成食譜**（NetworkOnly）
 - 離線 **週曆 PUT**（未入佇列）

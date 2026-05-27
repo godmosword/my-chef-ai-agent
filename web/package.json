@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "pnpm -F @chef/design-tokens build && next build",
+    "build:e2e": "pnpm -F @chef/design-tokens build && NEXT_PUBLIC_NEW_UI=1 NEXT_PUBLIC_COOKING_MODE_ENABLED=1 NEXT_PUBLIC_ENABLE_PWA=0 NEXT_PUBLIC_ANALYTICS_ENABLED=0 next build",
     "start": "next start",
     "lint": "tsc --noEmit && eslint .",
     "lint:eslint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "db:migrate": "tsx scripts/migrate.ts",
     "icons:generate": "tsx scripts/generate-icons.ts",
     "marketing:images": "tsx scripts/generate-marketing-images.ts"
@@ -43,6 +46,7 @@
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "@serwist/cli": "^9.5.11",
+    "@playwright/test": "^1.52.0",
     "eslint": "^9.28.0",
     "typescript-eslint": "^8.33.0",
     "@types/node": "^22.10.0",

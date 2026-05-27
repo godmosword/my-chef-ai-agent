@@ -9,6 +9,9 @@
 
 ### Added
 
+- **Playwright E2E**：`web/e2e/demo-cook-funnel.spec.ts`、`recipe-funnel-mocked.spec.ts`；CI 於 `web-ci.yml` 執行（需先 `next build` + `NEXT_PUBLIC_NEW_UI`）。
+- **step_tip（Wave 2）**：生成 JSON `steps[].step_tip`；詳情／Tonight 結果／烹飪模式顯示 💡 提示。
+- **剩菜續作**：烹飪完成頁連結至 `/app?prefill=…`（提示消耗 1 次 text 生成）。
 - **P2 家庭情境**：`domain/pantry`（今晚最多 5 樣、localStorage）、`NEXT_PUBLIC_PANTRY_TONIGHT`、Tonight 清單面板；生成帶 `pantry_items`；採買清單扣除／劃掉家裡已有；步驟與食材標註「用冰箱的…」；`pantry_tonight_saved` analytics。
 - **P3 習慣迴圈**：生成成功後「加入本週菜單」；採買清單扣今晚冰箱；週菜單「分享本週菜單」連結；`meal_plan_added_from_tonight` analytics。
 - **ESLint 分層**：`web/eslint.config.mjs` 限制 pure `domain` 不得 import `platform`／`application`。
@@ -38,6 +41,7 @@
 
 ### Fixed
 
+- **烹飪完成導覽**：完成後不再同步 URL 至 `/cook`（避免與「回到食譜」互搶、library 頁 React #185）；示範烹飪不再誤跳轉至 `/app/library/demo`。
 - **生成食譜寫入失敗**：Neon 未套用 migration `0009` 時，`recipe_versions` 插入自動降級（略過 `prep_minutes` 等欄位）；API 錯誤提示執行 `pnpm -F @chef/web db:migrate`。
 - **P0 UX 對齊**：`formatIngredient` 顯示 `unit`（修復 demo／詳情食材缺「杯／大匙」）；移除食譜詳情 header 與 demo 底部重複的烹飪 CTA；最近／料理書卡片主圖載入失敗時改菜系 emoji fallback。
 - **P1-1 demo CTA 收斂**：`/demo/recipe` 移除底部雙鈕，改 `RecipeActionsMenu`（⋯）收次要動作；主 CTA 僅 sticky／desktop「進入烹飪模式」。

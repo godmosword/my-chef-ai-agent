@@ -5,8 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { capture } from "@/platform/analytics/events";
 import { DEMO_RECIPE } from "@/lib/demo/demo-recipe";
-import type { CookingRecipe } from "@/domain/cook/types";
-import { stepText } from "@/application/hero/step-storage";
+import { recipePayloadToCooking } from "@/domain/cook/normalizeSteps";
 
 const CookingModeClient = dynamic(
   () =>
@@ -14,16 +13,9 @@ const CookingModeClient = dynamic(
   { ssr: false },
 );
 
-function toCookingRecipe(): CookingRecipe {
-  const steps = (DEMO_RECIPE.steps ?? []).map((s, i) => ({
-    index: i,
-    text: stepText(s),
-  }));
-  return {
-    id: "demo",
-    title: DEMO_RECIPE.recipe_name ?? "示範食譜",
-    steps,
-  };
+function toCookingRecipe() {
+  const recipe = recipePayloadToCooking({ ...DEMO_RECIPE, id: "demo" });
+  return recipe;
 }
 
 export default function DemoCookPage() {
