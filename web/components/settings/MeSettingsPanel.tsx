@@ -159,6 +159,16 @@ export function MeSettingsPanel() {
       <DietaryPreferencesPanel />
 
       <section className="rounded-lg border border-border-default bg-surface-default p-4">
+        <h2 className="text-sm font-medium text-text-ink">通知與提醒</h2>
+        <p className="mt-1 text-sm text-text-muted">
+          效期提醒、安靜時段、週報與暫停推播
+        </p>
+        <Button asChild variant="secondary" size="sm" className="mt-3">
+          <Link href="/app/settings/notifications">管理通知設定</Link>
+        </Button>
+      </section>
+
+      <section className="rounded-lg border border-border-default bg-surface-default p-4">
         <h2 className="text-sm font-medium text-text-ink">外觀</h2>
         <p className="mt-1 text-sm text-text-muted">跟隨系統或手動切換淺色／深色</p>
         <div className="mt-3 flex flex-wrap gap-2">

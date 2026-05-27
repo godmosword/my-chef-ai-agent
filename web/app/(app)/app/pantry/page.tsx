@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   categorizeForDisplay,
   expiryLabel,
@@ -14,6 +14,8 @@ import { parseManualPantryText } from "@/application/pantry/vision/manual-entry"
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
 import { displayDateKey } from "@/lib/locale/datetime";
+import { UseItUpPanel } from "@/components/notifications/UseItUpPanel";
+import { useSearchParams } from "next/navigation";
 
 type PantryRow = PantryDisplayItem & {
   id: number;
@@ -26,7 +28,10 @@ type Summary = {
   expired_count: number;
 };
 
-export default function PantryPage() {
+function PantryPageInner() {
+  const searchParams = useSearchParams();
+  const showUseItUp = searchParams.get("use_it_up") === "1";
+  const [hasUseItUpStored, setHasUseItUpStored] = useState(false);
   const [items, setItems] = useState<PantryRow[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [filter, setFilter] = useState<"all" | "expiring" | "expired">("all");
@@ -61,6 +66,10 @@ export default function PantryPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setHasUseItUpStored(Boolean(sessionStorage.getItem("chef_use_it_up_result")));
+  }, []);
 
   const today = displayDateKey();
   const filtered = useMemo(() => {
@@ -113,13 +122,45 @@ export default function PantryPage() {
       </Link>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-serif text-2xl text-text-ink">我的冰箱</h1>
-        <Link
-          href="/app/pantry/scan"
-          className="text-sm text-brand-primary hover:underline"
-        >
-          拍照盤點
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="text-sm text-brand-primary hover:underline"
+            onClick={async () => {
+              const res = await fetch("/api/me/pantry/use-it-up", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              });
+              const data = await res.json();
+              if (data.empty_expiring) {
+                setMessage(data.message ?? "沒有快過期食材");
+                return;
+              }
+              sessionStorage.setItem("chef_use_it_up_result", JSON.stringify(data));
+              setMessage(null);
+            }}
+          >
+            用快過期食材做菜
+          </button>
+          <Link
+            href="/app/pantry/scan"
+            className="text-sm text-brand-primary hover:underline"
+          >
+            拍照盤點
+          </Link>
+        </div>
       </div>
+
+      {(showUseItUp || hasUseItUpStored) && (
+        <div className="mt-4">
+          <UseItUpPanel
+            onPickRecipe={() => {
+              setMessage("請回到首頁查看生成的食譜，或點「看完整食譜」後在對話中繼續。");
+            }}
+          />
+        </div>
+      )}
 
       {summary && (
         <div className="mt-4 flex flex-wrap gap-2 text-sm">
@@ -254,5 +295,13 @@ export default function PantryPage() {
         <p className="mt-4 text-sm text-text-muted whitespace-pre-wrap">{message}</p>
       )}
     </main>
+  );
+}
+
+export default function PantryPage() {
+  return (
+    <Suspense fallback={<main className="p-8 text-sm text-text-muted">載入中…</main>}>
+      <PantryPageInner />
+    </Suspense>
   );
 }

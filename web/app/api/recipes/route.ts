@@ -17,6 +17,7 @@ import {
 } from "@/platform/config/personalization-ui-config";
 import { shouldPromptOnboarding } from "@/platform/db/personalization-onboarding";
 import { getSessionUserId } from "@/platform/identity/session";
+import { touchLastInteraction } from "@/platform/db/notification-prefs";
 import type { RecipePayload } from "@chef/shared-types";
 import {
   GenerateRecipeRequestSchema,
@@ -120,6 +121,10 @@ export async function POST(request: Request) {
         cleanFridgeItems: clean_fridge_items,
       },
     );
+
+    if (isDatabaseConfigured()) {
+      void touchLastInteraction(DEFAULT_TENANT_ID, userId);
+    }
 
     let recipe: RecipePayload;
     if (isDatabaseConfigured()) {

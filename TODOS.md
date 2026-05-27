@@ -15,7 +15,14 @@
 - [x] **PT-1**：migration `0013`、`domain/pantry` 正規化（238 別名）、`platform/db/pantry.ts` CRUD／合併策略、刪帳連動
 - [x] **PT-2**：Gemini Vision 冰箱／收據辨識、審核 session、`/api/pantry/vision`、[`/app/pantry/scan`](web/app/(app)/app/pantry/scan/page.tsx)、手動輸入 API
 - [x] **PT-3**：[`/app/pantry`](web/app/(app)/app/pantry/page.tsx) CRUD UI、`/api/me/pantry`、清冰箱 DB 連動、食譜 ✓ 冰箱有標註；（LINE Flex N/A）
-- [ ] **PT-4**：效期提醒與食譜↔庫存比對
+- [x] **PT-4**：效期提醒（App 收件匣 + Cron）、用完它反向推薦、週報、通知偏好（migration `0015`）
+- [x] **P0（個人化 + 冰箱）**：PM-1～PM-4、PT-1～PT-4 已交付
+
+## P1 — 週菜單與習慣（P0 完成後）
+
+- [ ] **P1-1**：一週菜單規劃 UI（從週報／用完它串接）
+- [ ] **P1-2**：採買清單與冰箱雙向同步優化
+- [ ] **P1-3**：通知 Web Push（需使用者授權，補強收件匣）
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 

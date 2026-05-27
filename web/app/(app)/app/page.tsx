@@ -20,7 +20,9 @@ import { OnboardingBanner } from "@/components/personalization/OnboardingBanner"
 import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { useCallback, useEffect, useState } from "react";
 import { isCleanFridgeMessage } from "@/domain/pantry/clean-fridge";
+import { isUseItUpMessage } from "@/domain/pantry/use-it-up-messages";
 import { CleanFridgeDialog } from "@/components/pantry/CleanFridgeDialog";
+import { ExpiryReminderBanner } from "@/components/notifications/ExpiryReminderBanner";
 
 export default function TodayPage() {
   const router = useRouter();
@@ -53,6 +55,28 @@ export default function TodayPage() {
 
   const handleSubmit = useCallback(
     async (message: string) => {
+      if (FLAGS.pantryTonight && isUseItUpMessage(message)) {
+        try {
+          const res = await fetch("/api/me/pantry/use-it-up", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const data = await res.json();
+          if (data.empty_expiring) {
+            setPendingMessage(message);
+            setCleanFridgeOpen(true);
+            return;
+          }
+          if (data.suggestions?.length) {
+            sessionStorage.setItem("chef_use_it_up_result", JSON.stringify(data));
+            router.push("/app/pantry?use_it_up=1");
+            return;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
       if (FLAGS.pantryTonight && isCleanFridgeMessage(message)) {
         try {
           const res = await fetch("/api/me/pantry?include_expired=0");
@@ -107,6 +131,8 @@ export default function TodayPage() {
       <GreetingHeader />
 
       <OnboardingBanner />
+
+      <ExpiryReminderBanner />
 
       <section aria-label="生成食譜" className="space-y-4">
         {FLAGS.pantryTonight && (
@@ -168,8 +194,30 @@ export default function TodayPage() {
           setCleanFridgeOpen(false);
           setPendingMessage(null);
         }}
-        onConfirm={(lines) => {
-          if (pendingMessage) {
+        onConfirm={(lines, mode) => {
+          if (pendingMessage && mode === "expiring") {
+            void (async () => {
+              const res = await fetch("/api/me/pantry/use-it-up", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              });
+              const data = await res.json();
+              if (data.suggestions?.length) {
+                sessionStorage.setItem(
+                  "chef_use_it_up_result",
+                  JSON.stringify(data),
+                );
+                router.push("/app/pantry?use_it_up=1");
+              } else {
+                runGenerate({
+                  message: pendingMessage,
+                  clean_fridge_mode: true,
+                  clean_fridge_items: lines,
+                });
+              }
+            })();
+          } else if (pendingMessage) {
             runGenerate({
               message: pendingMessage,
               clean_fridge_mode: true,

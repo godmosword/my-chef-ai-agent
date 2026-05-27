@@ -9,6 +9,10 @@ import {
 import { clearUserMemory } from "../memory";
 import { deleteAllPersonalization } from "../personalization";
 import { hardDeleteAllPantry } from "../pantry";
+import {
+  hardDeleteNotificationInbox,
+} from "../notification-inbox";
+import { hardDeleteNotificationPrefs } from "../notification-prefs";
 import { getSql } from "../client";
 
 export async function deleteAllUserData(
@@ -29,6 +33,8 @@ export async function deleteAllUserData(
     await clearUserMemory(userId, tenantId);
     await deleteAllPersonalization(tenantId, userId);
     await hardDeleteAllPantry(tenantId, userId);
+    await hardDeleteNotificationPrefs(tenantId, userId);
+    await hardDeleteNotificationInbox(tenantId, userId);
     await sql`DELETE FROM usage_daily WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
     await sql`DELETE FROM favorite_recipes WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
   }
