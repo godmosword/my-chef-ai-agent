@@ -9,6 +9,7 @@
 
 ### Added
 
+- **中長期架構規格**：[`2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md) — 三支柱（決策執行／家庭情境／習慣迴圈）、產品模組邊界、技術分層與 **一次搬遷** 路徑、G0–G3 閘門；不含付費與第四支柱。
 - **Wave 1 — 煮成功**：食譜**決策卡**（時間／人數／需購買）；烹飪模式 analytics 補 `source`、`duration_bucket`、`rating_bucket`；`recipe_generation_succeeded` 含 `has_decision_card`；晚餐推播 **Periodic Sync** + 同日 dedupe；[`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md)；產品規格 [`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) **已核准**。
 
 ### Changed

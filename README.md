@@ -37,7 +37,7 @@ pnpm dev:web
 | `/app/library/:id/cook` | 烹飪模式（需 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`） |
 | `/app/me` | 個人檔案、配額、晚餐提醒設定 |
 
-桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。產品進化路線見 [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)。
+桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。產品進化路線見 [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)。**中長期三支柱架構**（產品模組 + 技術分層、一次搬遷）見 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)。
 
 **烹飪模式（Prompt 4）**：另設 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`，於食譜詳情頁顯示「進入烹飪模式」（路由 `/app/library/:id/cook` 亦可直連）。
 
