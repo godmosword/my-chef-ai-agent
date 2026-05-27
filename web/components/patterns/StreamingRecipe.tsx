@@ -9,6 +9,8 @@ import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
 import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
 import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
 import type { RecipePayload } from "@chef/shared-types";
+import { formatStepForPantry } from "@/domain/pantry/step-note";
+import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
 import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
 import { dietaryAvoidDisplayLabels } from "@/platform/db/dietary-preferences";
 import type { DietaryPreferences } from "@/platform/db/dietary-preferences";
@@ -21,9 +23,15 @@ export type StreamingRecipeProps = {
   recipe: RecipePayload | null;
   streaming: boolean;
   error?: string | null;
+  pantryItems?: string[];
 };
 
-export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipeProps) {
+export function StreamingRecipe({
+  recipe,
+  streaming,
+  error,
+  pantryItems = [],
+}: StreamingRecipeProps) {
   const [avoidLabels, setAvoidLabels] = useState<string[]>([]);
 
   useEffect(() => {
@@ -110,12 +118,45 @@ export function StreamingRecipe({ recipe, streaming, error }: StreamingRecipePro
           </ul>
         </section>
       )}
+      {recipe.shopping_list &&
+        Array.isArray(recipe.shopping_list) &&
+        recipe.shopping_list.length > 0 && (
+          <section className="mt-4">
+            <h3 className="text-sm font-medium text-text-ink">還需採買</h3>
+            <ul className="mt-2 list-inside list-disc text-sm text-text-muted">
+              {(recipe.shopping_list as unknown[]).map((row, i) => {
+                const label =
+                  typeof row === "string"
+                    ? row
+                    : row && typeof row === "object" && "name" in row
+                      ? String((row as { name: string }).name)
+                      : String(row);
+                const atHome =
+                  pantryItems.length > 0 &&
+                  isPantryMatch(label, pantryNameKeys(pantryItems));
+                return (
+                  <li
+                    key={i}
+                    className={atHome ? "text-text-muted/60 line-through" : undefined}
+                  >
+                    {label}
+                    {atHome ? "（家裡已有）" : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       {recipe.steps && recipe.steps.length > 0 && (
         <section className="mt-4">
           <h3 className="text-sm font-medium text-text-ink">步驟</h3>
           <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-text-muted">
             {recipe.steps.map((step, i) => (
-              <li key={i}>{formatStep(step)}</li>
+              <li key={i}>
+                {pantryItems.length
+                  ? formatStepForPantry(step, pantryItems)
+                  : formatStep(step)}
+              </li>
             ))}
           </ol>
         </section>

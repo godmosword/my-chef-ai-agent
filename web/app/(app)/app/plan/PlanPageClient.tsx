@@ -30,6 +30,8 @@ import { WeekGrid } from "./_components/WeekGrid";
 import { PickRecipeSheet } from "./_components/PickRecipeSheet";
 import { SlotInspector } from "./_components/SlotInspector";
 import { capture } from "@/platform/analytics/events";
+import { FLAGS } from "@/platform/config/flags";
+import { ShareWeekPlanButton } from "@/components/plan/ShareWeekPlanButton";
 function parseCellId(id: string): { date: string; slot: Slot } | null {
   const [date, slot] = id.split("|");
   if (!date || !slot) return null;
@@ -169,12 +171,15 @@ export function PlanPageClient() {
             <ChevronRight className="size-5" />
           </Button>
         </div>
-        <Button asChild variant="secondary">
-          <Link href={`/app/shopping?week_of=${weekOf}`}>
-            <ShoppingCart className="size-4" aria-hidden />
-            生成買菜清單
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {FLAGS.mealPlan && <ShareWeekPlanButton weekOf={weekOf} />}
+          <Button asChild variant="secondary">
+            <Link href={`/app/shopping?week_of=${weekOf}`}>
+              <ShoppingCart className="size-4" aria-hidden />
+              生成買菜清單
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {loading && <p className="text-text-muted">載入週菜單…</p>}

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "pnpm -F @chef/design-tokens build && next build",
     "start": "next start",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && eslint .",
+    "lint:eslint": "eslint .",
     "test": "vitest run",
     "db:migrate": "tsx scripts/migrate.ts",
     "icons:generate": "tsx scripts/generate-icons.ts",
@@ -40,7 +41,10 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
     "@serwist/cli": "^9.5.11",
+    "eslint": "^9.28.0",
+    "typescript-eslint": "^8.33.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

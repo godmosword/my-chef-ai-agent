@@ -62,8 +62,10 @@ export function useRecipeGeneration() {
     setError(null);
     setErrorView(null);
     setRecipe(null);
+    const pantryCount = body.pantry_items?.length ?? 0;
     const analyticsProps = {
       source: "today",
+      pantry_items_count: pantryCount > 0 ? pantryCount : undefined,
       ...recipeGenerationCoarseProps(body.message),
     };
     capture("recipe_generation_started", analyticsProps);

@@ -7,6 +7,12 @@
 ---
 ## [Unreleased]
 
+### Added
+
+- **P2 家庭情境**：`domain/pantry`（今晚最多 5 樣、localStorage）、`NEXT_PUBLIC_PANTRY_TONIGHT`、Tonight 清單面板；生成帶 `pantry_items`；採買清單扣除／劃掉家裡已有；步驟與食材標註「用冰箱的…」；`pantry_tonight_saved` analytics。
+- **P3 習慣迴圈**：生成成功後「加入本週菜單」；採買清單扣今晚冰箱；週菜單「分享本週菜單」連結；`meal_plan_added_from_tonight` analytics。
+- **ESLint 分層**：`web/eslint.config.mjs` 限制 pure `domain` 不得 import `platform`／`application`。
+
 ### Changed
 
 - **Architecture sprint（一次搬遷）**：`web/lib` 核心程式拆至 `domain/`（recipe、cook、plan）、`application/`（api、hero、notifications、poster、settings）、`platform/`（db、sync、analytics、identity、config、media）；`lib/` 保留 copy、demo、marketing、locale、utils、theme、nav、profile。import 路徑改為 `@/domain/*`、`@/application/*`、`@/platform/*`。

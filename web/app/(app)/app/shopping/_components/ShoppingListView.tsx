@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AggregatedShoppingItem, ShoppingCategory } from "@chef/shared-types";
+import { shoppingItemAtHome } from "@/domain/plan/filter-pantry";
 import { formatItemAmount } from "@/domain/plan/shopping-list";
 import { cn } from "@/lib/utils/cn";
 
@@ -27,9 +28,16 @@ export type ShoppingListViewProps = {
   items: AggregatedShoppingItem[];
   groups: Partial<Record<ShoppingCategory, AggregatedShoppingItem[]>>;
   printMode?: boolean;
+  /** Tonight pantry: auto-strike items already at home */
+  pantryItems?: string[];
 };
 
-export function ShoppingListView({ items, groups, printMode }: ShoppingListViewProps) {
+export function ShoppingListView({
+  items,
+  groups,
+  printMode,
+  pantryItems = [],
+}: ShoppingListViewProps) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -59,7 +67,8 @@ export function ShoppingListView({ items, groups, printMode }: ShoppingListViewP
           <ul className="divide-y divide-border-default rounded-lg border border-border-default bg-surface-default">
             {section.items.map((item) => {
               const key = `${item.name}-${formatItemAmount(item)}`;
-              const isChecked = checked[key];
+              const atHome = shoppingItemAtHome(item, pantryItems);
+              const isChecked = checked[key] || (atHome && !printMode);
               return (
                 <li
                   key={key}
@@ -82,6 +91,11 @@ export function ShoppingListView({ items, groups, printMode }: ShoppingListViewP
                     <span className="flex-1">
                       <span className="font-medium text-text-ink">
                         {item.name} {formatItemAmount(item)}
+                        {atHome && (
+                          <span className="ml-1 text-xs font-normal text-brand-primary">
+                            家裡已有
+                          </span>
+                        )}
                       </span>
                       {!printMode && item.sources.length > 0 && (
                         <button

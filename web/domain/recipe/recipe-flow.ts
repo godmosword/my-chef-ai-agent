@@ -8,6 +8,7 @@ import {
 } from "@/platform/db/memory";
 import { getUserPreferences } from "@/platform/db/preferences";
 import { consumeQuota } from "@/platform/db/quota";
+import { buildPantryUserPrefix } from "@/domain/pantry/prompt";
 import {
   buildScenarioPrefix,
   buildScenarioSystemAddendum,
@@ -34,6 +35,7 @@ export type RecipeFlowResult = {
 
 export type RecipeFlowOptions = {
   deepResearch?: boolean;
+  pantryItems?: string[];
 };
 
 export async function runRecipeFlow(
@@ -54,10 +56,9 @@ export async function runRecipeFlow(
   }
 
   const scenarioPrefix = buildScenarioPrefix(userMessage);
+  const pantryPrefix = buildPantryUserPrefix(_options?.pantryItems ?? []);
   const scenarioAddendum = buildScenarioSystemAddendum(userMessage);
-  const effectiveMessage = scenarioPrefix
-    ? `${scenarioPrefix}${userMessage}`
-    : userMessage;
+  const effectiveMessage = `${pantryPrefix}${scenarioPrefix}${userMessage}`;
 
   const [fullHistory, prefs, cuisineCtx] = await Promise.all([
     getUserMemory(userId, tenantId),

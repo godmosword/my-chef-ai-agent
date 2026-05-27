@@ -10,6 +10,10 @@ import { PrefillHeroInput } from "@/components/patterns/PrefillHeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { Button } from "@/components/primitives/Button";
 import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
+import { useTonightPantry } from "@/hooks/useTonightPantry";
+import { TonightPantryPanel } from "@/components/app-home/TonightPantryPanel";
+import { AddToWeekPlanButton } from "@/components/app-home/AddToWeekPlanButton";
+import { FLAGS } from "@/platform/config/flags";
 import { listRecipes } from "@/application/api/recipes";
 import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { useEffect, useState } from "react";
@@ -17,6 +21,7 @@ import { useEffect, useState } from "react";
 export default function TodayPage() {
   const router = useRouter();
   const { recipe, streaming, error, errorView, generate, reset } = useRecipeGeneration();
+  const { items: pantryItems } = useTonightPantry();
   const [recent, setRecent] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
 
@@ -50,23 +55,45 @@ export default function TodayPage() {
       <GreetingHeader />
 
       <section aria-label="生成食譜" className="space-y-4">
+        {FLAGS.pantryTonight && (
+          <TonightPantryPanel disabled={streaming} />
+        )}
         <Suspense fallback={null}>
           <PrefillHeroInput
             disabled={streaming}
             streaming={streaming}
             error={error}
             errorView={errorView}
-            onSubmit={(message) => generate({ message })}
+            onSubmit={(message) =>
+              generate({
+                message,
+                pantry_items:
+                  FLAGS.pantryTonight && pantryItems.length > 0
+                    ? pantryItems
+                    : undefined,
+              })
+            }
           />
         </Suspense>
         {(recipe || streaming) && (
           <div className="space-y-3">
-            <StreamingRecipe recipe={recipe} streaming={streaming} error={null} />
+            <StreamingRecipe
+              recipe={recipe}
+              streaming={streaming}
+              error={null}
+              pantryItems={FLAGS.pantryTonight ? pantryItems : []}
+            />
             {recipe?.id && !streaming && (
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="secondary" size="sm">
                   <Link href={`/app/library/${recipe.id}`}>查看詳情</Link>
                 </Button>
+                {FLAGS.mealPlan && (
+                  <AddToWeekPlanButton
+                    recipeId={recipe.id}
+                    recipeTitle={recipe.recipe_name}
+                  />
+                )}
                 <Button variant="ghost" size="sm" onClick={reset}>
                   再來一道
                 </Button>

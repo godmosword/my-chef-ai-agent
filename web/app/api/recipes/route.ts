@@ -87,14 +87,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, context_tags, enable_deep_research } = parsed.data;
+  const { message, context_tags, enable_deep_research, pantry_items } = parsed.data;
 
   try {
     const result = await runRecipeFlow(
       userId,
       message,
       DEFAULT_TENANT_ID,
-      { deepResearch: enable_deep_research },
+      {
+        deepResearch: enable_deep_research,
+        pantryItems: pantry_items,
+      },
     );
 
     let recipe: RecipePayload;

@@ -15,6 +15,9 @@ import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
 import { ShoppingListView } from "./_components/ShoppingListView";
 import { capture } from "@/platform/analytics/events";
+import { FLAGS } from "@/platform/config/flags";
+import { filterShoppingGroupsByPantry } from "@/domain/plan/filter-pantry";
+import { useTonightPantry } from "@/hooks/useTonightPantry";
 
 export function ShoppingPageClient() {
   const searchParams = useSearchParams();
@@ -27,6 +30,8 @@ export function ShoppingPageClient() {
   const [list, setList] = useState<AggregatedShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const [printOpen, setPrintOpen] = useState(false);
+  const { items: pantryItems } = useTonightPantry();
+  const pantry = FLAGS.pantryTonight ? pantryItems : [];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,13 +89,30 @@ export function ShoppingPageClient() {
 
       {loading && <p className="text-text-muted">載入中…</p>}
 
-      {!loading && list && list.items.length > 0 && (
-        <ShoppingListView
-          items={list.items}
-          groups={list.groups}
-          printMode={printOpen}
-        />
-      )}
+      {!loading && list && list.items.length > 0 && (() => {
+        const groups =
+          pantry.length > 0
+            ? filterShoppingGroupsByPantry(list.groups, pantry)
+            : list.groups;
+        const items = Object.values(groups).flat();
+        const hidden =
+          pantry.length > 0 ? list.items.length - items.length : 0;
+        return (
+          <>
+            {hidden > 0 && (
+              <p className="text-xs text-text-muted">
+                已略過家裡已有的 {hidden} 項（對照今晚清冰箱清單）
+              </p>
+            )}
+            <ShoppingListView
+              items={items}
+              groups={groups}
+              printMode={printOpen}
+              pantryItems={pantry}
+            />
+          </>
+        );
+      })()}
 
       {!loading && list && list.items.length === 0 && (
         <EmptyShopping weekOf={weekOf} />

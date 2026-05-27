@@ -9,9 +9,9 @@
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 
 - [x] **Architecture sprint**：`web/lib` → `domain/` · `application/` · `platform/` **一次搬遷**（2026-05-27）
-- [x] `AGENTS.md` + `web/README.md` 分層約定（ESLint 規則待 CI 引入 eslint 時補上）
-- [ ] P2：`NEXT_PUBLIC_PANTRY_TONIGHT` + `domain/pantry`（閘門 G1 後）
-- [ ] P3：Tonight→週曆一鍵、採買扣 pantry（閘門 G2 後）
+- [x] `AGENTS.md` + `web/README.md` 分層約定 + `web/eslint.config.mjs`
+- [x] P2：`NEXT_PUBLIC_PANTRY_TONIGHT` + `domain/pantry` + 今晚清單 UI／採買扣減／步驟標註
+- [x] P3：Tonight→週曆一鍵、採買扣 pantry、週菜單分享連結（需 `MEAL_PLAN` flag）
 
 ## 產品進化 Wave 1 — 煮成功（[`spec`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) · [`plan`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)）
 

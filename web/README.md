@@ -21,7 +21,8 @@ pnpm dev:web
 |------|------|
 | `NEXT_PUBLIC_NEW_UI=1` | `/` 為 Landing；`/app` 為 Today／Library／Me |
 | `NEXT_PUBLIC_COOKING_MODE_ENABLED=1` | 食譜詳情顯示「進入烹飪模式」 |
-| `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1` | 側欄 Plan／Shopping；週曆與採買聚合 API |
+| `NEXT_PUBLIC_PANTRY_TONIGHT=1` | Tonight「今晚清冰箱」清單（最多 5 樣）；生成／採買／步驟整合 |
+| `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1` | 側欄 Plan／Shopping；週曆與採買聚合 API；生成後可「加入本週菜單」 |
 | （未設或 `0`） | `/` 為經典 `ChatPanel`；`/legacy` 永遠可用 |
 
 規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)、[`2026-05-23-cooking-mode.md`](../docs/superpowers/specs/2026-05-23-cooking-mode.md)、[`2026-05-23-meal-planner.md`](../docs/superpowers/specs/2026-05-23-meal-planner.md)

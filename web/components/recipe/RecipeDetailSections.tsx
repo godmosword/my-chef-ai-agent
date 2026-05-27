@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatStepForPantry } from "@/domain/pantry/step-note";
+import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
 import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
+import { FLAGS } from "@/platform/config/flags";
+import { useTonightPantry } from "@/hooks/useTonightPantry";
 import { ServingToggle } from "@/components/recipe/ServingToggle";
 import { scaleIngredient } from "@/domain/recipe/recipe-scale";
 import { readProgress, writeProgress } from "@/domain/recipe/recipe-progress";
@@ -23,6 +27,8 @@ export function RecipeDetailSections({
   steps,
   servings,
 }: RecipeDetailSectionsProps) {
+  const { items: pantryItems } = useTonightPantry();
+  const pantry = FLAGS.pantryTonight ? pantryItems : [];
   const ingList = ingredients ?? [];
   const stepList = steps ?? [];
   const [scale, setScale] = useState(1);
@@ -113,8 +119,30 @@ export function RecipeDetailSections({
                       onChange={() => toggleIngredient(i)}
                       className="mt-1 size-4 shrink-0 rounded border-border-default text-brand-primary focus:ring-brand-primary"
                     />
-                    <span className={cn(checked && "text-text-muted line-through")}>
+                    <span
+                      className={cn(
+                        checked && "text-text-muted line-through",
+                        !checked &&
+                          pantry.length > 0 &&
+                          isPantryMatch(
+                            typeof ing === "object" && ing && "name" in ing
+                              ? String((ing as { name: string }).name)
+                              : String(ing),
+                            pantryNameKeys(pantry),
+                          ) &&
+                          "text-text-muted",
+                      )}
+                    >
                       {formatIngredient(ing)}
+                      {pantry.length > 0 &&
+                      isPantryMatch(
+                        typeof ing === "object" && ing && "name" in ing
+                          ? String((ing as { name: string }).name)
+                          : String(ing),
+                        pantryNameKeys(pantry),
+                      ) ? (
+                        <span className="ml-1 text-xs text-brand-primary">（家裡已有）</span>
+                      ) : null}
                     </span>
                   </label>
                 </li>
@@ -165,7 +193,9 @@ export function RecipeDetailSections({
                           {i + 1}
                         </span>
                         <span className="flex-1 text-base leading-relaxed">
-                          {formatStep(step)}
+                          {pantry.length
+                            ? formatStepForPantry(step, pantry)
+                            : formatStep(step)}
                         </span>
                       </span>
                     </label>
