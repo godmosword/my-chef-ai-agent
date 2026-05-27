@@ -13,7 +13,7 @@
 - [x] **PM-3**：[`personalization-context.ts`](web/application/personalization/personalization-context.ts) + [`assemble-system-prompt`](web/application/recipe/assemble-system-prompt.ts) 注入生成；`GET /api/metrics` 個人化計數
 - [x] **PM-4**：Web [`/app/profile`](web/app/(app)/app/profile/page.tsx) CRUD、[`/app/onboarding`](web/app/(app)/app/onboarding/page.tsx)、`applied_personalization` 透明說明；（LINE Bot 已移除，Flex／指令 N/A）
 - [x] **PT-1**：migration `0013`、`domain/pantry` 正規化（238 別名）、`platform/db/pantry.ts` CRUD／合併策略、刪帳連動
-- [ ] **PT-2**：照片／收據辨識寫入庫存
+- [x] **PT-2**：Gemini Vision 冰箱／收據辨識、審核 session、`/api/pantry/vision`、[`/app/pantry/scan`](web/app/(app)/app/pantry/scan/page.tsx)、手動輸入 API
 - [ ] **PT-3**：Web／LINE 庫存 UI、清冰箱與 pantry 連動
 - [ ] **PT-4**：效期提醒與食譜↔庫存比對
 
