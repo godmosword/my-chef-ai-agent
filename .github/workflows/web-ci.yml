@@ -22,6 +22,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Print revision (E2E must match latest main)
+        run: |
+          git rev-parse HEAD
+          grep -n "recipe-share-trigger" web/e2e/recipe-funnel-mocked.spec.ts || (
+            echo "::error::Stale e2e spec: expected recipe-share-trigger test id on main"
+            exit 1
+          )
 
       - uses: pnpm/action-setup@v6
 

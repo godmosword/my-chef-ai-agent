@@ -1,3 +1,4 @@
+// Share step uses data-testid recipe-share-* (not getByRole('dialog')) — see e73968f+
 import { test, expect } from "@playwright/test";
 import {
   MOCK_RECIPE_ID,
