@@ -32,6 +32,7 @@ import { SlotInspector } from "./_components/SlotInspector";
 import { capture } from "@/platform/analytics/events";
 import { FLAGS } from "@/platform/config/flags";
 import { ShareWeekPlanButton } from "@/components/plan/ShareWeekPlanButton";
+import { AiMealPlanPanel } from "./_components/AiMealPlanPanel";
 function parseCellId(id: string): { date: string; slot: Slot } | null {
   const [date, slot] = id.split("|");
   if (!date || !slot) return null;
@@ -55,6 +56,9 @@ export function PlanPageClient() {
     null,
   );
   const [inspect, setInspect] = useState<MealPlanSlot | null>(null);
+  const [tab, setTab] = useState<"ai" | "manual">(
+    FLAGS.mealPlanAi ? "ai" : "manual",
+  );
 
   const dates = useMemo(() => weekDates(weekOf), [weekOf]);
 
@@ -149,6 +153,29 @@ export function PlanPageClient() {
 
   return (
     <div className="space-y-4">
+      {FLAGS.mealPlanAi && (
+        <div className="flex gap-2 border-b border-border-default pb-2">
+          <Button
+            variant={tab === "ai" ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setTab("ai")}
+          >
+            AI 週菜單
+          </Button>
+          <Button
+            variant={tab === "manual" ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => setTab("manual")}
+          >
+            手動週曆
+          </Button>
+        </div>
+      )}
+
+      {FLAGS.mealPlanAi && tab === "ai" ? <AiMealPlanPanel /> : null}
+
+      {(!FLAGS.mealPlanAi || tab === "manual") && (
+      <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button
@@ -238,6 +265,8 @@ export function PlanPageClient() {
           setInspect(null);
         }}
       />
+      </>
+      )}
     </div>
   );
 }

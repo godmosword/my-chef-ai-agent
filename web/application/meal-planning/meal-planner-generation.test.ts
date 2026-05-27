@@ -90,6 +90,7 @@ vi.mock("@/platform/db/meal-planning", () => ({
   bulkInsertMealSlots: (...args: unknown[]) => bulkInsert(...args),
   savePantrySnapshot: (...args: unknown[]) => saveSnapshot(...args),
   updateMealPlanMeta: (...args: unknown[]) => updateMeta(...args),
+  deleteSlotsForPlan: vi.fn().mockResolvedValue(undefined),
   activateMealPlan: vi.fn(),
 }));
 

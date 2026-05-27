@@ -4,7 +4,39 @@ export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type EffortLevel = "quick" | "medium" | "serious";
 export type IngredientUrgency = "urgent" | "soon" | "normal" | "none";
 export type ViolationSeverity = "critical" | "warning";
-export type PlanStatus = "draft" | "active" | "completed" | "abandoned" | "archived";
+export type PlanStatus =
+  | "generating"
+  | "draft"
+  | "active"
+  | "completed"
+  | "abandoned"
+  | "archived";
+
+export type GenerationPhase =
+  | "starting"
+  | "candidate"
+  | "validate"
+  | "repair"
+  | "persist"
+  | "done"
+  | "error";
+
+export type GenerationProgress = {
+  phase: GenerationPhase;
+  iteration?: number;
+  message?: string;
+  errors?: string[];
+};
+
+export type SwapCandidate = {
+  dish_title: string;
+  cuisine?: string | null;
+  estimated_time_min?: number | null;
+  effort_level?: EffortLevel | null;
+  key_ingredients: KeyIngredient[];
+  estimated_cost?: number | null;
+  rationale?: string | null;
+};
 export type SlotStatus = "planned" | "swapped_out" | "cooked" | "skipped";
 
 export type MealPattern = {

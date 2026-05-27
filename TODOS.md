@@ -21,7 +21,7 @@
 ## P1 — 週菜單與習慣（P0 完成後）
 
 - [x] **MP-1**：`meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`、兩段式規劃演算法、lazy 展開食譜（migration `0016`）
-- [ ] **MP-2**：週菜單規劃 UI（觸發規劃、檢視 slots、啟用計畫）
+- [x] **MP-2**：Web `/app/plan` AI 週菜單（條件表單、async 規劃輪詢、日曆格、換菜／展開、`/api/me/meal-plans/*`；migration `0017`；LINE N/A）
 - [ ] **MP-3**：採買清單合併與分類（聚合 needs → shopping）
 - [ ] **MP-4**：每日執行追蹤與推播
 - [ ] **P1-3**：通知 Web Push（需使用者授權，補強收件匣）

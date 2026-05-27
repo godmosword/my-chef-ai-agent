@@ -23,6 +23,8 @@ pnpm dev:web
 | `NEXT_PUBLIC_COOKING_MODE_ENABLED=1` | 食譜詳情顯示「進入烹飪模式」 |
 | `NEXT_PUBLIC_PANTRY_TONIGHT=1` | Tonight「今晚清冰箱」清單（最多 5 樣）；生成／採買／步驟整合 |
 | `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1` | 側欄 Plan／Shopping；週曆與採買聚合 API；生成後可「加入本週菜單」 |
+| `NEXT_PUBLIC_MEAL_PLAN_AI_ENABLED=1`（預設隨上項開啟） | `/app/plan` **AI 週菜單**分頁：觸發 MP-1 規劃、輪詢進度、啟用／換菜 |
+| `ENABLE_MEAL_PLAN_UI=1` | 伺服器端開啟 `/api/me/meal-plans`（需 `ENABLE_MEAL_PLANNING`） |
 | （未設或 `0`） | `/` 為經典 `ChatPanel`；`/legacy` 永遠可用 |
 
 規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)、[`2026-05-23-cooking-mode.md`](../docs/superpowers/specs/2026-05-23-cooking-mode.md)、[`2026-05-23-meal-planner.md`](../docs/superpowers/specs/2026-05-23-meal-planner.md)
@@ -73,7 +75,7 @@ pnpm dev:web
 - `GET|PATCH /api/me/dietary-preferences`（家庭飲食偏好與需避開食材）
 - `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
 - `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag；legacy 週曆 `meal_calendar_entries`）
-- **MP-1 週菜單規劃（後端）**：`generateMealPlan()`、`expandSlotToFullRecipe()`（`web/application/meal-planning/`）；表 `meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`（migration `0016`）。**尚無 HTTP 觸發**（MP-2 UI）。伺服器 env 見 `.env.example` 的 `ENABLE_MEAL_PLANNING`、`MEAL_PLAN_*`。
+- **MP-1／MP-2 週菜單規劃**：`POST /api/me/meal-plans`（async + `waitUntil`）、`GET .../status`、`.../activate`、`.../slots/:id/swap|expand`；UI 見 `/app/plan` → AI 週菜單。legacy 手動週曆仍為 `/api/plan/*`。
 
 需 cookie `chef_session`。
 

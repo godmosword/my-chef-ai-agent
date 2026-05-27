@@ -53,3 +53,42 @@ export function mealPlanWeekendMaxTime(): number {
     parseInt(process.env.MEAL_PLAN_WEEKEND_MAX_TIME || "60", 10) || 60,
   );
 }
+
+export function isMealPlanUiEnabled(): boolean {
+  return (
+    isMealPlanningEnabled() && process.env.ENABLE_MEAL_PLAN_UI !== "0"
+  );
+}
+
+export function mealPlanGenerationUserTimeoutSec(): number {
+  return Math.max(
+    30,
+    parseInt(process.env.MEAL_PLAN_GENERATION_USER_TIMEOUT_SEC || "90", 10) ||
+      90,
+  );
+}
+
+export function mealPlanFreeTierPerMonth(): number {
+  return Math.max(
+    0,
+    parseInt(process.env.MEAL_PLAN_FREE_TIER_PER_MONTH || "2", 10) || 2,
+  );
+}
+
+export function mealPlanPaidTierPerMonth(): number {
+  return parseInt(process.env.MEAL_PLAN_PAID_TIER_PER_MONTH || "0", 10) || 0;
+}
+
+export function mealPlanSwapCandidatesCount(): number {
+  return Math.max(
+    1,
+    parseInt(process.env.MEAL_PLAN_SWAP_CANDIDATES_COUNT || "3", 10) || 3,
+  );
+}
+
+export function mealPlanSwapLlmTimeoutSec(): number {
+  return Math.max(
+    5,
+    parseInt(process.env.MEAL_PLAN_SWAP_LLM_TIMEOUT_SEC || "15", 10) || 15,
+  );
+}

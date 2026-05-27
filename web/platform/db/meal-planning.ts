@@ -2,6 +2,7 @@
  * MP-1: Weekly meal plan sessions + slots (distinct from meal_calendar_entries).
  */
 import type {
+  GenerationProgress,
   KeyIngredient,
   MealPattern,
   MealPlanConstraints,
@@ -53,6 +54,7 @@ export type MealPlanRow = {
   updated_at: string;
   activated_at: string | null;
   completed_at: string | null;
+  generation_progress: GenerationProgress;
   slots?: MealSlotRow[];
 };
 
@@ -149,6 +151,9 @@ function planFromRow(
     updated_at: toIso(row.updated_at) ?? new Date().toISOString(),
     activated_at: toIso(row.activated_at),
     completed_at: toIso(row.completed_at),
+    generation_progress: parseJson<GenerationProgress>(row.generation_progress, {
+      phase: "done",
+    }),
     slots,
   };
 }
@@ -571,6 +576,83 @@ export async function deleteAllMealPlanning(
     RETURNING id
   `;
   return asRows(rows).length;
+}
+
+export async function updateGenerationProgress(
+  planId: number,
+  tenantId: string,
+  userId: string,
+  progress: GenerationProgress,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE meal_plans SET
+      generation_progress = ${JSON.stringify(progress)}::jsonb,
+      updated_at = now()
+    WHERE id = ${planId} AND tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function deleteSlotsForPlan(
+  planId: number,
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    DELETE FROM meal_slots
+    WHERE meal_plan_id = ${planId}
+      AND tenant_id = ${tenantId}
+      AND user_id = ${userId}
+  `;
+}
+
+export async function swapMealSlot(
+  slotId: number,
+  tenantId: string,
+  userId: string,
+  newData: {
+    dish_title: string;
+    cuisine?: string | null;
+    estimated_time_min?: number | null;
+    effort_level?: string | null;
+    key_ingredients: KeyIngredient[];
+    estimated_cost?: number | null;
+    tags?: string[];
+    rationale?: string | null;
+  },
+): Promise<MealSlotRow | null> {
+  const existing = await getMealSlot(slotId, tenantId, userId);
+  if (!existing || existing.status === "swapped_out") return null;
+  const sql = getSql();
+  if (!sql) return null;
+
+  await sql`
+    UPDATE meal_slots SET status = 'swapped_out', updated_at = now()
+    WHERE id = ${slotId} AND tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+
+  const rows = await sql`
+    INSERT INTO meal_slots (
+      meal_plan_id, tenant_id, user_id, slot_date, meal_type, slot_index,
+      dish_title, cuisine, estimated_time_min, effort_level, key_ingredients,
+      estimated_cost, tags, rationale, status
+    ) VALUES (
+      ${existing.meal_plan_id}, ${tenantId}, ${userId}, ${existing.slot_date},
+      ${existing.meal_type}, ${existing.slot_index}, ${newData.dish_title},
+      ${newData.cuisine ?? null}, ${newData.estimated_time_min ?? null},
+      ${newData.effort_level ?? null},
+      ${JSON.stringify(newData.key_ingredients)}::jsonb,
+      ${newData.estimated_cost ?? null},
+      ${JSON.stringify(newData.tags ?? [])}::jsonb,
+      ${newData.rationale ?? null}, 'planned'
+    )
+    RETURNING *
+  `;
+  const row = asRows<Record<string, unknown>>(rows)[0];
+  return row ? slotFromRow(row) : null;
 }
 
 export async function saveSlotFullRecipe(

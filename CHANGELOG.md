@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added meal plan UI (Web): `/app/plan` AI tab with constraint form, async generation + status polling, calendar grid, slot drawer (swap/expand), `POST/GET /api/me/meal-plans/*`, soft monthly quota (migration `0017`). LINE bot removed — no LINE constraint flow.
 - Added meal planning data layer and two-stage planner (candidate generation + constraint validation/repair) with pantry-aware ingredient reuse scoring (migration `0016`; legacy calendar → `meal_calendar_entries`).
 - Added proactive expiry reminders, "Use It Up" reverse recipe recommendation, weekly digest (opt-in), and notification preferences with quiet hours / snooze / backoff (Web inbox + `/app/settings/notifications`; Vercel Cron hourly). P0 (personalization + pantry) complete.
 - Added pantry query/edit UI (Web `/app/pantry` + `/app/pantry/scan`), conversational consume via API, recipe-pantry ingredient annotations, and rewired 清冰箱 to use real pantry data with backward-compatible fallback to Tonight localStorage list.
