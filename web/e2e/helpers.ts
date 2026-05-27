@@ -105,7 +105,27 @@ export async function installRecipeApiMocks(page: Page) {
     await route.fulfill({ json: { ok: true } });
   });
 
+  // Share handler registered first; wildcard below uses fallback() for /share URLs.
+  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/share`, async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          ok: true,
+          share_token: shareToken,
+          share_url: `http://127.0.0.1:3000/r/${shareToken}`,
+          published_at: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+    await route.fulfill({ json: { ok: true } });
+  });
+
   await page.route(`**/api/recipes/${MOCK_RECIPE_ID}**`, async (route) => {
+    if (route.request().url().includes("/share")) {
+      await route.fallback();
+      return;
+    }
     const method = route.request().method();
     if (method === "GET") {
       await route.fulfill({ json: { ok: true, recipe: MOCK_RECIPE } });
@@ -149,20 +169,6 @@ export async function installRecipeApiMocks(page: Page) {
     await route.continue();
   });
 
-  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/share`, async (route) => {
-    if (route.request().method() === "POST") {
-      await route.fulfill({
-        json: {
-          ok: true,
-          share_token: shareToken,
-          share_url: `http://127.0.0.1:3000/r/${shareToken}`,
-          published_at: new Date().toISOString(),
-        },
-      });
-      return;
-    }
-    await route.fulfill({ json: { ok: true } });
-  });
 }
 
 /** Advance cooking UI until completion screen or step guard exceeded. */

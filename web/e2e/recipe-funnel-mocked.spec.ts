@@ -46,11 +46,15 @@ test.describe("recipe funnel (mocked API)", () => {
     const shareBtn = page.getByRole("button", { name: /^分享/ });
     await expect(shareBtn).toBeVisible();
     await shareBtn.click();
-    // 成功後 Dialog 標題為「分享中」；toast 也會顯示「公開連結已建立」（勿用 getByText，避免 strict 重複）
+
     const shareDialog = page.getByRole("dialog");
-    await expect(shareDialog.getByRole("heading", { name: "分享中" })).toBeVisible({
-      timeout: 10_000,
+    await expect(shareDialog).toBeVisible({ timeout: 10_000 });
+    // 發布成功後顯示連結與「複製連結」（標題可能為 h2 或 Radix Title，不依賴 role=heading）
+    await expect(shareDialog.getByText(/e2e-share-token/)).toBeVisible({
+      timeout: 15_000,
     });
-    await expect(shareDialog.getByText(/e2e-share-token/)).toBeVisible();
+    await expect(
+      shareDialog.getByRole("button", { name: "複製連結" }),
+    ).toBeVisible();
   });
 });
