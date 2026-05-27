@@ -12,10 +12,10 @@
 - [x] **PM-2**：[`web/application/personalization/`](web/application/personalization/) 規則＋LLM 萃取、背景 `waitUntil` 寫入、收藏／再來一道 feedback API
 - [x] **PM-3**：[`personalization-context.ts`](web/application/personalization/personalization-context.ts) + [`assemble-system-prompt`](web/application/recipe/assemble-system-prompt.ts) 注入生成；`GET /api/metrics` 個人化計數
 - [x] **PM-4**：Web [`/app/profile`](web/app/(app)/app/profile/page.tsx) CRUD、[`/app/onboarding`](web/app/(app)/app/onboarding/page.tsx)、`applied_personalization` 透明說明；（LINE Bot 已移除，Flex／指令 N/A）
-- [ ] **PT-1**：Pantry 庫存追蹤（下一階段）
-- [ ] **PT-2**：—
-- [ ] **PT-3**：—
-- [ ] **PT-4**：—
+- [x] **PT-1**：migration `0013`、`domain/pantry` 正規化（238 別名）、`platform/db/pantry.ts` CRUD／合併策略、刪帳連動
+- [ ] **PT-2**：照片／收據辨識寫入庫存
+- [ ] **PT-3**：Web／LINE 庫存 UI、清冰箱與 pantry 連動
+- [ ] **PT-4**：效期提醒與食譜↔庫存比對
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 
