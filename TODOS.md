@@ -10,7 +10,7 @@
 
 - [x] **PM-1**：`user_taste_profile`／`household_members` migration `0010`、[`web/platform/db/personalization.ts`](web/platform/db/personalization.ts) CRUD、刪除帳戶連動
 - [x] **PM-2**：[`web/application/personalization/`](web/application/personalization/) 規則＋LLM 萃取、背景 `waitUntil` 寫入、收藏／再來一道 feedback API
-- [ ] **PM-3**：注入生成 prompt（`ai_service`／recipe flow）
+- [x] **PM-3**：[`personalization-context.ts`](web/application/personalization/personalization-context.ts) + [`assemble-system-prompt`](web/application/recipe/assemble-system-prompt.ts) 注入生成；`GET /api/metrics` 個人化計數
 - [ ] **PM-4**：LINE Flex／Web UI 編輯口味與家庭成員
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { QuotaExceededError, runRecipeFlow } from "@/domain/recipe/recipe-flow";
+import { QuotaExceededError, runRecipeFlow } from "@/application/recipe/recipe-flow";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import { createRecipeFromAi, listRecipesForUser } from "@/platform/db/queries/recipes";
 import { isHeroAutoEnabled } from "@/application/hero/preferences";

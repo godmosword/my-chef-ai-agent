@@ -12,7 +12,8 @@ export const SYSTEM_PROMPT =
   '"steps":[{"text":"步驟","step_tip":"常見錯誤或注意（可選，≤20字）"}],"shopping_list":["區塊：品項"],' +
   "steps 每步必含 text；step_tip 僅在易錯處給一句提醒。" +
   '"estimated_total_cost":"數字",' +
-  '"prep_minutes":15,"cook_minutes":20,"servings":2}';
+  '"prep_minutes":15,"cook_minutes":20,"servings":2,' +
+  '"personalization_note":"可選，因過敏等限制替換食材時≤60字"}';
 
 export const AI_RETRY_EXTRA_PROMPT =
   "請務必只回傳純JSON，不要加任何markdown或解釋文字。";

@@ -45,6 +45,8 @@ export type RecipePayload = {
   prep_minutes?: number;
   cook_minutes?: number;
   servings?: number;
+  /** Optional note when recipe was adjusted for user constraints (≤60 chars). */
+  personalization_note?: string;
 };
 
 function getClient(): OpenAI {
