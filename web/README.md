@@ -72,7 +72,8 @@ pnpm dev:web
 - `GET|PUT /api/cuisine`、`DELETE /api/memory`
 - `GET|PATCH /api/me/dietary-preferences`（家庭飲食偏好與需避開食材）
 - `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
-- `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag）
+- `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag；legacy 週曆 `meal_calendar_entries`）
+- **MP-1 週菜單規劃（後端）**：`generateMealPlan()`、`expandSlotToFullRecipe()`（`web/application/meal-planning/`）；表 `meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`（migration `0016`）。**尚無 HTTP 觸發**（MP-2 UI）。伺服器 env 見 `.env.example` 的 `ENABLE_MEAL_PLANNING`、`MEAL_PLAN_*`。
 
 需 cookie `chef_session`。
 
