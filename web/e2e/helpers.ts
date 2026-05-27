@@ -105,6 +105,17 @@ export async function installRecipeApiMocks(page: Page) {
     await route.fulfill({ json: { ok: true } });
   });
 
+  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/hero-status`, async (route) => {
+    await route.fulfill({
+      json: {
+        ok: true,
+        hero_status: "ready",
+        hero_url: MOCK_RECIPE.photo_url,
+        hero_error: null,
+      },
+    });
+  });
+
   // Share handler registered first; wildcard below uses fallback() for /share URLs.
   await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/share`, async (route) => {
     if (route.request().method() === "POST") {

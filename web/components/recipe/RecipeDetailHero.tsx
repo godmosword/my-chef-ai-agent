@@ -33,11 +33,26 @@ export function RecipeDetailHero({ recipe, onHeroUpdated }: Props) {
 
   useEffect(() => {
     if (heroStatus === "ready" && heroUrl) {
+      if (recipe.hero_status === "ready" && recipe.photo_url === heroUrl) return;
       onHeroUpdated?.({ hero_status: "ready", photo_url: heroUrl });
     } else if (heroStatus === "failed" || heroStatus === "generating") {
+      if (
+        recipe.hero_status === heroStatus &&
+        (recipe.hero_error ?? null) === (error ?? null)
+      ) {
+        return;
+      }
       onHeroUpdated?.({ hero_status: heroStatus, hero_error: error ?? undefined });
     }
-  }, [heroStatus, heroUrl, error, onHeroUpdated]);
+  }, [
+    heroStatus,
+    heroUrl,
+    error,
+    onHeroUpdated,
+    recipe.hero_status,
+    recipe.photo_url,
+    recipe.hero_error,
+  ]);
 
   const onRegenerate = async () => {
     if (!recipe.id) return;

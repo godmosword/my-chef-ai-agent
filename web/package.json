@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "pnpm -F @chef/design-tokens build && next build",
-    "build:e2e": "pnpm -F @chef/design-tokens build && NEXT_PUBLIC_NEW_UI=1 NEXT_PUBLIC_COOKING_MODE_ENABLED=1 NEXT_PUBLIC_ENABLE_PWA=0 NEXT_PUBLIC_ANALYTICS_ENABLED=0 next build",
+    "build:e2e": "pnpm -F @chef/design-tokens build && NEXT_PUBLIC_NEW_UI=1 NEXT_PUBLIC_COOKING_MODE_ENABLED=1 NEXT_PUBLIC_SHARING_ENABLED=1 NEXT_PUBLIC_ENABLE_PWA=0 NEXT_PUBLIC_ANALYTICS_ENABLED=0 next build",
     "start": "next start",
     "lint": "tsc --noEmit && eslint .",
     "lint:eslint": "eslint .",
