@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchRecipeWithOffline } from "@/platform/sync/recipes";
 import type { RecipePayload } from "@chef/shared-types";
@@ -73,6 +73,10 @@ export default function RecipeDetailPage() {
 
   const favorited = recipe?.id ? favoriteIds.has(recipe.id) : false;
 
+  const onHeroUpdated = useCallback((patch: Partial<RecipePayload>) => {
+    setRecipe((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
   const headerActions =
     recipe && (FLAGS.sharing || FLAGS.cookingMode || recipe.id) ? (
       <>
@@ -133,7 +137,7 @@ export default function RecipeDetailPage() {
         <RecipeDetailLayout
           recipe={recipe}
           headerActions={headerActions}
-          onHeroUpdated={(patch) => setRecipe((prev) => (prev ? { ...prev, ...patch } : prev))}
+          onHeroUpdated={onHeroUpdated}
         >
           <RecipeDetailSections
             recipeId={recipe.id}
