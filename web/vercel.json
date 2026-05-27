@@ -6,11 +6,19 @@
   "crons": [
     {
       "path": "/api/internal/cron/expiry-reminders",
-      "schedule": "5 * * * *"
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/internal/cron/weekly-digest",
-      "schedule": "5 * * * *"
+      "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/internal/cron/meal-plan-daily",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/internal/cron/meal-plan-daily",
+      "schedule": "0 9 * * *"
     }
   ],
   "env": {

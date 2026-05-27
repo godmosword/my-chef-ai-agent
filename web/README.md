@@ -41,6 +41,8 @@ pnpm dev:web
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 
+**Cron（Hobby）**：排程須 **每日最多一次**（勿用 `* * * * *` 每小時）；見 [`vercel.json`](vercel.json)。升級 Pro 後可改為更密排程。
+
 ### 文字生成成本
 
 - `MAX_COMPLETION_TOKENS` production 預設 `896`，可在 Vercel Dashboard 覆寫。

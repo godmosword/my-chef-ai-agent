@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Fixed
+
+- **Vercel deploy**：`web/vercel.json` cron 由 `5 * * * *`（每小時）改為 **每日／每週** 排程，符合 Hobby「每日最多執行一次」限制；補上 `meal-plan-daily`（預設對齊 Asia/Taipei 09:00／17:00 兩次觸發）。先前 `02d4226` 起 Production 建置失敗、線上仍停在 `121ce92`。
+
 ### Developer / 維運
 
 - **本機對齊**（2026-05-22）：`git pull` 至 `f8a648a`；`pnpm install`；`db:migrate` 套用 **15** 支 migration（`0001`–`0016`）。Vercel Production Neon 請確認亦已升至 `0016`。
