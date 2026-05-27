@@ -35,6 +35,7 @@ export type PantryItemInput = {
   raw_quantity?: string | number | null;
   raw_unit?: string | null;
   expires_at?: string | null;
+  purchased_at?: string | null;
   location?: PantryLocation;
   source?: PantrySource;
   confidence?: number;
@@ -118,6 +119,7 @@ async function insertRow(
     quantity_text: string | null;
     location: string;
     expires_at: string | null;
+    purchased_at?: string | null;
     source: string;
     confidence: number;
     notes: string | null;
@@ -126,14 +128,17 @@ async function insertRow(
   const sql = getSql();
   if (!sql) throw new Error("Database not configured");
 
+  const purchasedAt =
+    fields.purchased_at ?? new Date().toISOString().slice(0, 10);
+
   const rows = await sql`
     INSERT INTO pantry_items (
       tenant_id, user_id, item_key, display_name, category,
-      quantity, unit, quantity_text, location, expires_at,
+      quantity, unit, quantity_text, location, expires_at, purchased_at,
       source, confidence, notes
     ) VALUES (
       ${tenantId}, ${userId}, ${fields.item_key}, ${fields.display_name}, ${fields.category},
-      ${fields.quantity}, ${fields.unit}, ${fields.quantity_text}, ${fields.location}, ${fields.expires_at},
+      ${fields.quantity}, ${fields.unit}, ${fields.quantity_text}, ${fields.location}, ${fields.expires_at}, ${purchasedAt},
       ${fields.source}, ${fields.confidence}, ${fields.notes}
     )
     RETURNING *
@@ -221,6 +226,7 @@ export async function addPantryItem(
     raw_quantity?: string | number | null;
     raw_unit?: string | null;
     expires_at?: string | null;
+    purchased_at?: string | null;
     location?: string;
     source?: string;
     confidence?: number;
@@ -252,6 +258,7 @@ export async function addPantryItem(
       quantity_text: quantityText || null,
       location,
       expires_at: expiresAt,
+      purchased_at: options.purchased_at ?? null,
       source,
       confidence,
       notes: options.notes ?? null,
@@ -275,6 +282,7 @@ export async function addPantryItem(
       quantity_text: quantityText || null,
       location,
       expires_at: expiresAt,
+      purchased_at: options.purchased_at ?? null,
       source,
       confidence,
       notes: options.notes ?? null,
@@ -329,6 +337,7 @@ export async function bulkAddPantryItems(
       raw_quantity: item.raw_quantity,
       raw_unit: item.raw_unit,
       expires_at: item.expires_at ?? null,
+      purchased_at: item.purchased_at ?? null,
       location: item.location ?? "fridge_main",
       source: item.source ?? "manual",
       confidence: item.confidence ?? 1,

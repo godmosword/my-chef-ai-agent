@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getPantryVisionMetricsSnapshot } from "@/platform/observability/pantry-vision-metrics";
 import { getPersonalizationMetricsSnapshot } from "@/platform/observability/personalization-metrics";
 
 function metricsToken(): string | null {
@@ -23,5 +24,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     personalization: getPersonalizationMetricsSnapshot(),
+    pantry_vision: getPantryVisionMetricsSnapshot(),
   });
 }
