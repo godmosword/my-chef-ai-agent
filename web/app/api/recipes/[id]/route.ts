@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
 import { z } from "zod";
 import {
   getRecipeForUser,
   patchRecipeMeta,
   softDeleteRecipe,
-} from "@/lib/db/queries/recipes";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/queries/recipes";
+import { getSessionUserId } from "@/platform/identity/session";
 
 const PatchRecipeSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),

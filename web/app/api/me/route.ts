@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { deleteAllUserData } from "@/lib/db/queries/account";
-import { SESSION_COOKIE } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { deleteAllUserData } from "@/platform/db/queries/account";
+import { SESSION_COOKIE } from "@/platform/identity/session";
 
 export async function DELETE() {
   const { cookies } = await import("next/headers");

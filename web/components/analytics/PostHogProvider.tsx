@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { FLAGS } from "@/lib/flags";
-import { setAnalyticsEnabled } from "@/lib/analytics/track";
-import { capture, sanitizeAnalyticsPath } from "@/lib/analytics/events";
+import { FLAGS } from "@/platform/config/flags";
+import { setAnalyticsEnabled } from "@/platform/analytics/track";
+import { capture, sanitizeAnalyticsPath } from "@/platform/analytics/events";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

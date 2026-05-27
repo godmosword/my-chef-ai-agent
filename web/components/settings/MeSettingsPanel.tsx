@@ -14,12 +14,12 @@ import {
   deleteAccount,
   fetchUserSettings,
   updateUserSettings,
-} from "@/lib/api/settings";
+} from "@/application/api/settings";
 import {
   applySettingsToDocument,
   saveLocalSettings,
-} from "@/lib/settings/apply";
-import { FLAGS } from "@/lib/flags";
+} from "@/application/settings/apply";
+import { FLAGS } from "@/platform/config/flags";
 import { DietaryPreferencesPanel } from "@/components/settings/DietaryPreferencesPanel";
 
 export function MeSettingsPanel() {

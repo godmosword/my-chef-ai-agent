@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
-import { getPublicRecipeByToken } from "@/lib/db/queries/sharing";
-import { getSiteUrl } from "@/lib/site-url";
+import { getPublicRecipeByToken } from "@/platform/db/queries/sharing";
+import { getSiteUrl } from "@/platform/config/site-url";
 
 export const runtime = "edge";
 export const size = { width: 1200, height: 630 };

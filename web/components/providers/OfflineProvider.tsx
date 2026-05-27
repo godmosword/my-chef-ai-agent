@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { flushMutations, migrateLegacyRatingQueue } from "@/lib/offline/mutations";
+import { flushMutations, migrateLegacyRatingQueue } from "@/platform/sync/mutations";
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {

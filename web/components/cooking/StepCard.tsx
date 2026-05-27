@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Lightbulb, Loader2 } from "lucide-react";
-import type { CookingStep } from "@/lib/cooking/types";
+import type { CookingStep } from "@/domain/cook/types";
 
 export type StepCardProps = {
   step: CookingStep;

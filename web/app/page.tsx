@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { FLAGS } from "@/lib/flags";
+import { FLAGS } from "@/platform/config/flags";
 import { LandingPage } from "@/components/marketing/LandingPage";
 import { ChatPanel } from "@/components/ChatPanel";
-import { getSiteUrl } from "@/lib/site-url";
+import { getSiteUrl } from "@/platform/config/site-url";
 
 const siteUrl = getSiteUrl();
 

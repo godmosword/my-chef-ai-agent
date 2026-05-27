@@ -1,4 +1,4 @@
-import type { DecisionSummary } from "@/lib/recipe/decision-summary";
+import type { DecisionSummary } from "@/domain/recipe/decision-summary";
 import { cn } from "@/lib/utils/cn";
 
 export type RecipeDecisionCardProps = {

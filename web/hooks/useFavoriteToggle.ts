@@ -4,10 +4,10 @@ import { useCallback, useState } from "react";
 import {
   addFavoriteByRecipeId,
   removeFavoriteByRecipeId,
-} from "@/lib/api/recipes";
-import { enqueueMutation } from "@/lib/offline/mutations";
-import { isBrowserOnline } from "@/lib/offline/network";
-import { capture } from "@/lib/analytics/events";
+} from "@/application/api/recipes";
+import { enqueueMutation } from "@/platform/sync/mutations";
+import { isBrowserOnline } from "@/platform/sync/network";
+import { capture } from "@/platform/analytics/events";
 
 export function useFavoriteToggle(initialIds: Set<string>) {
   const [favoriteIds, setFavoriteIds] = useState(initialIds);

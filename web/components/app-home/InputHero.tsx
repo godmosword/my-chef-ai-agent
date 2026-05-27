@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchQuota } from "@/lib/api/recipes";
+import { fetchQuota } from "@/application/api/recipes";
 import { INPUT_PLACEHOLDERS } from "@/lib/copy/placeholders";
 import { QUICK_CHIPS, RUSH_HOUR_CHIP_IDS } from "@/lib/copy/quick-chips";
 import { usePlaceholderRotator } from "@/hooks/usePlaceholderRotator";
@@ -10,9 +10,9 @@ import { isRushHour } from "@/lib/utils/greeting";
 import { QuickChips } from "@/components/app-home/QuickChips";
 import { Kbd } from "@/components/primitives/Kbd";
 import { GenerationError } from "@/components/error-states/GenerationError";
-import type { GenerationErrorView } from "@/lib/api/error-types";
+import type { GenerationErrorView } from "@/application/api/error-types";
 import { QuotaExhausted } from "@/components/error-states/QuotaExhausted";
-import { isBrowserOnline } from "@/lib/offline/network";
+import { isBrowserOnline } from "@/platform/sync/network";
 import { cn } from "@/lib/utils/cn";
 
 export type InputHeroProps = {

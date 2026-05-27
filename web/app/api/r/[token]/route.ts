@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getPublicRecipeByToken } from "@/lib/db/queries/sharing";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getPublicRecipeByToken } from "@/platform/db/queries/sharing";
 
 type RouteContext = { params: Promise<{ token: string }> };
 

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import type { RecipePayload } from "@/lib/ai/generate-recipe";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   insertFavoriteByRecipeId,
   insertFavoriteRecipe,
   listFavoriteRecipes,
-} from "@/lib/db/favorites";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/favorites";
+import { getSessionUserId } from "@/platform/identity/session";
 import {
   FavoriteByRecipeIdSchema,
   LegacyFavoriteSchema,

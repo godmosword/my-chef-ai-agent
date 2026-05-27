@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { AggregatedShoppingItem, ShoppingCategory } from "@chef/shared-types";
-import { formatItemAmount } from "@/lib/aggregation/shopping-list";
+import { formatItemAmount } from "@/domain/plan/shopping-list";
 import { cn } from "@/lib/utils/cn";
 
 const GROUP_LABEL: Record<ShoppingCategory, string> = {

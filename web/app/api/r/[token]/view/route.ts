@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { recordPublicView } from "@/lib/db/queries/sharing";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { recordPublicView } from "@/platform/db/queries/sharing";
 import {
   computeVisitorId,
   getClientIp,
-} from "@/lib/sharing/visitor";
+} from "@/platform/identity/visitor";
 
 type RouteContext = { params: Promise<{ token: string }> };
 

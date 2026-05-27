@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/primitives/Button";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 
 const STORAGE_KEY = "chef_onboarded_v1";
 

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { aggregateShoppingList } from "@/lib/aggregation/shopping-list";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { aggregateShoppingList } from "@/domain/plan/shopping-list";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getSessionUserId } from "@/platform/identity/session";
 import { floorToWeekMonday } from "@/lib/locale/week";
 
 type RouteContext = { params: Promise<{ week: string }> };

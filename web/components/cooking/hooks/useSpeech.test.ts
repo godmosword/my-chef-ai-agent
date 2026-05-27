@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseTimerFromText } from "@/lib/cooking/parseTimerFromText";
+import { parseTimerFromText } from "@/domain/cook/parseTimerFromText";
 
 /** Speech hook needs jsdom + mocks; smoke-test voice preference key contract. */
 describe("useSpeech contract", () => {

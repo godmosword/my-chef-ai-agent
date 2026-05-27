@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RecipePayload } from "@/lib/ai/generate-recipe";
+import type { RecipePayload } from "@/domain/recipe/generate-recipe";
 
 type Props = {
   recipe: RecipePayload;

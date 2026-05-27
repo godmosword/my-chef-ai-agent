@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { deleteFavoriteRecipe } from "@/lib/db/favorites";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { deleteFavoriteRecipe } from "@/platform/db/favorites";
+import { getSessionUserId } from "@/platform/identity/session";
 
 type Params = { params: Promise<{ id: string }> };
 

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Clock } from "lucide-react";
-import type { ActiveTimer, CookingStep, TimerPhase } from "@/lib/cooking/types";
-import { endAtFromRemaining, remainingMsFromEndAt } from "@/lib/cooking/timerMath";
+import type { ActiveTimer, CookingStep, TimerPhase } from "@/domain/cook/types";
+import { endAtFromRemaining, remainingMsFromEndAt } from "@/domain/cook/timerMath";
 import { TimerCard } from "./TimerCard";
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";

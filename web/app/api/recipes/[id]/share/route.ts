@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   publishRecipeShare,
   republishRecipeShare,
   revokeRecipeShare,
-} from "@/lib/db/queries/sharing";
-import { buildShareUrl } from "@/lib/site-url";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/queries/sharing";
+import { buildShareUrl } from "@/platform/config/site-url";
+import { getSessionUserId } from "@/platform/identity/session";
 import { z } from "zod";
 
 const RepublishSchema = z.object({

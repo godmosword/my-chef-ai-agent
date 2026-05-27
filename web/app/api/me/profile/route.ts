@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { addDaysIsoLocal, todayDateKeyInTimeZone } from "@/lib/locale/datetime";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { countFavoritesForUser } from "@/lib/db/favorites";
-import { getRecipeActivityForUser } from "@/lib/db/queries/recipes";
-import { countSharedRecipesForUser } from "@/lib/db/queries/sharing";
-import { getSessionUserId } from "@/lib/session";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { countFavoritesForUser } from "@/platform/db/favorites";
+import { getRecipeActivityForUser } from "@/platform/db/queries/recipes";
+import { countSharedRecipesForUser } from "@/platform/db/queries/sharing";
+import { getSessionUserId } from "@/platform/identity/session";
 
 interface ProfileResponse {
   ok: true;

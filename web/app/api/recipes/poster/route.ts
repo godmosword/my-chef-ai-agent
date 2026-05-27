@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import type { RecipePayload } from "@/lib/ai/generate-recipe";
-import { buildRecipePosterHtml } from "@/lib/poster/recipe-poster-html";
-import { getLastRecipeFromMemory } from "@/lib/recipe-memory";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import { buildRecipePosterHtml } from "@/application/poster/recipe-poster-html";
+import { getLastRecipeFromMemory } from "@/domain/recipe/recipe-memory";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export async function POST(request: Request) {
   const userId = await getSessionUserId();

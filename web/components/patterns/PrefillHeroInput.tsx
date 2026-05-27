@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { InputHero, type InputHeroProps } from "@/components/app-home/InputHero";
-import type { GenerationErrorView } from "@/lib/api/error-types";
+import type { GenerationErrorView } from "@/application/api/error-types";
 
 export function PrefillHeroInput(
   props: Omit<InputHeroProps, "defaultValue" | "error"> & {

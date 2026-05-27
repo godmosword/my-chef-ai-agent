@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { HeroStatus } from "@chef/shared-types";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 
 const MAX_POLLS = 24;
 

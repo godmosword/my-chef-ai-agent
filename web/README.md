@@ -46,6 +46,19 @@ pnpm dev:web
 - 情境提示只在命中「清冰箱／兒童餐／預算／心情」時加入短 system 規則。
 - `user_memory` 只保存上次食譜摘要，完整食譜仍由 `recipes` / `recipe_versions` 持久化。
 
+## 程式分層（`domain` / `application` / `platform`）
+
+一次搬遷後的約定（細節見 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](../docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）：
+
+| 目錄 | 職責 | 範例 |
+|------|------|------|
+| `domain/` | 純邏輯與型別，無 DB／瀏覽器 I/O | `recipe/`、`cook/`、`plan/`、`pantry/`（預留） |
+| `application/` | 編排、對外 API client、hero 生圖、通知排程 | `api/`、`hero/`、`notifications/` |
+| `platform/` | DB、離線同步、analytics、identity、config | `db/`、`sync/`、`analytics/` |
+| `lib/` | 展示層鄰近：copy、demo、marketing、`utils/`、`locale/`、`theme` | 不 import `platform` 寫入邏輯 |
+
+**依賴**：`domain` → 不 import `platform`／`application`；`components`／`app` → `application` + `domain` + 允許的 `lib`。
+
 ## API
 
 - `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）

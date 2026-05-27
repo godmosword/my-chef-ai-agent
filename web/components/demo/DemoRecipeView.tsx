@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 import {
   DEMO_CHILD_TIP,
   DEMO_RECIPE,

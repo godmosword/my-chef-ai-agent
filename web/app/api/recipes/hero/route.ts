@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import type { RecipePayload } from "@/lib/ai/generate-recipe";
-import { generateRecipeHeroImageByName } from "@/lib/media/hero-image";
-import { getLastRecipeFromMemory } from "@/lib/recipe-memory";
-import { consumeQuota } from "@/lib/db/quota";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import { generateRecipeHeroImageByName } from "@/platform/media/hero-image";
+import { getLastRecipeFromMemory } from "@/domain/recipe/recipe-memory";
+import { consumeQuota } from "@/platform/db/quota";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export const maxDuration = 60;
 

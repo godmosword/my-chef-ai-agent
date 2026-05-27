@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { RecipeCard } from "./RecipeCard";
-import type { RecipePayload } from "@/lib/ai/generate-recipe";
+import type { RecipePayload } from "@/domain/recipe/generate-recipe";
 
 type ChatItem =
   | { id: string; role: "user"; text: string }

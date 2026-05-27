@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { recipePayloadToCooking } from "@/lib/cooking/normalizeSteps";
-import type { CookingRecipe } from "@/lib/cooking/types";
-import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
-import { parseCookSource } from "@/lib/cooking/cook-source";
+import { recipePayloadToCooking } from "@/domain/cook/normalizeSteps";
+import type { CookingRecipe } from "@/domain/cook/types";
+import { fetchRecipeWithOffline } from "@/platform/sync/recipes";
+import { parseCookSource } from "@/domain/cook/cook-source";
 import { CookPageClient } from "./CookPageClient";
 
 export default function CookPageLoader() {

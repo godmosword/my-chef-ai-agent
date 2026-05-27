@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getRecipeForUser } from "@/lib/db/queries/recipes";
-import { triggerHeroGeneration } from "@/lib/hero/trigger";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getRecipeForUser } from "@/platform/db/queries/recipes";
+import { triggerHeroGeneration } from "@/application/hero/trigger";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export const maxDuration = 60;
 

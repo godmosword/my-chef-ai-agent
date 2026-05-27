@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import {
   DIETARY_PRESET_OPTIONS,
   getDietaryPreferences,
   saveDietaryPreferences,
   type DietaryPresetKey,
-} from "@/lib/db/dietary-preferences";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/dietary-preferences";
+import { getSessionUserId } from "@/platform/identity/session";
 
 const VALID_KEYS = new Set(DIETARY_PRESET_OPTIONS.map((p) => p.key));
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChefHat, Flame, Sparkles } from "lucide-react";
 import { APP_NAV, type NavItem, type NavSection } from "@/lib/nav";
-import { fetchUserProfile, type ProfileResponse } from "@/lib/api/profile";
+import { fetchUserProfile, type ProfileResponse } from "@/application/api/profile";
 import { useDisplayName } from "@/lib/profile/display-name";
 import { cookedToday } from "@/lib/profile/title";
 import { Avatar } from "@/components/primitives/Avatar";

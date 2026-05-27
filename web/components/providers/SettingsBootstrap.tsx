@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { fetchUserSettings } from "@/lib/api/settings";
+import { fetchUserSettings } from "@/application/api/settings";
 import {
   applySettingsToDocument,
   loadLocalSettings,
   saveLocalSettings,
-} from "@/lib/settings/apply";
+} from "@/application/settings/apply";
 import { syncAnalyticsOptIn } from "@/components/analytics/PostHogProvider";
 import { applyTheme, persistTheme, readLocalTheme, type Theme } from "@/lib/theme";
 import type { UserSettings } from "@chef/shared-types";

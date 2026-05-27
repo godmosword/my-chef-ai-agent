@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 import { Button } from "@/components/primitives/Button";
 
 type Props = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { resolveModelName } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { resolveModelName } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
 
 export async function GET() {
   const hasKey = Boolean(process.env.GEMINI_API_KEY?.trim());

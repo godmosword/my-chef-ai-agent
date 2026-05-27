@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getRecipeHeroStatus } from "@/lib/db/queries/recipes";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getRecipeHeroStatus } from "@/platform/db/queries/recipes";
+import { getSessionUserId } from "@/platform/identity/session";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

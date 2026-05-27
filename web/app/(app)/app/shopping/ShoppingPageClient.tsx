@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Printer, ShoppingCart } from "lucide-react";
 import type { AggregatedShoppingList } from "@chef/shared-types";
-import { fetchShoppingList } from "@/lib/api/plan";
+import { fetchShoppingList } from "@/application/api/plan";
 import {
   currentWeekMonday,
   floorToWeekMonday,
@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
 import { ShoppingListView } from "./_components/ShoppingListView";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 
 export function ShoppingPageClient() {
   const searchParams = useSearchParams();

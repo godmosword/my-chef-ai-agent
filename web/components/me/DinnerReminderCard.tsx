@@ -6,11 +6,11 @@ import {
   requestNotificationPermission,
   writeDinnerReminder,
   type DinnerReminderSettings,
-} from "@/lib/notifications/dinner-reminder";
+} from "@/application/notifications/dinner-reminder";
 import {
   armDinnerReminderSchedule,
   disarmDinnerReminderSchedule,
-} from "@/lib/notifications/dinner-reminder-scheduler";
+} from "@/application/notifications/dinner-reminder-scheduler";
 
 const TIME_OPTIONS = [
   { label: "17:00", hour: 17, minute: 0 },

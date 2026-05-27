@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CookingRecipe } from "@/lib/cooking/types";
-import { recordRecipeCook } from "@/lib/api/recipes";
+import type { CookingRecipe } from "@/domain/cook/types";
+import { recordRecipeCook } from "@/application/api/recipes";
 import {
   clearCookingSession,
   loadCookingSession,
   saveCookingSession,
-} from "@/lib/cooking/session";
-import { dequeuePendingRating } from "@/lib/cooking/ratingQueue";
-import { enqueueMutation } from "@/lib/offline/mutations";
+} from "@/domain/cook/session";
+import { dequeuePendingRating } from "@/domain/cook/ratingQueue";
+import { enqueueMutation } from "@/platform/sync/mutations";
 import { useWakeLock } from "./hooks/useWakeLock";
 import { useFullscreen } from "./hooks/useFullscreen";
 import { useSpeech } from "./hooks/useSpeech";
@@ -29,8 +29,8 @@ import {
   capture,
   cookDurationBucket,
   cookRatingBucket,
-} from "@/lib/analytics/events";
-import type { CookAnalyticsSource } from "@/lib/cooking/cook-source";
+} from "@/platform/analytics/events";
+import type { CookAnalyticsSource } from "@/domain/cook/cook-source";
 
 export type CookingModeClientProps = {
   recipe: CookingRecipe;

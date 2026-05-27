@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchQuota } from "@/lib/api/recipes";
+import { fetchQuota } from "@/application/api/recipes";
 import { ProgressBar } from "@/components/primitives/ProgressBar";
 
 export function QuotaIndicator({ refreshIntervalMs = 30_000 }: { refreshIntervalMs?: number }) {

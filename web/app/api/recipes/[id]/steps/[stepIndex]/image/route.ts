@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { generateStepImageAtIndex } from "@/lib/hero/trigger-step-images";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { generateStepImageAtIndex } from "@/application/hero/trigger-step-images";
+import { getSessionUserId } from "@/platform/identity/session";
 
 type Params = { params: Promise<{ id: string; stepIndex: string }> };
 

@@ -13,7 +13,7 @@ import {
 } from "@dnd-kit/core";
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import type { MealPlanSlot, Slot, WeekPlan } from "@chef/shared-types";
-import { fetchWeekPlan, putMealPlanSlot } from "@/lib/api/plan";
+import { fetchWeekPlan, putMealPlanSlot } from "@/application/api/plan";
 import {
   addDaysIso,
   currentWeekMonday,
@@ -29,7 +29,7 @@ import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { WeekGrid } from "./_components/WeekGrid";
 import { PickRecipeSheet } from "./_components/PickRecipeSheet";
 import { SlotInspector } from "./_components/SlotInspector";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 function parseCellId(id: string): { date: string; slot: Slot } | null {
   const [date, slot] = id.split("|");
   if (!date || !slot) return null;

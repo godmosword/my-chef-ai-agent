@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { listRecipesWithOffline } from "@/lib/offline/recipes";
-import { recipeListItemToCard } from "@/lib/recipe-display";
+import { listRecipesWithOffline } from "@/platform/sync/recipes";
+import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { SearchInput } from "@/components/patterns/SearchInput";
 import { FilterRail, type FilterOption } from "@/components/patterns/FilterRail";
 import { ViewToggle, type LibraryView } from "@/components/patterns/ViewToggle";

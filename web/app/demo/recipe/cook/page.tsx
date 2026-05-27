@@ -3,10 +3,10 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 import { DEMO_RECIPE } from "@/lib/demo/demo-recipe";
-import type { CookingRecipe } from "@/lib/cooking/types";
-import { stepText } from "@/lib/hero/step-storage";
+import type { CookingRecipe } from "@/domain/cook/types";
+import { stepText } from "@/application/hero/step-storage";
 
 const CookingModeClient = dynamic(
   () =>

@@ -5,7 +5,7 @@ import {
   DIETARY_PRESET_OPTIONS,
   type DietaryPreferences,
   type DietaryPresetKey,
-} from "@/lib/db/dietary-preferences";
+} from "@/platform/db/dietary-preferences";
 import { useToast } from "@/components/providers/ToastProvider";
 
 export function DietaryPreferencesPanel() {

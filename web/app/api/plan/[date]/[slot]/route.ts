@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { upsertMealPlanSlot } from "@/lib/db/queries/meal-plans";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { upsertMealPlanSlot } from "@/platform/db/queries/meal-plans";
+import { getSessionUserId } from "@/platform/identity/session";
 import { PutMealPlanSlotSchema, SlotEnum } from "@chef/shared-types";
 
 type RouteContext = { params: Promise<{ date: string; slot: string }> };

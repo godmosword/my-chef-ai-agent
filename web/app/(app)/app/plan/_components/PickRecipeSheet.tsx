@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { Slot } from "@chef/shared-types";
-import { generateRecipe, listRecipes } from "@/lib/api/recipes";
-import { recipeListItemToCard } from "@/lib/recipe-display";
+import { generateRecipe, listRecipes } from "@/application/api/recipes";
+import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { Sheet } from "@/components/primitives/Sheet";
 import { Input } from "@/components/primitives/Input";
 import { Textarea } from "@/components/primitives/Textarea";

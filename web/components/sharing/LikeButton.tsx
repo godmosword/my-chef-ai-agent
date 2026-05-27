@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { Heart } from "lucide-react";
-import { likeSharedRecipe, unlikeSharedRecipe } from "@/lib/api/sharing";
+import { likeSharedRecipe, unlikeSharedRecipe } from "@/application/api/sharing";
 import { cn } from "@/lib/utils/cn";
 
 const LIKED_KEY = (token: string) => `chef_liked_${token}`;

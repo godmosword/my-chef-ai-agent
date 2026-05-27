@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatIngredient, formatStep } from "@/lib/recipe-steps";
+import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
 import { ServingToggle } from "@/components/recipe/ServingToggle";
-import { scaleIngredient } from "@/lib/recipe-scale";
-import { readProgress, writeProgress } from "@/lib/recipe-progress";
+import { scaleIngredient } from "@/domain/recipe/recipe-scale";
+import { readProgress, writeProgress } from "@/domain/recipe/recipe-progress";
 import { cn } from "@/lib/utils/cn";
 import { StepImageButton } from "@/components/recipe/StepImageButton";
 

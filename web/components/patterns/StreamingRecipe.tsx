@@ -7,11 +7,11 @@ import { Chip } from "@/components/primitives/Chip";
 import { RecipeDecisionCard } from "@/components/recipe/RecipeDecisionCard";
 import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
 import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
-import { buildDecisionSummary } from "@/lib/recipe/decision-summary";
+import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
 import type { RecipePayload } from "@chef/shared-types";
-import { formatIngredient, formatStep } from "@/lib/recipe-steps";
-import { dietaryAvoidDisplayLabels } from "@/lib/db/dietary-preferences";
-import type { DietaryPreferences } from "@/lib/db/dietary-preferences";
+import { formatIngredient, formatStep } from "@/domain/recipe/recipe-steps";
+import { dietaryAvoidDisplayLabels } from "@/platform/db/dietary-preferences";
+import type { DietaryPreferences } from "@/platform/db/dietary-preferences";
 
 function isQuotaError(message: string): boolean {
   return message.includes("額度") || message.includes("429");

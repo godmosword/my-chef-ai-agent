@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { recordShareView } from "@/lib/api/sharing";
-import { capture } from "@/lib/analytics/events";
+import { recordShareView } from "@/application/api/sharing";
+import { capture } from "@/platform/analytics/events";
 
 export function ShareViewTracker({ token }: { token: string }) {
   useEffect(() => {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { RecipeCardSkeleton } from "@/components/patterns/RecipeCard";
 import { RecipeCardWithHero } from "@/components/recipe/RecipeCardWithHero";
-import type { RecipeCardModel } from "@/lib/recipe-display";
+import type { RecipeCardModel } from "@/domain/recipe/recipe-display";
 import { Button } from "@/components/primitives/Button";
 
 export type RecentRecipesProps = {

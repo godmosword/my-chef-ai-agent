@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/primitives/Button";
 import { ProgressBar } from "@/components/primitives/ProgressBar";
-import type { ActiveTimer } from "@/lib/cooking/types";
+import type { ActiveTimer } from "@/domain/cook/types";
 import { cn } from "@/lib/utils/cn";
 
 function formatMs(ms: number): string {

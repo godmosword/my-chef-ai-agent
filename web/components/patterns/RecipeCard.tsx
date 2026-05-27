@@ -9,7 +9,7 @@ import { RecipeImageFallback } from "@/components/recipe/RecipeImageFallback";
 import { Card } from "@/components/primitives/Card";
 import { Chip } from "@/components/primitives/Chip";
 import { formatRelativeTime } from "@/lib/utils/format";
-import type { RecipeCardModel } from "@/lib/recipe-display";
+import type { RecipeCardModel } from "@/domain/recipe/recipe-display";
 import { cn } from "@/lib/utils/cn";
 import type { HeroStatus } from "@chef/shared-types";
 

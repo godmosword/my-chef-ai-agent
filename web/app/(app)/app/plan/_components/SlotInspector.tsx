@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { MealPlanSlot, Slot } from "@chef/shared-types";
-import { FLAGS } from "@/lib/flags";
+import { FLAGS } from "@/platform/config/flags";
 import { Sheet } from "@/components/primitives/Sheet";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";

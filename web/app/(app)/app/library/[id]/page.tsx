@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { fetchRecipeWithOffline } from "@/lib/offline/recipes";
+import { fetchRecipeWithOffline } from "@/platform/sync/recipes";
 import type { RecipePayload } from "@chef/shared-types";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { Button } from "@/components/primitives/Button";
 import { Heart } from "lucide-react";
 import { BackLink } from "@/components/patterns/BackLink";
-import { FLAGS } from "@/lib/flags";
-import { listFavorites } from "@/lib/api/recipes";
+import { FLAGS } from "@/platform/config/flags";
+import { listFavorites } from "@/application/api/recipes";
 import { useFavoriteToggle } from "@/hooks/useFavoriteToggle";
 import { cn } from "@/lib/utils/cn";
 import { RecipeDetailLayout } from "@/components/recipe/RecipeDetailLayout";
@@ -17,7 +17,7 @@ import { RecipeDetailSections } from "@/components/recipe/RecipeDetailSections";
 import { RecipeNotes } from "@/components/recipe/RecipeNotes";
 import { RecipeShareMenu } from "@/components/sharing/RecipeShareMenu";
 import { RecipeActionsMenu } from "@/components/recipe/RecipeActionsMenu";
-import { capture } from "@/lib/analytics/events";
+import { capture } from "@/platform/analytics/events";
 
 export default function RecipeDetailPage() {
   const router = useRouter();

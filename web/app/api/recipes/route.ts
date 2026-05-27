@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { QuotaExceededError, runRecipeFlow } from "@/lib/ai/recipe-flow";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { createRecipeFromAi, listRecipesForUser } from "@/lib/db/queries/recipes";
-import { isHeroAutoEnabled } from "@/lib/hero/preferences";
-import { markHeroSkipped, triggerHeroGeneration } from "@/lib/hero/trigger";
-import { triggerStepImagesGeneration } from "@/lib/hero/trigger-step-images";
-import { aiRecipeToPayload } from "@/lib/recipe-payload";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { QuotaExceededError, runRecipeFlow } from "@/domain/recipe/recipe-flow";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { createRecipeFromAi, listRecipesForUser } from "@/platform/db/queries/recipes";
+import { isHeroAutoEnabled } from "@/application/hero/preferences";
+import { markHeroSkipped, triggerHeroGeneration } from "@/application/hero/trigger";
+import { triggerStepImagesGeneration } from "@/application/hero/trigger-step-images";
+import { aiRecipeToPayload } from "@/domain/recipe/recipe-payload";
+import { getSessionUserId } from "@/platform/identity/session";
 import type { RecipePayload } from "@chef/shared-types";
 import {
   GenerateRecipeRequestSchema,

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { CUISINE_OPTIONS, cuisineLabel } from "@/lib/cuisines";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { CUISINE_OPTIONS, cuisineLabel } from "@/domain/recipe/cuisines";
 import {
   getUserCuisineContext,
   updateUserCuisineContext,
-} from "@/lib/db/cuisine";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/cuisine";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export async function GET() {
   const userId = await getSessionUserId();

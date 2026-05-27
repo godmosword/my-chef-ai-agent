@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { clearUserMemory, memoryAvailable } from "@/lib/db/memory";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { clearUserMemory, memoryAvailable } from "@/platform/db/memory";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export async function DELETE() {
   const userId = await getSessionUserId();

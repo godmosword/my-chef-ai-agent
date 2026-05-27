@@ -7,9 +7,9 @@ import { RecipeDetailHero } from "@/components/recipe/RecipeDetailHero";
 import { RecipeStats } from "@/components/recipe/RecipeStats";
 import { RecipeDecisionCard } from "@/components/recipe/RecipeDecisionCard";
 import { DesktopCookCTA, StickyCookCTA } from "@/components/recipe/StickyCookCTA";
-import { cookHrefWithSource } from "@/lib/cooking/cook-source";
-import { buildDecisionSummary } from "@/lib/recipe/decision-summary";
-import { FLAGS } from "@/lib/flags";
+import { cookHrefWithSource } from "@/domain/cook/cook-source";
+import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
+import { FLAGS } from "@/platform/config/flags";
 import { usePastHeroSticky } from "@/hooks/usePastHeroSticky";
 
 type RecipeDetailLayoutProps = {

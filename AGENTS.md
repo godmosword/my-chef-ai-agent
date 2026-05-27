@@ -18,6 +18,7 @@
 | `docs/**` only | 通常無 CI | |
 
 - **packages 不可互相 import**（僅 apps 依賴 packages）。
+- **Web 分層**（`web/domain`、`web/application`、`web/platform`；`web/lib` 僅 copy／locale／utils 等）：`domain` 不得 import `platform` 或 `application`。見 [`web/README.md`](web/README.md) 與 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)。
 - **Token 流程**：編輯 `packages/design-tokens/src/tokens.json` → `pnpm tokens:build` → Web 使用 `tokens.css`。
 
 ### Running the Web dev server（僅本機開發）

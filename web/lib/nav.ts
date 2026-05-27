@@ -7,7 +7,7 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
-import { FLAGS } from "@/lib/flags";
+import { FLAGS } from "@/platform/config/flags";
 
 export type NavSection = "下廚" | "規劃" | "帳號";
 

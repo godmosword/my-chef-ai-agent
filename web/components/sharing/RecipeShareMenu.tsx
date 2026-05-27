@@ -8,9 +8,9 @@ import { useToast } from "@/components/providers/ToastProvider";
 import {
   createShareLink,
   revokeShareLink,
-} from "@/lib/api/sharing";
-import { buildShareUrl } from "@/lib/site-url";
-import { capture } from "@/lib/analytics/events";
+} from "@/application/api/sharing";
+import { buildShareUrl } from "@/platform/config/site-url";
+import { capture } from "@/platform/analytics/events";
 
 type Props = {
   recipeId: string;

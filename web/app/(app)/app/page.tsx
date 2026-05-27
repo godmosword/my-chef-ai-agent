@@ -10,8 +10,8 @@ import { PrefillHeroInput } from "@/components/patterns/PrefillHeroInput";
 import { StreamingRecipe } from "@/components/patterns/StreamingRecipe";
 import { Button } from "@/components/primitives/Button";
 import { useRecipeGeneration } from "@/hooks/useRecipeGeneration";
-import { listRecipes } from "@/lib/api/recipes";
-import { recipeListItemToCard } from "@/lib/recipe-display";
+import { listRecipes } from "@/application/api/recipes";
+import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { useEffect, useState } from "react";
 
 export default function TodayPage() {

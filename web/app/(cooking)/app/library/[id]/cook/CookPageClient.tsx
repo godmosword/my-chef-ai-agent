@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { CookingRecipe } from "@/lib/cooking/types";
-import type { CookAnalyticsSource } from "@/lib/cooking/cook-source";
+import type { CookingRecipe } from "@/domain/cook/types";
+import type { CookAnalyticsSource } from "@/domain/cook/cook-source";
 
 const CookingModeClient = dynamic(
   () =>

@@ -2,15 +2,15 @@
 
 import { useCallback, useState } from "react";
 import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
-import { fakeRecipeStream, type StreamEvent } from "@/lib/api/streaming";
-import { isBrowserOnline } from "@/lib/offline/network";
-import { capture, recipeGenerationCoarseProps } from "@/lib/analytics/events";
+import { fakeRecipeStream, type StreamEvent } from "@/application/api/streaming";
+import { isBrowserOnline } from "@/platform/sync/network";
+import { capture, recipeGenerationCoarseProps } from "@/platform/analytics/events";
 import {
   classifyGenerationError,
   classifyStreamErrorMessage,
   validatePromptLength,
-} from "@/lib/api/error-handler";
-import type { GenerationErrorView } from "@/lib/api/error-types";
+} from "@/application/api/error-handler";
+import type { GenerationErrorView } from "@/application/api/error-types";
 
 function applyField(recipe: RecipePayload, ev: Extract<StreamEvent, { type: "field" }>): RecipePayload {
   const next = { ...recipe };

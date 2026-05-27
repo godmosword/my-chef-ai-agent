@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
-import { getWeekPlan } from "@/lib/db/queries/meal-plans";
-import { getSessionUserId } from "@/lib/session";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
+import { getWeekPlan } from "@/platform/db/queries/meal-plans";
+import { getSessionUserId } from "@/platform/identity/session";
 
 export async function GET(request: Request) {
   const userId = await getSessionUserId();

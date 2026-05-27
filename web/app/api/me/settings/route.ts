@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/lib/config";
-import { isDatabaseConfigured } from "@/lib/db/client";
+import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   getUserSettings,
   upsertUserSettings,
-} from "@/lib/db/queries/settings";
-import { countRecipesForUser } from "@/lib/db/queries/recipes";
-import { countSharedRecipesForUser } from "@/lib/db/queries/sharing";
-import { getSessionUserId } from "@/lib/session";
+} from "@/platform/db/queries/settings";
+import { countRecipesForUser } from "@/platform/db/queries/recipes";
+import { countSharedRecipesForUser } from "@/platform/db/queries/sharing";
+import { getSessionUserId } from "@/platform/identity/session";
 import { UpdateUserSettingsSchema } from "@chef/shared-types";
 
 export async function GET() {

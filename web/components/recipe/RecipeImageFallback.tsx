@@ -1,6 +1,6 @@
 "use client";
 
-import { getCuisineMeta } from "@/lib/recipe/cuisine-meta";
+import { getCuisineMeta } from "@/domain/recipe/cuisine-meta";
 import { cn } from "@/lib/utils/cn";
 
 export type RecipeImageFallbackProps = {

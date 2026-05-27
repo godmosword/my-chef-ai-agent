@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Changed
+
+- **Architecture sprint（一次搬遷）**：`web/lib` 核心程式拆至 `domain/`（recipe、cook、plan）、`application/`（api、hero、notifications、poster、settings）、`platform/`（db、sync、analytics、identity、config、media）；`lib/` 保留 copy、demo、marketing、locale、utils、theme、nav、profile。import 路徑改為 `@/domain/*`、`@/application/*`、`@/platform/*`。
+
 ### Added
 
 - **中長期架構規格**：[`2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md) — 三支柱（決策執行／家庭情境／習慣迴圈）、產品模組邊界、技術分層與 **一次搬遷** 路徑、G0–G3 閘門；不含付費與第四支柱。

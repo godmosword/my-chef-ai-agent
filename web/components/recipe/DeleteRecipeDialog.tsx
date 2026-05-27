@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Dialog } from "@/components/primitives/Dialog";
 import { Button } from "@/components/primitives/Button";
-import { deleteRecipe } from "@/lib/api/recipes";
-import { removeOfflineRecipe } from "@/lib/offline/sync";
+import { deleteRecipe } from "@/application/api/recipes";
+import { removeOfflineRecipe } from "@/platform/sync/sync";
 import { useToast } from "@/components/providers/ToastProvider";
 
 export type DeleteRecipeDialogProps = {

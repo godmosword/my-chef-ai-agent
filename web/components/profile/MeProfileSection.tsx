@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchUserProfile, type ProfileResponse } from "@/lib/api/profile";
+import { fetchUserProfile, type ProfileResponse } from "@/application/api/profile";
 import { useDisplayName } from "@/lib/profile/display-name";
 import { AchievementsRow } from "./AchievementsRow";
 import { ProfileHero } from "./ProfileHero";

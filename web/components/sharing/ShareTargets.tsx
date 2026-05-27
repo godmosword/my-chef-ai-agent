@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
-import { buildShareUrl } from "@/lib/site-url";
+import { buildShareUrl } from "@/platform/config/site-url";
 
 export function ShareTargets({ token }: { token: string }) {
   const { toast } = useToast();

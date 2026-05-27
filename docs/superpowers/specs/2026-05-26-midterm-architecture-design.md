@@ -1,6 +1,6 @@
 # 中長期架構規劃 — 三支柱並行
 
-**狀態**：已核准（2026-05-26；產品 §2 + 技術一次搬遷 + 不增第四支柱）  
+**狀態**：已核准；**Architecture sprint 已交付**（2026-05-27，`domain`／`application`／`platform` 一次搬遷）  
 **日期**：2026-05-26  
 **關聯**：
 - 產品哲學與 Wave：[`2026-05-26-product-evolution-design.md`](2026-05-26-product-evolution-design.md)
