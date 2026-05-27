@@ -6,6 +6,13 @@
 
 ---
 
+## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
+
+- [ ] **Architecture sprint**：`web/lib` → `domain/` · `application/` · `platform/` **一次搬遷**（見 spec §4.3；不夾 P2/P3 功能）
+- [ ] ESLint 分層 `no-restricted-imports` + `AGENTS.md` 分層約定
+- [ ] P2：`NEXT_PUBLIC_PANTRY_TONIGHT` + `domain/pantry`（閘門 G1 後）
+- [ ] P3：Tonight→週曆一鍵、採買扣 pantry（閘門 G2 後）
+
 ## 產品進化 Wave 1 — 煮成功（[`spec`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) · [`plan`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)）
 
 - [x] **決策卡**：生成結果頂部顯示時間／人數／需購買 N 樣
