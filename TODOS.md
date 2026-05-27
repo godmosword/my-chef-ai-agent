@@ -70,6 +70,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-27 | **架構一次搬遷 + P0**：`domain/`／`application/`／`platform/`；個人化 PM-1～4、冰箱 PT-1～4、MP-1 後端；migration `0010`–`0016`。 |
 | 2026-05-26 | **E2E + step_tip + 剩菜續作**：Playwright 漏斗（mock API + demo cook）；`step_tip` 生成／詳情／烹飪；完成頁剩菜 prefill；`CookingModeClient` 完成後停止 URL sync。 |
 | 2026-05-26 | **產品進化規格**：[`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)；Wave 1 實作計畫 [`2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。 |
 | 2026-05-26 | **料理書刪除 + DB 韌性**：`DELETE /api/recipes/:id` UI；`recipe_versions` 缺 `0009` 欄位時自動降級；`.gitignore` 加入 `web/.env.local`。 |
@@ -104,9 +105,10 @@
 
 ## 零、Neon 資料庫（部署後若 API 500）
 
-- [ ] **執行 migration**：`pnpm -F @chef/web db:migrate`（含 `0008` 補 `user_settings`、分享表、`meal_plans`、**`0009` `recipe_versions` 統計欄位**）
-- [ ] 或 Neon SQL Editor 依序貼 `web/migrations/0008_ensure_user_settings_and_sharing.sql`、`0009_recipe_version_stats.sql`
-- [ ] 確認：`SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1;`
+- [x] **本機 migration**（2026-05-22）：`pnpm -F @chef/web db:migrate` 已套用 **`0001`–`0016`**（共 15 支；含個人化 `0010`–`0012`、冰箱 `0013`–`0014`、通知 `0015`、週菜單 v2 `0016`）
+- [ ] **Vercel Production Neon**：確認遠端 DB 亦已跑至 `0016`（部署後若 API 500 先查 migration 版本）
+- [ ] 或 Neon SQL Editor 手動補跑：`web/migrations/*.sql`（以 `db:migrate` 為單一來源為佳）
+- [ ] 確認：`SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1;`（應含 `pantry_items`、`user_taste_profile`、`meal_slots` 等）
 
 ## 零點一、部署後建議手動驗收（Web · Vercel）
 

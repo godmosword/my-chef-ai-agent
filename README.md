@@ -58,7 +58,7 @@ pnpm dev:web
 
 **主圖與步驟插圖（Prompt 8）**：新食譜預設只背景生成或提供 **1 張成品主圖**；烹飪步驟插圖改由使用者在食譜詳情主動按「產生這一步的示意圖」，每次清楚提示使用 1 次 **image** 配額。需 `DATABASE_URL`；真實生圖設 `IMAGE_PROVIDER=openai_compatible` 與 `IMAGE_OPENAI_API_KEY`（或 `OPENAI_API_KEY`）。`AUTO_HERO_IMAGE=0` 可關閉主圖；`AUTO_STEP_IMAGES=1` 才會恢復背景批次步驟圖（不建議免費預設）。
 
-**Neon migration**：部署或本機連線 DB 後執行 `pnpm -F @chef/web db:migrate`（含 `0008` 分享／設定、`0009` 食譜版本 `prep_minutes`／`servings` 等）。未跑 `0009` 時生成仍會降級寫入，但建議補齊 schema。
+**Neon migration**：部署或本機連線 DB 後執行 `pnpm -F @chef/web db:migrate`（目前至 **`0016`**：分享／食譜統計 `0008`–`0009`、個人化 `0010`–`0012`、冰箱 `0013`–`0014`、通知偏好 `0015`、週菜單 v2 `0016`）。未跑 `0009` 時生成仍會降級寫入，但建議一次跑滿。
 
 **家庭飲食偏好**：在「我的／偏好」可設定不吃辣、兒童餐、低油低鹽與需避開食材（`user_preferences`）。**口味檔案**（`/app/profile`）另存過敏、家庭成員與 PM 個人化欄位，用於生成 prompt；不送入 analytics。
 
@@ -113,7 +113,9 @@ my-chef-ai-agent/
 ```bash
 pnpm tokens:build
 pnpm -F @chef/web build
-pnpm -F @chef/web test   # 目前 64 項（18 個測試檔）
+pnpm -F @chef/web test              # 單元／整合：199 passed（45 檔；1 檔 skipped）
+pnpm -F @chef/web test:e2e         # Playwright（需先 build；見 web/playwright.config.ts）
+pnpm -F @chef/web db:migrate        # Neon：0001–0016
 ```
 
 ---
@@ -130,6 +132,8 @@ pnpm -F @chef/web test   # 目前 64 項（18 個測試檔）
 | [`docs/design-tokens.md`](docs/design-tokens.md) | 設計 token 對照 |
 | [`docs/analytics/funnel-cook-success.md`](docs/analytics/funnel-cook-success.md) | PostHog 煮成功漏斗（Wave 1） |
 | [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) | 產品進化路線（已核准） |
+| [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md) | 中長期架構（domain／application／platform） |
+| [`DESIGN.md`](DESIGN.md) | 設計系統摘要 |
 
 ---
 

@@ -80,14 +80,16 @@ pnpm dev:web
 ## 資料庫
 
 ```bash
-# 初次或升級（建議跑完整 migrate 至最新；至少需含 0001、0003、0008、0009）
+# 初次或升級（建議跑完整 migrate 至最新 0016）
 pnpm -F @chef/web db:migrate
+# 預期：0001–0009 基線／分享／食譜統計；0010–0012 個人化；0013–0014 冰箱；0015 通知；0016 週菜單 v2
 ```
 
 `db:migrate` 會自動讀取 `web/.env.local` 的 `DATABASE_URL`（Neon URL 請用雙引號包住，避免 `&` 被 shell 誤解析）。
 
 ```bash
-pnpm -F @chef/web test
+pnpm -F @chef/web test        # Vitest（約 199 passed）
+pnpm -F @chef/web test:e2e    # Playwright；CI 於 build 後執行
 ```
 
 ## 圖片與配額策略

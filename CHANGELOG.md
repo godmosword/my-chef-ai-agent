@@ -7,6 +7,10 @@
 ---
 ## [Unreleased]
 
+### Developer / 維運
+
+- **本機對齊**（2026-05-22）：`git pull` 至 `f8a648a`；`pnpm install`；`db:migrate` 套用 **15** 支 migration（`0001`–`0016`）。Vercel Production Neon 請確認亦已升至 `0016`。
+
 ### Added
 
 - Added meal planning data layer and two-stage planner (candidate generation + constraint validation/repair) with pantry-aware ingredient reuse scoring (migration `0016`; legacy calendar → `meal_calendar_entries`).
