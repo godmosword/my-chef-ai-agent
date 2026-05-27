@@ -37,6 +37,8 @@ pnpm dev:web
 | `/app/library/:id/cook` | 烹飪模式（需 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`） |
 | `/app/me` | 個人檔案、配額、晚餐提醒設定 |
 | `/app/profile` | 口味檔案（過敏、偏好、家庭成員 CRUD） |
+| `/app/pantry` | 我的冰箱（庫存查詢、編輯、批次加入） |
+| `/app/pantry/scan` | 拍照盤點冰箱／掃收據 |
 | `/app/onboarding` | 快速口味設定（3 題） |
 
 桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。產品進化路線見 [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)。**中長期三支柱架構**（產品模組 + 技術分層、一次搬遷）見 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)。

@@ -6,6 +6,7 @@ import {
 import { loadPersonalizationContext } from "@/application/personalization/personalization-context";
 import { showAppliedPersonalization } from "@/platform/config/personalization-ui-config";
 import { assembleRecipeSystemPrompt } from "@/application/recipe/assemble-system-prompt";
+import { buildCleanFridgeSystemBlock } from "@/domain/pantry/clean-fridge-prompt";
 import { buildPantryUserPrefix } from "@/domain/pantry/prompt";
 import {
   buildScenarioPrefix,
@@ -45,6 +46,9 @@ export type RecipeFlowResult = {
 export type RecipeFlowOptions = {
   deepResearch?: boolean;
   pantryItems?: string[];
+  /** PT-3: full clean-fridge lines for system prompt block */
+  cleanFridgeItems?: string[];
+  cleanFridgeMode?: boolean;
   /** Metrics label for inject counter (default text). */
   injectionPath?: "text" | "image" | "random" | "cuisine_switch";
 };
@@ -67,7 +71,15 @@ export async function runRecipeFlow(
   }
 
   const scenarioPrefix = buildScenarioPrefix(userMessage);
-  const pantryPrefix = buildPantryUserPrefix(options?.pantryItems ?? []);
+  const useCleanFridgeBlock =
+    Boolean(options?.cleanFridgeMode) &&
+    (options?.cleanFridgeItems?.length ?? 0) > 0;
+  const pantryPrefix = useCleanFridgeBlock
+    ? ""
+    : buildPantryUserPrefix(options?.pantryItems ?? []);
+  const cleanFridgeBlock = useCleanFridgeBlock
+    ? buildCleanFridgeSystemBlock(options!.cleanFridgeItems!)
+    : null;
   const scenarioAddendum = buildScenarioSystemAddendum(userMessage);
   const effectiveMessage = `${pantryPrefix}${scenarioPrefix}${userMessage}`;
 
@@ -102,6 +114,7 @@ export async function runRecipeFlow(
     prefs,
     currentCuisine: cuisineCtx.active_cuisine,
     scenarioAddendum,
+    cleanFridgeBlock,
     personalizationBlock,
     deepResearchSummary,
   });

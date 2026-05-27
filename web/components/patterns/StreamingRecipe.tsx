@@ -37,6 +37,12 @@ export function StreamingRecipe({
   appliedPersonalization = null,
 }: StreamingRecipeProps) {
   const [avoidLabels, setAvoidLabels] = useState<string[]>([]);
+  const [pantryAnnotations, setPantryAnnotations] = useState<
+    Array<{ in_pantry: boolean }>
+  >([]);
+  const [pantryMatchSummary, setPantryMatchSummary] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!recipe?.id || streaming) return;
@@ -57,6 +63,43 @@ export function StreamingRecipe({
       cancelled = true;
     };
   }, [recipe?.id, streaming]);
+
+  useEffect(() => {
+    if (!recipe?.ingredients?.length || streaming) {
+      setPantryAnnotations([]);
+      setPantryMatchSummary(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/me/pantry/annotate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ingredients: recipe.ingredients }),
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          annotations: Array<{ name: string; in_pantry: boolean }>;
+          match_count: number;
+          total: number;
+        };
+        if (!cancelled) {
+          setPantryAnnotations(data.annotations ?? []);
+          if (data.total > 0) {
+            setPantryMatchSummary(
+              `本食譜可用冰箱現有 ${data.match_count}/${data.total} 項食材`,
+            );
+          }
+        }
+      } catch {
+        /* fail-open */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [recipe?.ingredients, streaming]);
 
   if (error) {
     return (
@@ -120,10 +163,24 @@ export function StreamingRecipe({
       {recipe.ingredients && recipe.ingredients.length > 0 && (
         <section className="mt-4">
           <h3 className="text-sm font-medium text-text-ink">食材</h3>
+          {pantryMatchSummary && (
+            <p className="mt-1 text-xs text-emerald-700">{pantryMatchSummary}</p>
+          )}
           <ul className="mt-2 list-inside list-disc text-sm text-text-muted">
-            {recipe.ingredients.map((ing, i) => (
-              <li key={i}>{formatIngredient(ing)}</li>
-            ))}
+            {recipe.ingredients.map((ing, i) => {
+              const label = formatIngredient(ing);
+              const inPantry = pantryAnnotations[i]?.in_pantry;
+              return (
+                <li
+                  key={i}
+                  className={inPantry ? "text-emerald-800" : undefined}
+                >
+                  {inPantry ? "✓ " : null}
+                  {label}
+                  {inPantry ? " （冰箱有）" : null}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

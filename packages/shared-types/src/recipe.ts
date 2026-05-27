@@ -145,6 +145,9 @@ export const GenerateRecipeRequestSchema = z.object({
   message: z.string().min(1).max(2000),
   /** Tonight pantry (Wave 2): up to 5 items to use first. */
   pantry_items: z.array(z.string().min(1).max(40)).max(5).optional(),
+  /** PT-3: 清冰箱 mode from DB pantry (system prompt block). */
+  clean_fridge_mode: z.boolean().optional(),
+  clean_fridge_items: z.array(z.string().min(1).max(80)).max(50).optional(),
   context_tags: z.array(z.string()).max(10).optional(),
   enable_deep_research: z.boolean().optional(),
 });

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getPantryMetricsSnapshot } from "@/platform/observability/pantry-metrics";
 import { getPantryVisionMetricsSnapshot } from "@/platform/observability/pantry-vision-metrics";
 import { getPersonalizationMetricsSnapshot } from "@/platform/observability/personalization-metrics";
 
@@ -25,5 +26,6 @@ export async function GET(request: Request) {
     ok: true,
     personalization: getPersonalizationMetricsSnapshot(),
     pantry_vision: getPantryVisionMetricsSnapshot(),
+    pantry: getPantryMetricsSnapshot(),
   });
 }

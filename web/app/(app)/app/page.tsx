@@ -18,7 +18,9 @@ import { listRecipes } from "@/application/api/recipes";
 import { reportRegenerateFeedback } from "@/application/api/recipe-feedback";
 import { OnboardingBanner } from "@/components/personalization/OnboardingBanner";
 import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { isCleanFridgeMessage } from "@/domain/pantry/clean-fridge";
+import { CleanFridgeDialog } from "@/components/pantry/CleanFridgeDialog";
 
 export default function TodayPage() {
   const router = useRouter();
@@ -34,6 +36,46 @@ export default function TodayPage() {
   const { items: pantryItems } = useTonightPantry();
   const [recent, setRecent] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
+  const [cleanFridgeOpen, setCleanFridgeOpen] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  const runGenerate = useCallback(
+    (opts: {
+      message: string;
+      pantry_items?: string[];
+      clean_fridge_mode?: boolean;
+      clean_fridge_items?: string[];
+    }) => {
+      void generate(opts);
+    },
+    [generate],
+  );
+
+  const handleSubmit = useCallback(
+    async (message: string) => {
+      if (FLAGS.pantryTonight && isCleanFridgeMessage(message)) {
+        try {
+          const res = await fetch("/api/me/pantry?include_expired=0");
+          const data = (await res.json()) as { items: unknown[] };
+          if ((data.items?.length ?? 0) > 0) {
+            setPendingMessage(message);
+            setCleanFridgeOpen(true);
+            return;
+          }
+        } catch {
+          /* fallback to local pantry list */
+        }
+      }
+      runGenerate({
+        message,
+        pantry_items:
+          FLAGS.pantryTonight && pantryItems.length > 0
+            ? pantryItems
+            : undefined,
+      });
+    },
+    [pantryItems, runGenerate],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -76,15 +118,7 @@ export default function TodayPage() {
             streaming={streaming}
             error={error}
             errorView={errorView}
-            onSubmit={(message) =>
-              generate({
-                message,
-                pantry_items:
-                  FLAGS.pantryTonight && pantryItems.length > 0
-                    ? pantryItems
-                    : undefined,
-              })
-            }
+            onSubmit={(message) => void handleSubmit(message)}
           />
         </Suspense>
         {(recipe || streaming) && (
@@ -128,11 +162,29 @@ export default function TodayPage() {
         )}
       </section>
 
+      <CleanFridgeDialog
+        open={cleanFridgeOpen}
+        onClose={() => {
+          setCleanFridgeOpen(false);
+          setPendingMessage(null);
+        }}
+        onConfirm={(lines) => {
+          if (pendingMessage) {
+            runGenerate({
+              message: pendingMessage,
+              clean_fridge_mode: true,
+              clean_fridge_items: lines,
+            });
+          }
+          setPendingMessage(null);
+        }}
+      />
+
       <RecentRecipes
         items={recent}
         loading={loadingRecent}
         disabled={streaming}
-        onGenerate={(message) => generate({ message })}
+        onGenerate={(message) => void handleSubmit(message)}
       />
 
       <InspirationCards

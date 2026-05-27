@@ -95,7 +95,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, context_tags, enable_deep_research, pantry_items } = parsed.data;
+  const {
+    message,
+    context_tags,
+    enable_deep_research,
+    pantry_items,
+    clean_fridge_mode,
+    clean_fridge_items,
+  } = parsed.data;
 
   const lastRecipeForExtraction = isPreferenceExtractionEnabled()
     ? await getLastRecipeContextFromMemory(userId, DEFAULT_TENANT_ID)
@@ -109,6 +116,8 @@ export async function POST(request: Request) {
       {
         deepResearch: enable_deep_research,
         pantryItems: pantry_items,
+        cleanFridgeMode: clean_fridge_mode,
+        cleanFridgeItems: clean_fridge_items,
       },
     );
 

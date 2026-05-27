@@ -2,11 +2,12 @@ import type { PersonalizationBlock } from "@/application/personalization/persona
 import { renderPersonalizationBlock } from "@/application/personalization/personalization-context";
 import { SYSTEM_PROMPT } from "@/domain/recipe/prompts";
 
-/** base → personalization → deep research (PM-3 ordering). */
+/** base → clean fridge → personalization → deep research (PT-3 / PM-3 ordering). */
 export function assembleRecipeSystemPrompt(options: {
   prefs: string | null;
   currentCuisine: string | null;
   scenarioAddendum?: string;
+  cleanFridgeBlock?: string | null;
   personalizationBlock?: PersonalizationBlock | null;
   deepResearchSummary?: string | null;
 }): string {
@@ -23,6 +24,9 @@ export function assembleRecipeSystemPrompt(options: {
   }
 
   const parts = [base];
+  if (options.cleanFridgeBlock?.trim()) {
+    parts.push(options.cleanFridgeBlock.trim());
+  }
   const personalizationText = options.personalizationBlock
     ? renderPersonalizationBlock(options.personalizationBlock)
     : "";

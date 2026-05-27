@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   User,
   UtensilsCrossed,
+  Refrigerator,
   type LucideIcon,
 } from "lucide-react";
 import { FLAGS } from "@/platform/config/flags";
@@ -57,6 +58,13 @@ export const APP_NAV: NavItem[] = [
     href: "/app/profile",
     label: "口味檔案",
     icon: UtensilsCrossed,
+    enabled: true,
+    section: "帳號",
+  },
+  {
+    href: "/app/pantry",
+    label: "我的冰箱",
+    icon: Refrigerator,
     enabled: true,
     section: "帳號",
   },

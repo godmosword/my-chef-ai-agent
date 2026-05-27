@@ -356,6 +356,11 @@ export async function listPantryItems(
     location?: string;
     category?: string;
     include_expired?: boolean;
+    /** Only items expiring within N days (inclusive), not already expired unless include_expired */
+    expiring_within_days?: number;
+    /** Only items with expires_at < today */
+    expired_only?: boolean;
+    min_confidence?: number;
   },
 ): Promise<PantryItem[]> {
   const sql = getSql();
@@ -371,6 +376,9 @@ export async function listPantryItems(
   `;
 
   let items = asRows<Record<string, unknown>>(rows).map(pantryItemFromRow);
+  const minConf = options?.min_confidence ?? 0;
+
+  items = items.filter((i) => (i.confidence ?? 1) >= minConf);
 
   if (options?.location) {
     items = items.filter((i) => i.location === options.location);
@@ -378,11 +386,87 @@ export async function listPantryItems(
   if (options?.category) {
     items = items.filter((i) => i.category === options.category);
   }
-  if (options?.include_expired === false) {
+  if (options?.expired_only) {
+    items = items.filter((i) => i.expires_at && i.expires_at < today);
+  } else if (options?.include_expired === false) {
     items = items.filter((i) => !i.expires_at || i.expires_at >= today);
+  }
+  if (options?.expiring_within_days != null) {
+    const end = new Date(`${today}T12:00:00Z`);
+    end.setUTCDate(end.getUTCDate() + options.expiring_within_days);
+    const endStr = end.toISOString().slice(0, 10);
+    items = items.filter(
+      (i) =>
+        i.expires_at &&
+        i.expires_at >= today &&
+        i.expires_at <= endStr,
+    );
   }
 
   return items;
+}
+
+export type PantrySummary = {
+  total_count: number;
+  expiring_count: number;
+  expired_count: number;
+  by_category: Record<string, number>;
+};
+
+export async function getPantrySummary(
+  tenantId: string,
+  userId: string,
+  warnDays: number,
+): Promise<PantrySummary> {
+  const items = await listPantryItems(tenantId, userId, {
+    include_expired: true,
+    min_confidence: 0.5,
+  });
+  const today = new Date().toISOString().slice(0, 10);
+  const end = new Date(`${today}T12:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + warnDays);
+  const endStr = end.toISOString().slice(0, 10);
+
+  const by_category: Record<string, number> = {};
+  let expiring_count = 0;
+  let expired_count = 0;
+  for (const item of items) {
+    const cat = item.category ?? "other";
+    by_category[cat] = (by_category[cat] ?? 0) + 1;
+    if (item.expires_at && item.expires_at < today) expired_count += 1;
+    else if (
+      item.expires_at &&
+      item.expires_at >= today &&
+      item.expires_at <= endStr
+    ) {
+      expiring_count += 1;
+    }
+  }
+  return {
+    total_count: items.length,
+    expiring_count,
+    expired_count,
+    by_category,
+  };
+}
+
+/** Find active rows matching a spoken name (normalized item_key or display). */
+export async function findPantryItemsByName(
+  tenantId: string,
+  userId: string,
+  rawName: string,
+): Promise<PantryItem[]> {
+  const [itemKey] = normalizeIngredientName(rawName);
+  const sql = getSql();
+  if (!sql) return [];
+  const rows = await sql`
+    SELECT * FROM pantry_items
+    WHERE tenant_id = ${tenantId}
+      AND user_id = ${userId}
+      AND deleted_at IS NULL
+      AND (item_key = ${itemKey} OR display_name ILIKE ${"%" + rawName.trim() + "%"})
+  `;
+  return asRows<Record<string, unknown>>(rows).map(pantryItemFromRow);
 }
 
 export async function getPantryItem(

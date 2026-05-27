@@ -14,7 +14,7 @@
 - [x] **PM-4**：Web [`/app/profile`](web/app/(app)/app/profile/page.tsx) CRUD、[`/app/onboarding`](web/app/(app)/app/onboarding/page.tsx)、`applied_personalization` 透明說明；（LINE Bot 已移除，Flex／指令 N/A）
 - [x] **PT-1**：migration `0013`、`domain/pantry` 正規化（238 別名）、`platform/db/pantry.ts` CRUD／合併策略、刪帳連動
 - [x] **PT-2**：Gemini Vision 冰箱／收據辨識、審核 session、`/api/pantry/vision`、[`/app/pantry/scan`](web/app/(app)/app/pantry/scan/page.tsx)、手動輸入 API
-- [ ] **PT-3**：Web／LINE 庫存 UI、清冰箱與 pantry 連動
+- [x] **PT-3**：[`/app/pantry`](web/app/(app)/app/pantry/page.tsx) CRUD UI、`/api/me/pantry`、清冰箱 DB 連動、食譜 ✓ 冰箱有標註；（LINE Flex N/A）
 - [ ] **PT-4**：效期提醒與食譜↔庫存比對
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
