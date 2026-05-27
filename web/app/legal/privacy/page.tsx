@@ -16,7 +16,7 @@ export default function PrivacyPage() {
           <h2 className="font-medium text-text-ink">我們會保存什麼</h2>
           <ul className="mt-2 list-inside list-disc space-y-1">
             <li>你輸入的料理需求與 AI 產出的食譜（若已連線資料庫）</li>
-            <li>料理書、收藏、週菜單與家庭飲食偏好（同一裝置／同一匿名 ID）</li>
+            <li>料理書、收藏、週菜單、家庭飲食偏好與口味檔案（過敏、不愛食材、家庭成員等，同一匿名工作階段 ID）</li>
             <li>每日文字與圖片使用次數（配額管理）</li>
             <li>瀏覽器本機快取（離線閱讀已看過的食譜）</li>
           </ul>
@@ -42,7 +42,12 @@ export default function PrivacyPage() {
         <section>
           <h2 className="font-medium text-text-ink">你的選擇</h2>
           <ul className="mt-2 list-inside list-disc space-y-1">
-            <li>在「我的」可關閉分析、刪除帳戶與所有伺服器端資料</li>
+            <li>
+              在「口味檔案」（/app/profile）可查看、編輯、匯出或清除個人化資料；在「我的」可關閉分析、刪除帳戶與所有伺服器端資料
+            </li>
+            <li>
+              我們會記住你提供的口味偏好與家庭成員資訊以提供個人化推薦。你可隨時透過口味檔案管理或清除。
+            </li>
             <li>清除瀏覽器資料可能使本機料理書與快取無法恢復</li>
             <li>過敏原偏好僅用於生成食譜，不會用於廣告，也不會放入分析事件</li>
           </ul>

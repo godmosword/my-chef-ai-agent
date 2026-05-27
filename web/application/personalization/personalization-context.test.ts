@@ -30,6 +30,7 @@ function baseProfile(overrides: Partial<TasteProfile> = {}): TasteProfile {
     typical_cooking_time_min: null,
     notes: null,
     confidence_score: 0.5,
+    onboarding_status: "pending",
     created_at: "",
     updated_at: "",
     ...overrides,

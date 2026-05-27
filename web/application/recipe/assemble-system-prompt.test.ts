@@ -26,6 +26,7 @@ describe("assembleRecipeSystemPrompt", () => {
       typical_cooking_time_min: null,
       notes: null,
       confidence_score: 0.8,
+      onboarding_status: "completed",
       created_at: "",
       updated_at: "",
     };
@@ -88,6 +89,7 @@ describe("assembleRecipeSystemPrompt", () => {
         typical_cooking_time_min: null,
         notes: null,
         confidence_score: 0.5,
+        onboarding_status: "completed",
         created_at: "",
         updated_at: "",
       },

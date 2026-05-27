@@ -1,4 +1,5 @@
 import { apiFetch } from "./client";
+import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 import type {
   GenerateRecipeRequest,
   RecipePayload,
@@ -22,6 +23,8 @@ export type ListRecipesResponse = {
 export type GenerateRecipeResponse = {
   ok: true;
   recipe: RecipePayload;
+  applied_personalization?: AppliedPersonalization | null;
+  suggest_onboarding?: boolean;
   quota?: {
     remaining: number;
     limit: number;

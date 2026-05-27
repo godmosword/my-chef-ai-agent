@@ -1,5 +1,10 @@
 import type OpenAI from "openai";
+import {
+  buildAppliedPersonalization,
+  type AppliedPersonalization,
+} from "@/application/personalization/applied-personalization";
 import { loadPersonalizationContext } from "@/application/personalization/personalization-context";
+import { showAppliedPersonalization } from "@/platform/config/personalization-ui-config";
 import { assembleRecipeSystemPrompt } from "@/application/recipe/assemble-system-prompt";
 import { buildPantryUserPrefix } from "@/domain/pantry/prompt";
 import {
@@ -26,6 +31,7 @@ import { recordPersonalizationInject } from "@/platform/observability/personaliz
 export type RecipeFlowResult = {
   recipe: RecipePayload;
   raw: string;
+  applied_personalization?: AppliedPersonalization;
   quota: {
     plan_key: string;
     limit: number;
@@ -147,9 +153,14 @@ export async function runRecipeFlow(
   }
   await saveUserMemory(userId, tenantId, trimmed);
 
+  const applied_personalization = showAppliedPersonalization()
+    ? buildAppliedPersonalization(personalizationBlock)
+    : undefined;
+
   return {
     recipe,
     raw,
+    applied_personalization,
     quota: {
       plan_key: quota.plan_key,
       limit: quota.limit,

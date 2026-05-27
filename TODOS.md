@@ -11,7 +11,11 @@
 - [x] **PM-1**：`user_taste_profile`／`household_members` migration `0010`、[`web/platform/db/personalization.ts`](web/platform/db/personalization.ts) CRUD、刪除帳戶連動
 - [x] **PM-2**：[`web/application/personalization/`](web/application/personalization/) 規則＋LLM 萃取、背景 `waitUntil` 寫入、收藏／再來一道 feedback API
 - [x] **PM-3**：[`personalization-context.ts`](web/application/personalization/personalization-context.ts) + [`assemble-system-prompt`](web/application/recipe/assemble-system-prompt.ts) 注入生成；`GET /api/metrics` 個人化計數
-- [ ] **PM-4**：LINE Flex／Web UI 編輯口味與家庭成員
+- [x] **PM-4**：Web [`/app/profile`](web/app/(app)/app/profile/page.tsx) CRUD、[`/app/onboarding`](web/app/(app)/app/onboarding/page.tsx)、`applied_personalization` 透明說明；（LINE Bot 已移除，Flex／指令 N/A）
+- [ ] **PT-1**：Pantry 庫存追蹤（下一階段）
+- [ ] **PT-2**：—
+- [ ] **PT-3**：—
+- [ ] **PT-4**：—
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 

@@ -16,12 +16,21 @@ import { AddToWeekPlanButton } from "@/components/app-home/AddToWeekPlanButton";
 import { FLAGS } from "@/platform/config/flags";
 import { listRecipes } from "@/application/api/recipes";
 import { reportRegenerateFeedback } from "@/application/api/recipe-feedback";
+import { OnboardingBanner } from "@/components/personalization/OnboardingBanner";
 import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { useEffect, useState } from "react";
 
 export default function TodayPage() {
   const router = useRouter();
-  const { recipe, streaming, error, errorView, generate, reset } = useRecipeGeneration();
+  const {
+    recipe,
+    streaming,
+    error,
+    errorView,
+    appliedPersonalization,
+    generate,
+    reset,
+  } = useRecipeGeneration();
   const { items: pantryItems } = useTonightPantry();
   const [recent, setRecent] = useState<ReturnType<typeof recipeListItemToCard>[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
@@ -55,6 +64,8 @@ export default function TodayPage() {
     <div className="mx-auto max-w-3xl space-y-10">
       <GreetingHeader />
 
+      <OnboardingBanner />
+
       <section aria-label="生成食譜" className="space-y-4">
         {FLAGS.pantryTonight && (
           <TonightPantryPanel disabled={streaming} />
@@ -83,6 +94,7 @@ export default function TodayPage() {
               streaming={streaming}
               error={null}
               pantryItems={FLAGS.pantryTonight ? pantryItems : []}
+              appliedPersonalization={appliedPersonalization}
             />
             {recipe?.id && !streaming && (
               <div className="flex flex-wrap gap-2">

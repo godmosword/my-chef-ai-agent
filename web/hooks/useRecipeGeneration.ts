@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
 import { fakeRecipeStream, type StreamEvent } from "@/application/api/streaming";
 import { isBrowserOnline } from "@/platform/sync/network";
@@ -44,6 +45,9 @@ export function useRecipeGeneration() {
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorView, setErrorView] = useState<GenerationErrorView | null>(null);
+  const [appliedPersonalization, setAppliedPersonalization] =
+    useState<AppliedPersonalization | null>(null);
+  const [suggestOnboarding, setSuggestOnboarding] = useState(false);
 
   const generate = useCallback(async (body: GenerateRecipeRequest) => {
     const short = validatePromptLength(body.message);
@@ -62,6 +66,8 @@ export function useRecipeGeneration() {
     setError(null);
     setErrorView(null);
     setRecipe(null);
+    setAppliedPersonalization(null);
+    setSuggestOnboarding(false);
     const pantryCount = body.pantry_items?.length ?? 0;
     const analyticsProps = {
       source: "today",
@@ -81,6 +87,8 @@ export function useRecipeGeneration() {
           setRecipe({ ...partial });
         } else if (ev.type === "done") {
           setRecipe(ev.recipe);
+          setAppliedPersonalization(ev.applied_personalization ?? null);
+          setSuggestOnboarding(Boolean(ev.suggest_onboarding));
           if (ev.recipe.id) {
             capture("recipe_generation_succeeded", {
               ...analyticsProps,
@@ -116,5 +124,14 @@ export function useRecipeGeneration() {
     setErrorView(null);
   }, []);
 
-  return { recipe, streaming, error, errorView, generate, reset };
+  return {
+    recipe,
+    streaming,
+    error,
+    errorView,
+    appliedPersonalization,
+    suggestOnboarding,
+    generate,
+    reset,
+  };
 }

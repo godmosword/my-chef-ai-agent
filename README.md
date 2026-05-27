@@ -36,6 +36,8 @@ pnpm dev:web
 | `/app/library/:id` | 食譜詳情（份量切換、⋯ 選單、mobile sticky 烹飪 CTA） |
 | `/app/library/:id/cook` | 烹飪模式（需 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`） |
 | `/app/me` | 個人檔案、配額、晚餐提醒設定 |
+| `/app/profile` | 口味檔案（過敏、偏好、家庭成員 CRUD） |
+| `/app/onboarding` | 快速口味設定（3 題） |
 
 桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。產品進化路線見 [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)。**中長期三支柱架構**（產品模組 + 技術分層、一次搬遷）見 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)。
 
@@ -53,7 +55,9 @@ pnpm dev:web
 
 **Neon migration**：部署或本機連線 DB 後執行 `pnpm -F @chef/web db:migrate`（含 `0008` 分享／設定、`0009` 食譜版本 `prep_minutes`／`servings` 等）。未跑 `0009` 時生成仍會降級寫入，但建議補齊 schema。
 
-**家庭飲食偏好**：在「我的／偏好」可設定不吃辣、兒童餐、低油低鹽與需避開食材。設定存於 `user_preferences.preferences`，只用於生成 prompt 與結果提示，不送入 analytics。
+**家庭飲食偏好**：在「我的／偏好」可設定不吃辣、兒童餐、低油低鹽與需避開食材（`user_preferences`）。**口味檔案**（`/app/profile`）另存過敏、家庭成員與 PM 個人化欄位，用於生成 prompt；不送入 analytics。
+
+**Web 身份**：匿名 cookie `chef_session`（middleware 自動發放 UUID，`HttpOnly`／`Secure`／`SameSite=Lax`），與 Neon 資料列 `user_id` 對應。無需註冊帳號。
 
 **日期與配額日界線**：UI 日期、週菜單與每日配額預設以 `Asia/Taipei` 判斷（`NEXT_PUBLIC_DISPLAY_TIMEZONE` 可覆寫）；資料庫 timestamp 仍維持 UTC 儲存。
 

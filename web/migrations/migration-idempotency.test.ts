@@ -23,6 +23,14 @@ describe("recipe library migration SQL", () => {
     expect(sql).toContain("CREATE TABLE IF NOT EXISTS meal_plans");
   });
 
+  it("0012 adds onboarding_status idempotently", () => {
+    const sql = fs.readFileSync(
+      path.join(migrationsDir, "0012_onboarding_status.sql"),
+      "utf-8",
+    );
+    expect(sql).toContain("ADD COLUMN IF NOT EXISTS onboarding_status");
+  });
+
   it("0011 adds regenerated_dishes idempotently", () => {
     const sql = fs.readFileSync(
       path.join(migrationsDir, "0011_regenerated_dishes.sql"),

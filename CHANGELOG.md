@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added personalization management UI (Web `/app/profile` + `/app/onboarding` with full CRUD) and "why this recipe?" transparency (`applied_personalization` on generate).
 - Personalization context now injected into recipe generation system prompt with hard/soft constraint distinction and token budget control.
 - Added preference extraction from chat (rule-based + LLM tier) with background persistence; migration `0011` (`regenerated_dishes`).
 - Added personalization data layer (`user_taste_profile`, `household_members` tables + CRUD).

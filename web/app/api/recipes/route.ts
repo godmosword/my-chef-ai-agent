@@ -11,6 +11,11 @@ import { aiRecipeToPayload } from "@/domain/recipe/recipe-payload";
 import { getLastRecipeContextFromMemory } from "@/domain/recipe/recipe-memory";
 import { extractAndPersist } from "@/application/personalization/preference-extractor";
 import { isPreferenceExtractionEnabled } from "@/platform/config/preference-extraction-config";
+import {
+  isOnboardingFlowEnabled,
+  isPersonalizationUiEnabled,
+} from "@/platform/config/personalization-ui-config";
+import { shouldPromptOnboarding } from "@/platform/db/personalization-onboarding";
 import { getSessionUserId } from "@/platform/identity/session";
 import type { RecipePayload } from "@chef/shared-types";
 import {
@@ -156,10 +161,17 @@ export async function POST(request: Request) {
       recipe = aiRecipeToPayload(result.recipe);
     }
 
+    const showOnboarding =
+      isPersonalizationUiEnabled() &&
+      isOnboardingFlowEnabled() &&
+      (await shouldPromptOnboarding(DEFAULT_TENANT_ID, userId));
+
     const response = NextResponse.json({
       ok: true,
       recipe,
       quota: result.quota,
+      applied_personalization: result.applied_personalization ?? null,
+      suggest_onboarding: showOnboarding,
     });
 
     if (isPreferenceExtractionEnabled()) {

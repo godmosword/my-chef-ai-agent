@@ -8,6 +8,8 @@ import { RecipeDecisionCard } from "@/components/recipe/RecipeDecisionCard";
 import { RecipeResultHero } from "@/components/recipe/RecipeResultHero";
 import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
 import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
+import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
+import { WhyThisRecipe } from "@/components/personalization/WhyThisRecipe";
 import type { RecipePayload } from "@chef/shared-types";
 import { formatStepForPantry } from "@/domain/pantry/step-note";
 import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
@@ -24,6 +26,7 @@ export type StreamingRecipeProps = {
   streaming: boolean;
   error?: string | null;
   pantryItems?: string[];
+  appliedPersonalization?: AppliedPersonalization | null;
 };
 
 export function StreamingRecipe({
@@ -31,6 +34,7 @@ export function StreamingRecipe({
   streaming,
   error,
   pantryItems = [],
+  appliedPersonalization = null,
 }: StreamingRecipeProps) {
   const [avoidLabels, setAvoidLabels] = useState<string[]>([]);
 
@@ -108,6 +112,11 @@ export function StreamingRecipe({
       {!streaming && recipe.id && (
         <RecipeSafetyNotice avoidLabels={avoidLabels} />
       )}
+      {!streaming && recipe.id ? (
+        <div className="mt-4">
+          <WhyThisRecipe applied={appliedPersonalization} />
+        </div>
+      ) : null}
       {recipe.ingredients && recipe.ingredients.length > 0 && (
         <section className="mt-4">
           <h3 className="text-sm font-medium text-text-ink">食材</h3>

@@ -1,3 +1,4 @@
+import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 import type { RecipePayload } from "@chef/shared-types";
 import { generateRecipe } from "./recipes";
 
@@ -12,7 +13,13 @@ type StreamField =
 export type StreamEvent =
   | { type: "meta"; id?: string; version_no?: number }
   | { type: "field"; path: StreamField; value: unknown }
-  | { type: "done"; recipe: RecipePayload; persisted: boolean }
+  | {
+      type: "done";
+      recipe: RecipePayload;
+      persisted: boolean;
+      applied_personalization?: AppliedPersonalization | null;
+      suggest_onboarding?: boolean;
+    }
   | { type: "error"; message: string };
 
 function delay(ms: number) {
@@ -49,7 +56,13 @@ export async function* fakeRecipeStream(
       yield { type: "field", path: "steps", value: recipe.steps };
       await delay(200);
     }
-    yield { type: "done", recipe, persisted: Boolean(recipe.id) };
+    yield {
+      type: "done",
+      recipe,
+      persisted: Boolean(recipe.id),
+      applied_personalization: res.applied_personalization,
+      suggest_onboarding: res.suggest_onboarding,
+    };
   } catch (e) {
     yield {
       type: "error",

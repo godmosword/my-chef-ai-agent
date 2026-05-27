@@ -4,7 +4,15 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { asRows, getSql } from "./client";
 import { getDb } from "./drizzle";
+import type { OnboardingStatus } from "./personalization-types";
 import { householdMembers, userTasteProfile } from "./schema";
+
+export type { OnboardingStatus } from "./personalization-types";
+export {
+  CUISINE_OPTIONS,
+  DIETARY_RESTRICTION_OPTIONS,
+  SCALE_LABELS_ZH,
+} from "./personalization-types";
 
 export type LovedDish = {
   name: string;
@@ -37,6 +45,7 @@ export type TasteProfile = {
   typical_cooking_time_min: number | null;
   notes: string | null;
   confidence_score: number;
+  onboarding_status: OnboardingStatus;
   created_at: string;
   updated_at: string;
 };
@@ -181,6 +190,8 @@ function tasteProfileFromRow(row: Record<string, unknown>): TasteProfile {
         : Number(row.typical_cooking_time_min),
     notes: row.notes == null ? null : String(row.notes),
     confidence_score: Number(row.confidence_score ?? 0),
+    onboarding_status:
+      (row.onboarding_status as OnboardingStatus) ?? "pending",
     created_at: toIso(row.created_at),
     updated_at: toIso(row.updated_at),
   };
@@ -226,6 +237,7 @@ function emptyTasteProfile(tenantId: string, userId: string): TasteProfile {
     typical_cooking_time_min: null,
     notes: null,
     confidence_score: 0,
+    onboarding_status: "pending",
     created_at: now,
     updated_at: now,
   };
@@ -341,7 +353,7 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
       allergies, dislikes, loved_ingredients, loved_dishes, regenerated_dishes,
       dietary_restrictions, preferred_cuisines, disliked_cuisines,
       cooking_skill_level, typical_cooking_time_min, notes,
-      confidence_score, created_at, updated_at
+      confidence_score, onboarding_status, created_at, updated_at
     ) VALUES (
       ${profile.tenant_id}, ${profile.user_id},
       ${profile.spice_tolerance}, ${profile.sweetness_preference},
@@ -356,6 +368,7 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
       ${JSON.stringify(profile.disliked_cuisines)}::jsonb,
       ${profile.cooking_skill_level}, ${profile.typical_cooking_time_min},
       ${profile.notes}, ${profile.confidence_score},
+      ${profile.onboarding_status},
       ${profile.created_at}::timestamptz, now()
     )
     ON CONFLICT (tenant_id, user_id) DO UPDATE SET
@@ -375,7 +388,21 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
       typical_cooking_time_min = EXCLUDED.typical_cooking_time_min,
       notes = EXCLUDED.notes,
       confidence_score = EXCLUDED.confidence_score,
+      onboarding_status = EXCLUDED.onboarding_status,
       updated_at = now()
+  `;
+}
+
+/** Wipe taste profile row only; household members unchanged. */
+export async function clearTasteProfile(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    DELETE FROM user_taste_profile
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
   `;
 }
 
@@ -397,6 +424,7 @@ export async function upsertTasteProfile(
     loved_ingredients: fields.loved_ingredients ?? base.loved_ingredients,
     loved_dishes: fields.loved_dishes ?? base.loved_dishes,
     regenerated_dishes: base.regenerated_dishes,
+    onboarding_status: base.onboarding_status,
     dietary_restrictions:
       fields.dietary_restrictions ?? base.dietary_restrictions,
     preferred_cuisines: fields.preferred_cuisines ?? base.preferred_cuisines,
