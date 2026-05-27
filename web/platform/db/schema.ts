@@ -240,6 +240,7 @@ export const userTasteProfile = pgTable("user_taste_profile", {
   dislikes: jsonb("dislikes").notNull().default([]),
   lovedIngredients: jsonb("loved_ingredients").notNull().default([]),
   lovedDishes: jsonb("loved_dishes").notNull().default([]),
+  regeneratedDishes: jsonb("regenerated_dishes").notNull().default([]),
   dietaryRestrictions: jsonb("dietary_restrictions").notNull().default([]),
   preferredCuisines: jsonb("preferred_cuisines").notNull().default([]),
   dislikedCuisines: jsonb("disliked_cuisines").notNull().default([]),

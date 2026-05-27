@@ -8,6 +8,9 @@ import { isHeroAutoEnabled } from "@/application/hero/preferences";
 import { markHeroSkipped, triggerHeroGeneration } from "@/application/hero/trigger";
 import { triggerStepImagesGeneration } from "@/application/hero/trigger-step-images";
 import { aiRecipeToPayload } from "@/domain/recipe/recipe-payload";
+import { getLastRecipeContextFromMemory } from "@/domain/recipe/recipe-memory";
+import { extractAndPersist } from "@/application/personalization/preference-extractor";
+import { isPreferenceExtractionEnabled } from "@/platform/config/preference-extraction-config";
 import { getSessionUserId } from "@/platform/identity/session";
 import type { RecipePayload } from "@chef/shared-types";
 import {
@@ -89,6 +92,10 @@ export async function POST(request: Request) {
 
   const { message, context_tags, enable_deep_research, pantry_items } = parsed.data;
 
+  const lastRecipeForExtraction = isPreferenceExtractionEnabled()
+    ? await getLastRecipeContextFromMemory(userId, DEFAULT_TENANT_ID)
+    : null;
+
   try {
     const result = await runRecipeFlow(
       userId,
@@ -149,11 +156,24 @@ export async function POST(request: Request) {
       recipe = aiRecipeToPayload(result.recipe);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       recipe,
       quota: result.quota,
     });
+
+    if (isPreferenceExtractionEnabled()) {
+      waitUntil(
+        extractAndPersist(
+          message,
+          DEFAULT_TENANT_ID,
+          userId,
+          lastRecipeForExtraction,
+        ),
+      );
+    }
+
+    return response;
   } catch (err) {
     if (err instanceof QuotaExceededError) {
       return NextResponse.json(

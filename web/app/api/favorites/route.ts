@@ -7,6 +7,8 @@ import {
   insertFavoriteRecipe,
   listFavoriteRecipes,
 } from "@/platform/db/favorites";
+import { handleCollectLovedDish } from "@/application/personalization/preference-feedback";
+import { getRecipeForUser } from "@/platform/db/queries/recipes";
 import { getSessionUserId } from "@/platform/identity/session";
 import {
   FavoriteByRecipeIdSchema,
@@ -57,6 +59,19 @@ export async function POST(request: Request) {
         { status: 404 },
       );
     }
+    const savedRecipe = await getRecipeForUser(
+      userId,
+      DEFAULT_TENANT_ID,
+      byId.data.recipe_id,
+    );
+    if (savedRecipe?.recipe_name) {
+      await handleCollectLovedDish(
+        DEFAULT_TENANT_ID,
+        userId,
+        savedRecipe.recipe_name,
+        savedRecipe.theme ?? null,
+      );
+    }
     return NextResponse.json({ ok: true, saved: true, recipe_id: byId.data.recipe_id });
   }
 
@@ -89,5 +104,13 @@ export async function POST(request: Request) {
     data,
     recipeId,
   );
+  if (ok) {
+    await handleCollectLovedDish(
+      DEFAULT_TENANT_ID,
+      userId,
+      name,
+      (data as { cuisine?: string }).cuisine ?? data.theme ?? null,
+    );
+  }
   return NextResponse.json({ ok: true, saved: ok });
 }

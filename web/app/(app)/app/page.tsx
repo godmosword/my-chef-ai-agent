@@ -15,6 +15,7 @@ import { TonightPantryPanel } from "@/components/app-home/TonightPantryPanel";
 import { AddToWeekPlanButton } from "@/components/app-home/AddToWeekPlanButton";
 import { FLAGS } from "@/platform/config/flags";
 import { listRecipes } from "@/application/api/recipes";
+import { reportRegenerateFeedback } from "@/application/api/recipe-feedback";
 import { recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import { useEffect, useState } from "react";
 
@@ -94,7 +95,19 @@ export default function TodayPage() {
                     recipeTitle={recipe.recipe_name}
                   />
                 )}
-                <Button variant="ghost" size="sm" onClick={reset}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (recipe?.recipe_name) {
+                      void reportRegenerateFeedback(
+                        recipe.recipe_name,
+                        recipe.cuisine,
+                      );
+                    }
+                    reset();
+                  }}
+                >
                   再來一道
                 </Button>
               </div>

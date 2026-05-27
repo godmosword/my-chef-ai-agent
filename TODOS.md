@@ -9,7 +9,7 @@
 ## 個人化記憶（Personalization Memory）
 
 - [x] **PM-1**：`user_taste_profile`／`household_members` migration `0010`、[`web/platform/db/personalization.ts`](web/platform/db/personalization.ts) CRUD、刪除帳戶連動
-- [ ] **PM-2**：從對話自動萃取偏好、入庫
+- [x] **PM-2**：[`web/application/personalization/`](web/application/personalization/) 規則＋LLM 萃取、背景 `waitUntil` 寫入、收藏／再來一道 feedback API
 - [ ] **PM-3**：注入生成 prompt（`ai_service`／recipe flow）
 - [ ] **PM-4**：LINE Flex／Web UI 編輯口味與家庭成員
 

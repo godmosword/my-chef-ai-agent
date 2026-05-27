@@ -12,6 +12,12 @@ export type LovedDish = {
   last_loved_at: string;
 };
 
+export type RegeneratedDish = {
+  name: string;
+  cuisine?: string | null;
+  regenerated_at: string;
+};
+
 export type TasteProfile = {
   tenant_id: string;
   user_id: string;
@@ -23,6 +29,7 @@ export type TasteProfile = {
   dislikes: string[];
   loved_ingredients: string[];
   loved_dishes: LovedDish[];
+  regenerated_dishes: RegeneratedDish[];
   dietary_restrictions: string[];
   preferred_cuisines: string[];
   disliked_cuisines: string[];
@@ -94,6 +101,26 @@ function asStringArray(value: unknown): string[] {
   return value.map(String).filter(Boolean);
 }
 
+function asRegeneratedDishes(value: unknown): RegeneratedDish[] {
+  if (!Array.isArray(value)) return [];
+  const out: RegeneratedDish[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const name = typeof o.name === "string" ? o.name.trim() : "";
+    if (!name) continue;
+    out.push({
+      name,
+      cuisine: typeof o.cuisine === "string" ? o.cuisine : null,
+      regenerated_at:
+        typeof o.regenerated_at === "string"
+          ? o.regenerated_at
+          : new Date().toISOString(),
+    });
+  }
+  return out;
+}
+
 function asLovedDishes(value: unknown): LovedDish[] {
   if (!Array.isArray(value)) return [];
   const out: LovedDish[] = [];
@@ -140,6 +167,7 @@ function tasteProfileFromRow(row: Record<string, unknown>): TasteProfile {
     dislikes: asStringArray(row.dislikes),
     loved_ingredients: asStringArray(row.loved_ingredients),
     loved_dishes: asLovedDishes(row.loved_dishes),
+    regenerated_dishes: asRegeneratedDishes(row.regenerated_dishes),
     dietary_restrictions: asStringArray(row.dietary_restrictions),
     preferred_cuisines: asStringArray(row.preferred_cuisines),
     disliked_cuisines: asStringArray(row.disliked_cuisines),
@@ -190,6 +218,7 @@ function emptyTasteProfile(tenantId: string, userId: string): TasteProfile {
     dislikes: [],
     loved_ingredients: [],
     loved_dishes: [],
+    regenerated_dishes: [],
     dietary_restrictions: [],
     preferred_cuisines: [],
     disliked_cuisines: [],
@@ -256,6 +285,10 @@ function appendUnique(items: string[], item: string): string[] {
   return [...items, trimmed];
 }
 
+export function appendUniqueStrings(items: string[], item: string): string[] {
+  return appendUnique(items, item);
+}
+
 /** Return profile or null. Never raises on missing row. */
 export async function getTasteProfile(
   tenantId: string,
@@ -305,7 +338,7 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
     INSERT INTO user_taste_profile (
       tenant_id, user_id,
       spice_tolerance, sweetness_preference, saltiness_preference, oil_preference,
-      allergies, dislikes, loved_ingredients, loved_dishes,
+      allergies, dislikes, loved_ingredients, loved_dishes, regenerated_dishes,
       dietary_restrictions, preferred_cuisines, disliked_cuisines,
       cooking_skill_level, typical_cooking_time_min, notes,
       confidence_score, created_at, updated_at
@@ -317,6 +350,7 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
       ${JSON.stringify(profile.dislikes)}::jsonb,
       ${JSON.stringify(profile.loved_ingredients)}::jsonb,
       ${JSON.stringify(profile.loved_dishes)}::jsonb,
+      ${JSON.stringify(profile.regenerated_dishes)}::jsonb,
       ${JSON.stringify(profile.dietary_restrictions)}::jsonb,
       ${JSON.stringify(profile.preferred_cuisines)}::jsonb,
       ${JSON.stringify(profile.disliked_cuisines)}::jsonb,
@@ -333,6 +367,7 @@ async function persistTasteProfile(profile: TasteProfile): Promise<void> {
       dislikes = EXCLUDED.dislikes,
       loved_ingredients = EXCLUDED.loved_ingredients,
       loved_dishes = EXCLUDED.loved_dishes,
+      regenerated_dishes = EXCLUDED.regenerated_dishes,
       dietary_restrictions = EXCLUDED.dietary_restrictions,
       preferred_cuisines = EXCLUDED.preferred_cuisines,
       disliked_cuisines = EXCLUDED.disliked_cuisines,
@@ -361,6 +396,7 @@ export async function upsertTasteProfile(
     dislikes: fields.dislikes ?? base.dislikes,
     loved_ingredients: fields.loved_ingredients ?? base.loved_ingredients,
     loved_dishes: fields.loved_dishes ?? base.loved_dishes,
+    regenerated_dishes: base.regenerated_dishes,
     dietary_restrictions:
       fields.dietary_restrictions ?? base.dietary_restrictions,
     preferred_cuisines: fields.preferred_cuisines ?? base.preferred_cuisines,
@@ -390,6 +426,31 @@ async function mutateTasteProfileArrays(
   next.updated_at = new Date().toISOString();
   if (!existing) next.created_at = next.updated_at;
   await persistTasteProfile(next);
+}
+
+export async function addRegeneratedDish(
+  tenantId: string,
+  userId: string,
+  dishName: string,
+  cuisine?: string | null,
+): Promise<void> {
+  const name = dishName.trim();
+  if (!name) return;
+  await mutateTasteProfileArrays(tenantId, userId, (profile) => {
+    const now = new Date().toISOString();
+    const without = profile.regenerated_dishes.filter((d) => d.name !== name);
+    const entry: RegeneratedDish = {
+      name,
+      cuisine: cuisine ?? null,
+      regenerated_at: now,
+    };
+    let dishes = [...without, entry];
+    const cap = 30;
+    if (dishes.length > cap) {
+      dishes = dishes.slice(dishes.length - cap);
+    }
+    return { ...profile, regenerated_dishes: dishes };
+  });
 }
 
 export async function addLovedDish(

@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added preference extraction from chat (rule-based + LLM tier) with background persistence; migration `0011` (`regenerated_dishes`).
 - Added personalization data layer (`user_taste_profile`, `household_members` tables + CRUD).
 - **Playwright E2E**：`web/e2e/demo-cook-funnel.spec.ts`、`recipe-funnel-mocked.spec.ts`；CI 於 `web-ci.yml` 執行（需先 `next build` + `NEXT_PUBLIC_NEW_UI`）。
 - **step_tip（Wave 2）**：生成 JSON `steps[].step_tip`；詳情／Tonight 結果／烹飪模式顯示 💡 提示。
