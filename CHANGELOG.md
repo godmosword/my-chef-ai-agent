@@ -9,6 +9,7 @@
 
 ### Added
 
+- Added pantry data layer with ingredient + unit normalization (238 alias entries, Taiwan 兩/斤, Chinese numerals); migration `0013` (`pantry_items` CRUD in `web/platform/db/pantry.ts`).
 - Added personalization management UI (Web `/app/profile` + `/app/onboarding` with full CRUD) and "why this recipe?" transparency (`applied_personalization` on generate).
 - Personalization context now injected into recipe generation system prompt with hard/soft constraint distinction and token budget control.
 - Added preference extraction from chat (rule-based + LLM tier) with background persistence; migration `0011` (`regenerated_dishes`).

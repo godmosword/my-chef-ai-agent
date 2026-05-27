@@ -8,6 +8,7 @@ import {
 } from "../schema";
 import { clearUserMemory } from "../memory";
 import { deleteAllPersonalization } from "../personalization";
+import { hardDeleteAllPantry } from "../pantry";
 import { getSql } from "../client";
 
 export async function deleteAllUserData(
@@ -27,6 +28,7 @@ export async function deleteAllUserData(
   if (sql) {
     await clearUserMemory(userId, tenantId);
     await deleteAllPersonalization(tenantId, userId);
+    await hardDeleteAllPantry(tenantId, userId);
     await sql`DELETE FROM usage_daily WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
     await sql`DELETE FROM favorite_recipes WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
   }

@@ -8,6 +8,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   real,
@@ -257,6 +258,50 @@ export const userTasteProfile = pgTable("user_taste_profile", {
 }, (t) => ({
   pk: primaryKey({ columns: [t.tenantId, t.userId] }),
 }));
+
+export const pantryItems = pgTable(
+  "pantry_items",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    tenantId: text("tenant_id").notNull().default("default"),
+    userId: text("user_id").notNull(),
+    itemKey: text("item_key").notNull(),
+    displayName: text("display_name").notNull(),
+    category: text("category"),
+    quantity: numeric("quantity", { precision: 10, scale: 2 }),
+    unit: text("unit"),
+    quantityText: text("quantity_text"),
+    location: text("location").notNull().default("fridge_main"),
+    expiresAt: date("expires_at"),
+    purchasedAt: date("purchased_at").notNull().defaultNow(),
+    source: text("source").notNull().default("manual"),
+    confidence: real("confidence").notNull().default(1),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => ({
+    tenantUserDeletedIdx: index("idx_pantry_items_tenant_user_deleted").on(
+      t.tenantId,
+      t.userId,
+      t.deletedAt,
+    ),
+    tenantUserKeyDeletedIdx: index("idx_pantry_items_tenant_user_key_deleted").on(
+      t.tenantId,
+      t.userId,
+      t.itemKey,
+      t.deletedAt,
+    ),
+    tenantUserExpiresDeletedIdx: index(
+      "idx_pantry_items_tenant_user_expires_deleted",
+    ).on(t.tenantId, t.userId, t.expiresAt, t.deletedAt),
+  }),
+);
 
 export const householdMembers = pgTable(
   "household_members",
