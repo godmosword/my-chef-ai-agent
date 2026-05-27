@@ -42,13 +42,15 @@ pnpm dev:web
 | `/app/settings/notifications` | 效期提醒、安靜時段、週報、暫停推播 |
 | `/app/onboarding` | 快速口味設定（3 題） |
 
-**主動提醒（PT-4）**：效期與週報寫入 App **收件匣**（首頁橫幅），非 LINE 推播。文字指令：`用完它`、`清快過期`；冰箱頁「用快過期食材做菜」。Cron（需 `NOTIFICATION_CRON_SECRET`）：`GET/POST /api/internal/cron/expiry-reminders`、`/api/internal/cron/weekly-digest`（Vercel Cron 每小時 `:05`）。偏好 API：`GET/PATCH /api/me/notifications`。
+**主動提醒（PT-4 + MP-4）**：效期、週報、**每日菜單預告／晚餐提醒／採買提醒／週菜單回顧**寫入 App **收件匣**（首頁橫幅），非 LINE 推播。Cron（需 `NOTIFICATION_CRON_SECRET`）：`GET/POST /api/internal/cron/expiry-reminders`、`/api/internal/cron/weekly-digest`、`/api/internal/cron/meal-plan-daily`（建議每小時）。偏好：`GET/PATCH /api/me/notifications`（含菜單推播開關）。執行追蹤 API：`POST /api/me/meal-plans/{planId}/slots/{slotId}/cooked|skipped|consume`；儀表板 `GET /api/me/dashboard`；頁面 `/app/dashboard`、`/app/plan/{id}/review`。
 
 桌面側欄：Logo 下方為個人區塊（預設顯示名稱「美食家」），其下為「下廚／規劃」導航。UX 細節見 [`docs/ux-spec.md`](docs/ux-spec.md)。產品進化路線見 [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)。**中長期三支柱架構**（產品模組 + 技術分層、一次搬遷）見 [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)。
 
 **烹飪模式（Prompt 4）**：另設 `NEXT_PUBLIC_COOKING_MODE_ENABLED=1`，於食譜詳情頁顯示「進入烹飪模式」（路由 `/app/library/:id/cook` 亦可直連）。
 
 **週曆與採買（Prompt 5）**：另設 `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`，側欄出現 Plan／Shopping（`/app/plan`、`/app/shopping`）。
+
+**MP-3 採買清單（v2 plan）**：`ENABLE_SHOPPING_LIST=1`（預設開）、`NEXT_PUBLIC_SHOPPING_LIST_ENABLED`；由 `meal_plans`／`meal_slots` 自動產生清單（`POST /api/me/shopping-lists` 帶 `meal_plan_id`）；依賣場動線分區、可勾選、完成後寫回冰箱；家人唯讀分享 `/shop/{token}`（7 天）。計畫專頁：`/app/plan/{planId}/shopping`。
 
 **PWA 與離線（Prompt 6）**：production `next build` 會產生 `public/sw.js`（Serwist）。本機 dev 預設不註冊 SW。關閉：build 設 `ENABLE_PWA=false`，或 client 設 `NEXT_PUBLIC_ENABLE_PWA=false`。圖示：`pnpm -F @chef/web icons:generate`（需 pnpm）。離線可讀已快取食譜（最近 20 筆）；生成新食譜仍需連線。
 
@@ -134,6 +136,7 @@ pnpm -F @chef/web db:migrate        # Neon：0001–0016
 | [`docs/superpowers/specs/2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md) | 產品進化路線（已核准） |
 | [`docs/superpowers/specs/2026-05-26-midterm-architecture-design.md`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md) | 中長期架構（domain／application／platform） |
 | [`DESIGN.md`](DESIGN.md) | 設計系統摘要 |
+| [`docs/WEBWRIGHT_SKILL.md`](docs/WEBWRIGHT_SKILL.md) | Microsoft Webwright 瀏覽器自動化 skill（Cursor） |
 
 ---
 

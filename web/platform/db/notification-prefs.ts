@@ -24,6 +24,25 @@ export type NotificationPreferences = {
   last_interaction_at: string | null;
   first_reminder_disclaimer_sent: boolean;
   backoff_until: string | null;
+  daily_meal_push_enabled: boolean;
+  daily_meal_morning_hour: number;
+  daily_meal_evening_hour: number;
+  daily_meal_evening_minute: number;
+  daily_meal_morning_enabled: boolean;
+  daily_meal_evening_enabled: boolean;
+  shopping_reminder_enabled: boolean;
+  shopping_reminder_day: number;
+  shopping_reminder_hour: number;
+  weekly_review_enabled: boolean;
+  weekly_review_day: number;
+  weekly_review_hour: number;
+  last_daily_morning_sent_at: string | null;
+  last_daily_evening_sent_at: string | null;
+  last_shopping_reminder_sent_at: string | null;
+  last_weekly_review_sent_at: string | null;
+  meal_plan_morning_ignored_count: number;
+  meal_plan_morning_backoff_until: string | null;
+  last_next_week_nudge_sent_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -57,6 +76,27 @@ function rowToPrefs(row: Record<string, unknown>): NotificationPreferences {
     last_interaction_at: toIso(row.last_interaction_at),
     first_reminder_disclaimer_sent: Boolean(row.first_reminder_disclaimer_sent),
     backoff_until: toIso(row.backoff_until),
+    daily_meal_push_enabled: row.daily_meal_push_enabled !== false,
+    daily_meal_morning_hour: Number(row.daily_meal_morning_hour ?? 9),
+    daily_meal_evening_hour: Number(row.daily_meal_evening_hour ?? 17),
+    daily_meal_evening_minute: Number(row.daily_meal_evening_minute ?? 0),
+    daily_meal_morning_enabled: row.daily_meal_morning_enabled !== false,
+    daily_meal_evening_enabled: row.daily_meal_evening_enabled !== false,
+    shopping_reminder_enabled: row.shopping_reminder_enabled !== false,
+    shopping_reminder_day: Number(row.shopping_reminder_day ?? 5),
+    shopping_reminder_hour: Number(row.shopping_reminder_hour ?? 9),
+    weekly_review_enabled: row.weekly_review_enabled !== false,
+    weekly_review_day: Number(row.weekly_review_day ?? 6),
+    weekly_review_hour: Number(row.weekly_review_hour ?? 19),
+    last_daily_morning_sent_at: toIso(row.last_daily_morning_sent_at),
+    last_daily_evening_sent_at: toIso(row.last_daily_evening_sent_at),
+    last_shopping_reminder_sent_at: toIso(row.last_shopping_reminder_sent_at),
+    last_weekly_review_sent_at: toIso(row.last_weekly_review_sent_at),
+    meal_plan_morning_ignored_count: Number(
+      row.meal_plan_morning_ignored_count ?? 0,
+    ),
+    meal_plan_morning_backoff_until: toIso(row.meal_plan_morning_backoff_until),
+    last_next_week_nudge_sent_at: toIso(row.last_next_week_nudge_sent_at),
     created_at: toIso(row.created_at) ?? new Date().toISOString(),
     updated_at: toIso(row.updated_at) ?? new Date().toISOString(),
   };
@@ -116,6 +156,20 @@ export type NotificationPrefsPatch = Partial<
     | "first_reminder_disclaimer_sent"
     | "backoff_until"
     | "consecutive_ignored_count"
+    | "daily_meal_push_enabled"
+    | "daily_meal_morning_hour"
+    | "daily_meal_evening_hour"
+    | "daily_meal_evening_minute"
+    | "daily_meal_morning_enabled"
+    | "daily_meal_evening_enabled"
+    | "shopping_reminder_enabled"
+    | "shopping_reminder_day"
+    | "shopping_reminder_hour"
+    | "weekly_review_enabled"
+    | "weekly_review_day"
+    | "weekly_review_hour"
+    | "meal_plan_morning_ignored_count"
+    | "meal_plan_morning_backoff_until"
   >
 >;
 
@@ -146,6 +200,20 @@ export async function updateNotificationPreferences(
       first_reminder_disclaimer_sent = ${fields.first_reminder_disclaimer_sent ?? current.first_reminder_disclaimer_sent},
       backoff_until = ${fields.backoff_until !== undefined ? fields.backoff_until : current.backoff_until},
       consecutive_ignored_count = ${fields.consecutive_ignored_count ?? current.consecutive_ignored_count},
+      daily_meal_push_enabled = ${fields.daily_meal_push_enabled ?? current.daily_meal_push_enabled},
+      daily_meal_morning_hour = ${fields.daily_meal_morning_hour ?? current.daily_meal_morning_hour},
+      daily_meal_evening_hour = ${fields.daily_meal_evening_hour ?? current.daily_meal_evening_hour},
+      daily_meal_evening_minute = ${fields.daily_meal_evening_minute ?? current.daily_meal_evening_minute},
+      daily_meal_morning_enabled = ${fields.daily_meal_morning_enabled ?? current.daily_meal_morning_enabled},
+      daily_meal_evening_enabled = ${fields.daily_meal_evening_enabled ?? current.daily_meal_evening_enabled},
+      shopping_reminder_enabled = ${fields.shopping_reminder_enabled ?? current.shopping_reminder_enabled},
+      shopping_reminder_day = ${fields.shopping_reminder_day ?? current.shopping_reminder_day},
+      shopping_reminder_hour = ${fields.shopping_reminder_hour ?? current.shopping_reminder_hour},
+      weekly_review_enabled = ${fields.weekly_review_enabled ?? current.weekly_review_enabled},
+      weekly_review_day = ${fields.weekly_review_day ?? current.weekly_review_day},
+      weekly_review_hour = ${fields.weekly_review_hour ?? current.weekly_review_hour},
+      meal_plan_morning_ignored_count = ${fields.meal_plan_morning_ignored_count ?? current.meal_plan_morning_ignored_count},
+      meal_plan_morning_backoff_until = ${fields.meal_plan_morning_backoff_until !== undefined ? fields.meal_plan_morning_backoff_until : current.meal_plan_morning_backoff_until},
       updated_at = now()
     WHERE tenant_id = ${tenantId} AND user_id = ${userId}
     RETURNING *
@@ -178,6 +246,112 @@ export async function markDigestSent(
     SET last_digest_sent_at = now(), updated_at = now()
     WHERE tenant_id = ${tenantId} AND user_id = ${userId}
   `;
+}
+
+export async function markDailyMorningSent(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET last_daily_morning_sent_at = now(), updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function markDailyEveningSent(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET last_daily_evening_sent_at = now(), updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function markShoppingReminderSent(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET last_shopping_reminder_sent_at = now(), updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function markWeeklyReviewSent(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET last_weekly_review_sent_at = now(), updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function markNextWeekNudgeSent(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET last_next_week_nudge_sent_at = now(), updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function incrementMealPlanMorningIgnored(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET meal_plan_morning_ignored_count = meal_plan_morning_ignored_count + 1,
+        updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function resetMealPlanMorningIgnored(
+  tenantId: string,
+  userId: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE notification_preferences
+    SET meal_plan_morning_ignored_count = 0,
+        meal_plan_morning_backoff_until = NULL,
+        updated_at = now()
+    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function listUsersWithActiveMealPlans(
+  tenantId: string,
+): Promise<string[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  const rows = await sql`
+    SELECT DISTINCT user_id FROM meal_plans
+    WHERE tenant_id = ${tenantId} AND status = 'active'
+  `;
+  return asRows<Record<string, unknown>>(rows).map((r) => String(r.user_id));
 }
 
 export async function incrementIgnored(

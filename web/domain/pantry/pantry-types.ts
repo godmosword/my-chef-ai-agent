@@ -37,6 +37,7 @@ export const PANTRY_SOURCES = [
   "photo",
   "receipt",
   "recipe_consumed",
+  "shopping_list_completed",
   "auto",
 ] as const;
 

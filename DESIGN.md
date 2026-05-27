@@ -239,3 +239,18 @@ User constraints + pantry snapshot
 └───────────────────────┘
 
 Legacy weekly calendar UI (`/app/plan`) still uses `meal_calendar_entries` (migration 0004); MP-1 planning sessions use new `meal_plans` / `meal_slots` tables (migration 0016).
+
+## P0 + P1 closed loop (MP-4 execution)
+
+```
+plan (MP-1) → shopping list (MP-3) → pantry sync
+     │                │
+     ▼                ▼
+daily inbox push ──► cook / skip (API) ──► pantry consume
+     │                                      │
+     └──────── weekly review ◄──────────────┘
+              (insights + narrative)
+              └──► next-week nudge → replan
+```
+
+Cron: `/api/internal/cron/meal-plan-daily` (inbox delivery, not LINE). Preferences: `notification_preferences` + migration `0018`.

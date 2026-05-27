@@ -15,6 +15,17 @@ type Prefs = {
   weekly_digest_hour: number;
   snooze_until: string | null;
   last_reminder_sent_at: string | null;
+  daily_meal_push_enabled: boolean;
+  daily_meal_morning_enabled: boolean;
+  daily_meal_morning_hour: number;
+  daily_meal_evening_enabled: boolean;
+  daily_meal_evening_hour: number;
+  shopping_reminder_enabled: boolean;
+  shopping_reminder_day: number;
+  shopping_reminder_hour: number;
+  weekly_review_enabled: boolean;
+  weekly_review_day: number;
+  weekly_review_hour: number;
 };
 
 export default function NotificationSettingsPage() {
@@ -206,6 +217,74 @@ export default function NotificationSettingsPage() {
         >
           {prefs.weekly_digest_enabled ? "關閉週報" : "開啟週日 19:00"}
         </Button>
+      </section>
+
+      <section className="space-y-3 rounded-xl border border-surface-muted p-4">
+        <h2 className="font-medium">菜單推播</h2>
+        <p className="text-sm text-text-muted">
+          每日菜單預告：{prefs.daily_meal_morning_enabled ? `開啟（${prefs.daily_meal_morning_hour}:00）` : "關閉"}
+          <br />
+          晚餐前提醒：{prefs.daily_meal_evening_enabled ? `開啟（${prefs.daily_meal_evening_hour}:00）` : "關閉"}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saving}
+            onClick={() =>
+              void patch({
+                daily_meal_morning_enabled: !prefs.daily_meal_morning_enabled,
+              })
+            }
+          >
+            {prefs.daily_meal_morning_enabled ? "關閉每日預告" : "打開每日預告"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saving}
+            onClick={() =>
+              void patch({
+                daily_meal_evening_enabled: !prefs.daily_meal_evening_enabled,
+              })
+            }
+          >
+            {prefs.daily_meal_evening_enabled ? "關閉晚餐提醒" : "打開晚餐提醒"}
+          </Button>
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-xl border border-surface-muted p-4">
+        <h2 className="font-medium">採買與週回顧</h2>
+        <p className="text-sm text-text-muted">
+          採買提醒：{prefs.shopping_reminder_enabled ? `週${prefs.shopping_reminder_day} ${prefs.shopping_reminder_hour}:00` : "關閉"}
+          <br />
+          週菜單回顧：{prefs.weekly_review_enabled ? `週${prefs.weekly_review_day} ${prefs.weekly_review_hour}:00` : "關閉"}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saving}
+            onClick={() =>
+              void patch({
+                shopping_reminder_enabled: !prefs.shopping_reminder_enabled,
+              })
+            }
+          >
+            {prefs.shopping_reminder_enabled ? "關閉採買提醒" : "打開採買提醒"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={saving}
+            onClick={() =>
+              void patch({ weekly_review_enabled: !prefs.weekly_review_enabled })
+            }
+          >
+            {prefs.weekly_review_enabled ? "關閉週回顧" : "打開週回顧"}
+          </Button>
+        </div>
       </section>
 
       <section className="space-y-3 rounded-xl border border-surface-muted p-4">

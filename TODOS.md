@@ -22,9 +22,11 @@
 
 - [x] **MP-1**：`meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`、兩段式規劃演算法、lazy 展開食譜（migration `0016`）
 - [ ] **MP-2**：週菜單規劃 UI（觸發規劃、檢視 slots、啟用計畫）
-- [ ] **MP-3**：採買清單合併與分類（聚合 needs → shopping）
-- [ ] **MP-4**：每日執行追蹤與推播
+- [x] **MP-3**：採買清單合併與分類（`shopping_lists`／`shopping_list_items`、merge 引擎、Web API、`/app/plan/[planId]/shopping`、`/shop/[token]` 分享；migration `0017`；LINE N/A）
+- [x] **MP-4**：每日菜單／晚餐提醒／採買提醒／週回顧（App 收件匣 + Cron `meal-plan-daily`）；slot cooked/skip + pantry 扣減 API；`/app/dashboard`、`/app/plan/[id]/review`；migration `0018`；LINE N/A
+- [x] **P1**：MP-1～MP-4 後端與 Web 執行迴路已閉環（MP-2 規劃 UI 仍待補）
 - [ ] **P1-3**：通知 Web Push（需使用者授權，補強收件匣）
+- [ ] **P2**：語音引導烹飪、超市整合、營養追蹤（placeholder）
 
 ## 中長期架構 — 三支柱並行（[`spec`](docs/superpowers/specs/2026-05-26-midterm-architecture-design.md)）
 

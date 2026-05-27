@@ -22,6 +22,17 @@ const PatchSchema = z
     weekly_digest_enabled: z.boolean().optional(),
     weekly_digest_day: z.number().int().min(0).max(6).optional(),
     weekly_digest_hour: z.number().int().min(0).max(23).optional(),
+    daily_meal_push_enabled: z.boolean().optional(),
+    daily_meal_morning_hour: z.number().int().min(0).max(23).optional(),
+    daily_meal_evening_hour: z.number().int().min(0).max(23).optional(),
+    daily_meal_morning_enabled: z.boolean().optional(),
+    daily_meal_evening_enabled: z.boolean().optional(),
+    shopping_reminder_enabled: z.boolean().optional(),
+    shopping_reminder_day: z.number().int().min(0).max(6).optional(),
+    shopping_reminder_hour: z.number().int().min(0).max(23).optional(),
+    weekly_review_enabled: z.boolean().optional(),
+    weekly_review_day: z.number().int().min(0).max(6).optional(),
+    weekly_review_hour: z.number().int().min(0).max(23).optional(),
   })
   .strict();
 

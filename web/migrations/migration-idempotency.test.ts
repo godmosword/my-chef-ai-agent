@@ -39,6 +39,16 @@ describe("recipe library migration SQL", () => {
     expect(sql).toContain("ADD COLUMN IF NOT EXISTS regenerated_dishes");
   });
 
+  it("0017 shopping lists idempotent", () => {
+    const sql = fs.readFileSync(
+      path.join(migrationsDir, "0017_shopping_lists.sql"),
+      "utf-8",
+    );
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS shopping_lists");
+    expect(sql).toContain("CREATE TABLE IF NOT EXISTS shopping_list_items");
+    expect(sql).toContain("uniq_active_list_per_plan");
+  });
+
   it("0016 meal planning v2 idempotent", () => {
     const sql = fs.readFileSync(
       path.join(migrationsDir, "0016_meal_planning_v2.sql"),

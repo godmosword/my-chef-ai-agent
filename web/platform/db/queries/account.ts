@@ -14,6 +14,7 @@ import {
 } from "../notification-inbox";
 import { hardDeleteNotificationPrefs } from "../notification-prefs";
 import { deleteAllMealPlanning } from "../meal-planning";
+import { deleteAllShoppingLists } from "../shopping-lists";
 import { getSql } from "../client";
 
 export async function deleteAllUserData(
@@ -39,6 +40,7 @@ export async function deleteAllUserData(
     await hardDeleteNotificationPrefs(tenantId, userId);
     await hardDeleteNotificationInbox(tenantId, userId);
     await deleteAllMealPlanning(tenantId, userId);
+    await deleteAllShoppingLists(tenantId, userId);
     await sql`DELETE FROM usage_daily WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
     await sql`DELETE FROM favorite_recipes WHERE user_id = ${userId} AND tenant_id = ${tenantId}`;
   }

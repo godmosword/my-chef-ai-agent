@@ -6,7 +6,12 @@ import { asRows, getSql } from "./client";
 export type NotificationInboxKind =
   | "expiry_reminder"
   | "weekly_digest"
-  | "expiry_disclaimer";
+  | "expiry_disclaimer"
+  | "meal_plan_morning"
+  | "meal_plan_evening"
+  | "meal_plan_shopping"
+  | "meal_plan_weekly_review"
+  | "meal_plan_next_week";
 
 export type NotificationInboxRow = {
   id: number;

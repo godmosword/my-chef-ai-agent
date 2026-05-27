@@ -258,6 +258,18 @@ export async function generateMealPlan(
       await activateMealPlan(planRow.id, tenant_id, user_id);
     }
 
+    try {
+      const { ensureShoppingListForPlan } = await import(
+        "@/application/shopping-list/shopping-list-service"
+      );
+      await ensureShoppingListForPlan(planRow.id, tenant_id, user_id);
+    } catch (shopErr) {
+      console.error("[meal-planner] shopping list bootstrap failed", {
+        planId: planRow.id,
+        message: shopErr instanceof Error ? shopErr.message : String(shopErr),
+      });
+    }
+
     const criticalLeft = violations.filter((v) => v.severity === "critical");
     const resultKind =
       criticalLeft.length > 0

@@ -53,6 +53,9 @@ export type MealPlanRow = {
   updated_at: string;
   activated_at: string | null;
   completed_at: string | null;
+  auto_completed_with_low_engagement?: boolean;
+  weekly_review_narrative?: string | null;
+  weekly_review_narrative_at?: string | null;
   slots?: MealSlotRow[];
 };
 
@@ -149,6 +152,14 @@ function planFromRow(
     updated_at: toIso(row.updated_at) ?? new Date().toISOString(),
     activated_at: toIso(row.activated_at),
     completed_at: toIso(row.completed_at),
+    auto_completed_with_low_engagement: Boolean(
+      row.auto_completed_with_low_engagement,
+    ),
+    weekly_review_narrative:
+      row.weekly_review_narrative == null
+        ? null
+        : String(row.weekly_review_narrative),
+    weekly_review_narrative_at: toIso(row.weekly_review_narrative_at),
     slots,
   };
 }
@@ -483,6 +494,126 @@ export async function listSlotsForDate(
     ORDER BY meal_type ASC, slot_index ASC
   `;
   return asRows<Record<string, unknown>>(rows).map(slotFromRow);
+}
+
+export async function listSlotsForDateAll(
+  tenantId: string,
+  userId: string,
+  date: string,
+  planId?: number,
+): Promise<MealSlotRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  const rows = planId
+    ? await sql`
+        SELECT * FROM meal_slots
+        WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+          AND slot_date = ${date}
+          AND meal_plan_id = ${planId}
+          AND status != 'swapped_out'
+        ORDER BY meal_type ASC, slot_index ASC
+      `
+    : await sql`
+        SELECT * FROM meal_slots
+        WHERE tenant_id = ${tenantId} AND user_id = ${userId}
+          AND slot_date = ${date}
+          AND status != 'swapped_out'
+        ORDER BY meal_type ASC, slot_index ASC
+      `;
+  return asRows<Record<string, unknown>>(rows).map(slotFromRow);
+}
+
+export async function listSlotsForPlan(
+  planId: number,
+  tenantId: string,
+  userId: string,
+): Promise<MealSlotRow[]> {
+  return loadSlotsForPlan(planId, tenantId, userId);
+}
+
+export type PlanSlotEngagement = {
+  total: number;
+  cooked: number;
+  skipped: number;
+  swapped: number;
+  planned: number;
+  engagement_rate: number;
+};
+
+export async function getPlanSlotEngagement(
+  planId: number,
+  tenantId: string,
+  userId: string,
+): Promise<PlanSlotEngagement> {
+  const slots = await loadSlotsForPlan(planId, tenantId, userId);
+  const active = slots.filter((s) => s.status !== "swapped_out");
+  const total = active.length;
+  const cooked = active.filter((s) => s.status === "cooked").length;
+  const skipped = active.filter((s) => s.status === "skipped").length;
+  const swapped = slots.filter((s) => s.status === "swapped_out").length;
+  const planned = active.filter((s) => s.status === "planned").length;
+  const engaged = cooked + skipped;
+  return {
+    total,
+    cooked,
+    skipped,
+    swapped,
+    planned,
+    engagement_rate: total > 0 ? engaged / total : 0,
+  };
+}
+
+export async function completeMealPlanWithMeta(
+  planId: number,
+  tenantId: string,
+  userId: string,
+  opts?: { auto_completed_with_low_engagement?: boolean },
+): Promise<MealPlanRow | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  const rows = await sql`
+    UPDATE meal_plans SET
+      status = 'completed',
+      completed_at = now(),
+      auto_completed_with_low_engagement = ${opts?.auto_completed_with_low_engagement ?? false},
+      updated_at = now()
+    WHERE id = ${planId} AND tenant_id = ${tenantId} AND user_id = ${userId}
+    RETURNING *
+  `;
+  const row = asRows<Record<string, unknown>>(rows)[0];
+  return row ? getMealPlan(planId, tenantId, userId) : null;
+}
+
+export async function saveWeeklyReviewNarrative(
+  planId: number,
+  tenantId: string,
+  userId: string,
+  narrative: string,
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE meal_plans SET
+      weekly_review_narrative = ${narrative},
+      weekly_review_narrative_at = now(),
+      updated_at = now()
+    WHERE id = ${planId} AND tenant_id = ${tenantId} AND user_id = ${userId}
+  `;
+}
+
+export async function listActivePlansPastEndDate(
+  tenantId: string,
+  today: string,
+): Promise<MealPlanRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  const rows = await sql`
+    SELECT * FROM meal_plans
+    WHERE tenant_id = ${tenantId}
+      AND status = 'active'
+      AND end_date < ${today}
+  `;
+  return asRows<Record<string, unknown>>(rows).map((r) => planFromRow(r));
 }
 
 export async function markSlotCooked(

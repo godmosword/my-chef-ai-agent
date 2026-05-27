@@ -13,6 +13,8 @@
 
 ### Added
 
+- Closed P1 execution loop (MP-4): daily morning/evening meal-plan inbox pushes, shopping reminders, weekly review digest with template narrative, plan auto-complete lifecycle, one-tap slot cooked/skip with pantry consume preview APIs, dashboard and plan review pages (migration `0018`; cron `/api/internal/cron/meal-plan-daily`). LINE push N/A — Web inbox only.
+- Added shopping list engine (MP-3): merges meal-plan slot ingredients, subtracts pantry, sections by supermarket aisle, persists check-off state, syncs checked items back to pantry on completion; Web APIs under `/api/me/shopping-lists` and token-based `/api/shared/shopping-lists`; pages `/app/plan/[planId]/shopping` and `/shop/[token]` (migration `0017`).
 - Added meal planning data layer and two-stage planner (candidate generation + constraint validation/repair) with pantry-aware ingredient reuse scoring (migration `0016`; legacy calendar → `meal_calendar_entries`).
 - Added proactive expiry reminders, "Use It Up" reverse recipe recommendation, weekly digest (opt-in), and notification preferences with quiet hours / snooze / backoff (Web inbox + `/app/settings/notifications`; Vercel Cron hourly). P0 (personalization + pantry) complete.
 - Added pantry query/edit UI (Web `/app/pantry` + `/app/pantry/scan`), conversational consume via API, recipe-pantry ingredient annotations, and rewired 清冰箱 to use real pantry data with backward-compatible fallback to Tonight localStorage list.
