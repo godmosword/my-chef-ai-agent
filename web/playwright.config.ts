@@ -23,6 +23,9 @@ export default defineConfig({
     timeout: 300_000,
     env: {
       GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "test_key",
+      NEXT_PUBLIC_SHARING_ENABLED: "1",
+      NEXT_PUBLIC_COOKING_MODE_ENABLED: "1",
+      NEXT_PUBLIC_NEW_UI: "1",
     },
   },
 });

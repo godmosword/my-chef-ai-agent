@@ -92,6 +92,7 @@ export function RecipeShareMenu({
         type="button"
         variant="secondary"
         size="sm"
+        data-testid="recipe-share-trigger"
         loading={busy && !open}
         onClick={() => {
           setOpen(true);
@@ -107,6 +108,7 @@ export function RecipeShareMenu({
       <Dialog
         open={open}
         onOpenChange={setOpen}
+        contentTestId="recipe-share-dialog"
         title={isShared ? "分享中" : "分享食譜"}
         description="任何持有連結的人都可以查看，但不能編輯。"
       >

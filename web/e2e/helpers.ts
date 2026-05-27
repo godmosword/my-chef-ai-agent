@@ -105,39 +105,39 @@ export async function installRecipeApiMocks(page: Page) {
     await route.fulfill({ json: { ok: true } });
   });
 
-  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/hero-status`, async (route) => {
-    await route.fulfill({
-      json: {
-        ok: true,
-        hero_status: "ready",
-        hero_url: MOCK_RECIPE.photo_url,
-        hero_error: null,
-      },
-    });
-  });
+  // Single handler for recipe id routes (share + hero-status + GET/PATCH); avoids route.fallback().
+  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}**`, async (route) => {
+    const url = route.request().url();
+    const method = route.request().method();
 
-  // Share handler registered first; wildcard below uses fallback() for /share URLs.
-  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}/share`, async (route) => {
-    if (route.request().method() === "POST") {
+    if (url.includes("/share")) {
+      if (method === "POST") {
+        await route.fulfill({
+          json: {
+            ok: true,
+            share_token: shareToken,
+            share_url: `http://127.0.0.1:3000/r/${shareToken}`,
+            published_at: new Date().toISOString(),
+          },
+        });
+        return;
+      }
+      await route.fulfill({ json: { ok: true } });
+      return;
+    }
+
+    if (url.includes("/hero-status")) {
       await route.fulfill({
         json: {
           ok: true,
-          share_token: shareToken,
-          share_url: `http://127.0.0.1:3000/r/${shareToken}`,
-          published_at: new Date().toISOString(),
+          hero_status: "ready",
+          hero_url: MOCK_RECIPE.photo_url,
+          hero_error: null,
         },
       });
       return;
     }
-    await route.fulfill({ json: { ok: true } });
-  });
 
-  await page.route(`**/api/recipes/${MOCK_RECIPE_ID}**`, async (route) => {
-    if (route.request().url().includes("/share")) {
-      await route.fallback();
-      return;
-    }
-    const method = route.request().method();
     if (method === "GET") {
       await route.fulfill({ json: { ok: true, recipe: MOCK_RECIPE } });
       return;

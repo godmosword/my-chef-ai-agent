@@ -43,24 +43,21 @@ test.describe("recipe funnel (mocked API)", () => {
     await dismissBlockingOverlays(page);
     await expect(page.getByRole("heading", { name: "E2E 測試咖哩" })).toBeVisible();
 
-    const shareBtn = page.getByRole("button", { name: /^分享/ });
+    const shareBtn = page.getByTestId("recipe-share-trigger");
     await expect(shareBtn).toBeVisible();
     const sharePost = page.waitForResponse(
       (res) =>
         res.url().includes(`/api/recipes/${MOCK_RECIPE_ID}/share`) &&
-        res.request().method() === "POST",
+        res.request().method() === "POST" &&
+        res.ok(),
+      { timeout: 20_000 },
     );
     await shareBtn.click();
-    const shareRes = await sharePost;
-    expect(shareRes.ok()).toBeTruthy();
+    await sharePost;
 
-    const shareDialog = page.getByRole("dialog");
-    await expect(shareDialog).toBeVisible({ timeout: 15_000 });
-    await expect(shareDialog.getByText(/e2e-share-token/)).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(
-      shareDialog.getByRole("button", { name: "複製連結" }),
-    ).toBeVisible();
+    const sharePanel = page.getByTestId("recipe-share-dialog");
+    await expect(sharePanel).toBeVisible({ timeout: 20_000 });
+    await expect(sharePanel).toContainText(/e2e-share-token/);
+    await expect(sharePanel.getByRole("button", { name: "複製連結" })).toBeVisible();
   });
 });
