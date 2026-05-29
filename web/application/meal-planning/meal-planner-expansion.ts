@@ -2,7 +2,7 @@
  * MP-1: Lazy expand meal slot to full recipe JSON.
  */
 import { buildCleanFridgeSystemBlock } from "@/domain/pantry/clean-fridge-prompt";
-import { generateRecipe, type RecipePayload } from "@/domain/recipe/generate-recipe";
+import { generateRecipe, type AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import {
   getMealSlot,
   saveSlotFullRecipe,
@@ -68,4 +68,4 @@ export async function expandSlotToFullRecipe(
   }
 }
 
-export type { RecipePayload };
+export type { AiRecipePayload };

@@ -33,7 +33,8 @@ function formatAiError(err: unknown, model: string): Error {
 type KitchenTalk = { role: string; content: string };
 type Ingredient = { name: string; price?: string };
 
-export type RecipePayload = {
+/** Raw recipe JSON from the LLM before persistence / API enrichment. */
+export type AiRecipePayload = {
   kitchen_talk?: KitchenTalk[];
   theme?: string;
   recipe_name?: string;
@@ -61,14 +62,14 @@ function getClient(): OpenAI {
   });
 }
 
-function parseRecipeJson(raw: string): RecipePayload {
+function parseRecipeJson(raw: string): AiRecipePayload {
   const trimmed = raw.trim();
   const start = trimmed.indexOf("{");
   const end = trimmed.lastIndexOf("}");
   if (start < 0 || end <= start) {
     throw new Error("No JSON object in model output");
   }
-  const parsed = JSON.parse(trimmed.slice(start, end + 1)) as RecipePayload;
+  const parsed = JSON.parse(trimmed.slice(start, end + 1)) as AiRecipePayload;
   if (!parsed.recipe_name) {
     throw new Error("Missing recipe_name in JSON");
   }
@@ -78,7 +79,7 @@ function parseRecipeJson(raw: string): RecipePayload {
 export async function generateRecipe(
   apiMessages: OpenAI.Chat.ChatCompletionMessageParam[],
   userId: string,
-): Promise<{ raw: string; recipe: RecipePayload }> {
+): Promise<{ raw: string; recipe: AiRecipePayload }> {
   const model = resolveModelName();
   const maxTokens = Math.max(
     512,

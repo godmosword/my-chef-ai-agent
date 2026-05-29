@@ -1,4 +1,4 @@
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import { and, desc, eq } from "drizzle-orm";
 import { asRows, getSql } from "./client";
 import { getDb } from "./drizzle";
@@ -7,7 +7,7 @@ import { favoritesV2, recipes } from "./schema";
 export type FavoriteRow = {
   id: number;
   recipe_name: string;
-  recipe_data: RecipePayload;
+  recipe_data: AiRecipePayload;
   created_at: string;
   recipe_id?: string;
 };
@@ -78,8 +78,8 @@ export async function listFavoriteRecipes(
     recipe_name: String(r.recipe_name),
     recipe_data:
       typeof r.recipe_data === "string"
-        ? (JSON.parse(r.recipe_data) as RecipePayload)
-        : (r.recipe_data as RecipePayload),
+        ? (JSON.parse(r.recipe_data) as AiRecipePayload)
+        : (r.recipe_data as AiRecipePayload),
     created_at:
       r.created_at instanceof Date
         ? r.created_at.toISOString()
@@ -91,7 +91,7 @@ export async function insertFavoriteRecipe(
   userId: string,
   tenantId: string,
   recipeName: string,
-  recipeData: RecipePayload,
+  recipeData: AiRecipePayload,
   recipeId?: string,
 ): Promise<boolean> {
   const db = getDb();

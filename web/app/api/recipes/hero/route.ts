@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import { generateRecipeHeroImageByName } from "@/platform/media/hero-image";
 import { getLastRecipeFromMemory } from "@/domain/recipe/recipe-memory";
 import { consumeQuota } from "@/platform/db/quota";
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
   }
 
-  let body: { recipe_name?: string; recipe_data?: RecipePayload };
+  let body: { recipe_name?: string; recipe_data?: AiRecipePayload };
   try {
     body = await request.json();
   } catch {

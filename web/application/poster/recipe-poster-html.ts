@@ -1,4 +1,4 @@
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 
 function esc(s: string): string {
   return s
@@ -8,7 +8,7 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function listIngredients(recipe: RecipePayload): string {
+function listIngredients(recipe: AiRecipePayload): string {
   const items = recipe.ingredients || [];
   if (!items.length) return "<li>依食譜準備</li>";
   return items
@@ -21,14 +21,14 @@ function listIngredients(recipe: RecipePayload): string {
     .join("");
 }
 
-function listSteps(recipe: RecipePayload): string {
+function listSteps(recipe: AiRecipePayload): string {
   const steps = recipe.steps || [];
   if (!steps.length) return "<li>依序料理</li>";
   return steps.map((s, i) => `<li>${esc(String(s))}</li>`).join("");
 }
 
 /** Printable HTML poster (no Playwright; user prints or saves as PDF). */
-export function buildRecipePosterHtml(recipe: RecipePayload): string {
+export function buildRecipePosterHtml(recipe: AiRecipePayload): string {
   const name = esc(recipe.recipe_name || "本日料理");
   const theme = esc(recipe.theme || "家常");
   const cost = esc(String(recipe.estimated_total_cost || "—"));

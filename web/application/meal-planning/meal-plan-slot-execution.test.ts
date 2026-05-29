@@ -62,7 +62,7 @@ describe("buildConsumePreview", () => {
         quantity_text: "1把",
         location: "fridge",
         expires_at: "2026-05-30",
-        purchased_at: null,
+        purchased_at: new Date().toISOString(),
         source: "manual",
         confidence: 1,
         notes: null,

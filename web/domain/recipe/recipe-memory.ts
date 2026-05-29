@@ -1,11 +1,11 @@
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import type { LastRecipeContext } from "./last-recipe-context";
 import { getUserMemory } from "@/platform/db/memory";
 
 export async function getLastRecipeFromMemory(
   userId: string,
   tenantId: string,
-): Promise<RecipePayload | null> {
+): Promise<AiRecipePayload | null> {
   const ctx = await getLastRecipeContextFromMemory(userId, tenantId);
   if (!ctx?.recipe_name) return null;
   return {
@@ -28,7 +28,7 @@ export async function getLastRecipeContextFromMemory(
       if (start < 0 || end <= start) continue;
       const parsed = JSON.parse(
         msg.content.slice(start, end + 1),
-      ) as RecipePayload;
+      ) as AiRecipePayload;
       if (parsed.recipe_name) {
         return {
           recipe_name: parsed.recipe_name,

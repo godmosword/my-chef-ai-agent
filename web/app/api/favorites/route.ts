@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   insertFavoriteByRecipeId,
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   }
 
   const name = (legacy.data.recipe_name || "").trim();
-  const data = legacy.data.recipe_data as RecipePayload | undefined;
+  const data = legacy.data.recipe_data as AiRecipePayload | undefined;
   if (!name || !data) {
     return NextResponse.json(
       { ok: false, error: "recipe_name and recipe_data required" },

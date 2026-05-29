@@ -4,7 +4,7 @@ import { markSlotSkippedWithReason } from "@/application/meal-planning/meal-plan
 import {
   mealPlanExecutionEnabled,
   requireMealPlanSession,
-  requirePlanOwnership,
+  requireSlotInPlan,
 } from "@/lib/api/meal-plan-guard";
 
 const BodySchema = z.object({ reason: z.string().min(1).max(64) });
@@ -26,12 +26,13 @@ export async function POST(request: Request, ctx: Ctx) {
     return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
   }
 
-  const denied = await requirePlanOwnership(
+  const slotCheck = await requireSlotInPlan(
     planId,
+    slotId,
     session.tenantId,
     session.userId,
   );
-  if (denied) return denied;
+  if (slotCheck instanceof NextResponse) return slotCheck;
 
   const slot = await markSlotSkippedWithReason(
     slotId,

@@ -1,4 +1,4 @@
-import type { RecipePayload } from "./generate-recipe";
+import type { AiRecipePayload } from "./generate-recipe";
 import { SYSTEM_PROMPT } from "./prompts";
 
 const SCENARIO_HINTS = [
@@ -67,7 +67,7 @@ export function condenseAssistantMessage(content: string, maxChars = 80): string
     const start = content.indexOf("{");
     const end = content.lastIndexOf("}");
     if (start >= 0 && end > start) {
-      const parsed = JSON.parse(content.slice(start, end + 1)) as RecipePayload;
+      const parsed = JSON.parse(content.slice(start, end + 1)) as AiRecipePayload;
       if (parsed.recipe_name) return `【上次食譜】${parsed.recipe_name}`;
     }
   } catch {

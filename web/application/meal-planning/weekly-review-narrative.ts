@@ -3,7 +3,7 @@
  */
 import type { WeeklyReviewInsights } from "./weekly-review-insights";
 
-export function buildReviewNarrativeFallback(
+function buildReviewNarrativeFallback(
   insights: WeeklyReviewInsights,
 ): string {
   const pct = Math.round(insights.cook_rate * 100);

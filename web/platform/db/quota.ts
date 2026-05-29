@@ -254,3 +254,62 @@ export async function consumeQuota(
 
   return checkQuota(userId, tenantId, kind);
 }
+
+/** Roll back a prior text/image charge (e.g. AI or persist failure after consume). */
+export async function refundQuota(
+  userId: string,
+  tenantId: string,
+  units = 1,
+  eventType = "quota_refund",
+  kind: QuotaKind = "text",
+): Promise<void> {
+  if (!isDatabaseConfigured() || units <= 0) return;
+
+  const sql = getSql();
+  if (!sql) return;
+
+  const usageDate = quotaToday();
+  if (kind === "text") {
+    await sql`
+      UPDATE usage_daily SET
+        requests_count = GREATEST(0, requests_count - ${units}),
+        text_requests_count = GREATEST(0, text_requests_count - ${units}),
+        updated_at = now()
+      WHERE tenant_id = ${tenantId}
+        AND user_id = ${userId}
+        AND usage_date = ${usageDate}
+    `;
+  } else {
+    await sql`
+      UPDATE usage_daily SET
+        image_requests_count = GREATEST(0, image_requests_count - ${units}),
+        updated_at = now()
+      WHERE tenant_id = ${tenantId}
+        AND user_id = ${userId}
+        AND usage_date = ${usageDate}
+    `;
+  }
+
+  await appendUsageLedger(userId, tenantId, -units, eventType, {
+    kind,
+    refund: true,
+  });
+}
+
+export function quotaDecisionToBuckets(decision: QuotaDecision): {
+  plan_key: string;
+  limit: number;
+  used: number;
+  remaining: number;
+  text: QuotaBucket;
+  image: QuotaBucket;
+} {
+  return {
+    plan_key: decision.plan_key,
+    limit: decision.limit,
+    used: decision.used,
+    remaining: decision.remaining,
+    text: decision.text,
+    image: decision.image,
+  };
+}

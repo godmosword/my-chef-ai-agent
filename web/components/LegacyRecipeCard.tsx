@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 
 type Props = {
-  recipe: RecipePayload;
-  onFavorite?: (recipe: RecipePayload) => Promise<void>;
+  recipe: AiRecipePayload;
+  onFavorite?: (recipe: AiRecipePayload) => Promise<void>;
   favoritesEnabled?: boolean;
-  onGenerateHero?: (recipe: RecipePayload) => Promise<string | null>;
-  onDownloadPoster?: (recipe: RecipePayload, photoUrl?: string | null) => Promise<void>;
+  onGenerateHero?: (recipe: AiRecipePayload) => Promise<string | null>;
+  onDownloadPoster?: (recipe: AiRecipePayload, photoUrl?: string | null) => Promise<void>;
 };
 
-export function RecipeCard({
+/** Classic ChatPanel recipe card (pre–Prompt 3 library UI). */
+export function LegacyRecipeCard({
   recipe,
   onFavorite,
   favoritesEnabled = false,

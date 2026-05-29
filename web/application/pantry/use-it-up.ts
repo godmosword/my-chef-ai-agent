@@ -12,7 +12,8 @@ import {
   loadPersonalizationContext,
   renderPersonalizationBlock,
 } from "@/application/personalization/personalization-context";
-import { generateRecipe, type RecipePayload } from "@/domain/recipe/generate-recipe";
+import { generateRecipe, type AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import { checkQuota, consumeQuota } from "@/platform/db/quota";
 import { resolveModelName } from "@/platform/config/app-config";
 import {
   useItUpCandidateMaxTokens,
@@ -35,7 +36,7 @@ export type UseItUpSuggestion = {
   other_pantry_ingredients_used: string[];
   additional_shopping: string[];
   rationale: string;
-  recipe_full: RecipePayload | null;
+  recipe_full: AiRecipePayload | null;
 };
 
 export type UseItUpRequest = {
@@ -182,9 +183,16 @@ async function expandFullRecipe(
   title: string,
   priorityLines: string[],
   personalizationText: string,
+  tenantId: string,
   userId: string,
-): Promise<RecipePayload | null> {
+): Promise<AiRecipePayload | null> {
   const start = Date.now();
+  const pre = await checkQuota(userId, tenantId, "text");
+  if (!pre.allowed) {
+    recordUseItUpCall("full_recipe", "quota", Date.now() - start);
+    return null;
+  }
+
   const cleanBlock = buildCleanFridgeSystemBlock(priorityLines);
   const systemParts = [cleanBlock, personalizationText].filter(Boolean);
   const userMessage = `請做「${title}」，優先用完快過期食材。`;
@@ -199,6 +207,17 @@ async function expandFullRecipe(
       ],
       userId,
     );
+    const charged = await consumeQuota(
+      userId,
+      tenantId,
+      1,
+      "use_it_up_full_recipe",
+      "text",
+    );
+    if (!charged.allowed) {
+      recordUseItUpCall("full_recipe", "quota", Date.now() - start);
+      return null;
+    }
     recordUseItUpCall("full_recipe", "ok", Date.now() - start);
     return recipe;
   } catch {
@@ -248,12 +267,13 @@ export async function suggestUseItUpRecipes(
     const out: UseItUpSuggestion[] = [];
     for (let i = 0; i < top.length; i++) {
       const c = top[i]!;
-      let recipe_full: RecipePayload | null = null;
+      let recipe_full: AiRecipePayload | null = null;
       if (i < fullCount) {
         recipe_full = await expandFullRecipe(
           c.title,
           priorityLines,
           personalizationText,
+          req.tenant_id,
           req.user_id,
         );
       }

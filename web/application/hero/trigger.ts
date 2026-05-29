@@ -3,7 +3,7 @@ import type { RecipePayload } from "@chef/shared-types";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { getDb } from "@/platform/db/drizzle";
 import { getRecipeForUser } from "@/platform/db/queries/recipes";
-import { checkQuota, consumeQuota } from "@/platform/db/quota";
+import { checkQuota, consumeQuota, refundQuota } from "@/platform/db/quota";
 import { recipes } from "@/platform/db/schema";
 import { buildHeroPrompt } from "@/application/hero/build-prompt";
 import {
@@ -131,6 +131,21 @@ export async function triggerHeroGeneration(
     return;
   }
 
+  const consumed = await consumeQuota(
+    opts.userId,
+    tenantId,
+    1,
+    "image_recipe_generation",
+    "image",
+  );
+  if (!consumed.allowed) {
+    await markHero(opts.recipeId, {
+      heroStatus: "failed",
+      heroError: "image_quota_exceeded",
+    });
+    return;
+  }
+
   const prompt = buildHeroPrompt(recipe);
   const recipeName = recipe.recipe_name?.trim() || row.title;
 
@@ -142,21 +157,6 @@ export async function triggerHeroGeneration(
       }),
     ]);
 
-    const consumed = await consumeQuota(
-      opts.userId,
-      tenantId,
-      1,
-      "image_recipe_generation",
-      "image",
-    );
-    if (!consumed.allowed) {
-      await markHero(opts.recipeId, {
-        heroStatus: "failed",
-        heroError: "image_quota_exceeded",
-      });
-      return;
-    }
-
     await markHero(opts.recipeId, {
       heroStatus: "ready",
       heroUrl: image_url,
@@ -166,6 +166,13 @@ export async function triggerHeroGeneration(
     const message =
       err instanceof Error ? err.message.slice(0, 200) : "unknown";
     console.error("[hero-auto] generation failed:", message);
+    await refundQuota(
+      opts.userId,
+      tenantId,
+      1,
+      "image_recipe_generation_refund",
+      "image",
+    );
     // Degraded: show committed marketing hero so UI is not stuck on failed/skipped.
     await markHero(opts.recipeId, {
       heroStatus: "ready",

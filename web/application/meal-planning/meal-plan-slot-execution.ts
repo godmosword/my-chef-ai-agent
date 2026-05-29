@@ -5,6 +5,7 @@ import type { KeyIngredient } from "@/domain/meal-planning/types";
 import type { MealSlotRow } from "@/platform/db/meal-planning";
 import {
   getMealSlot,
+  getMealSlotForPlan,
   markSlotCooked,
   markSlotSkipped,
 } from "@/platform/db/meal-planning";
@@ -90,6 +91,19 @@ export async function markSlotCookedWithEngagement(
     pantry,
   );
   return { slot, consume_preview: preview };
+}
+
+/** Server-side consume lines for a slot (do not trust client-supplied pantry ids). */
+export async function buildSlotConsumePreview(
+  slotId: number,
+  planId: number,
+  tenantId: string,
+  userId: string,
+): Promise<ConsumeLine[] | null> {
+  const slot = await getMealSlotForPlan(slotId, planId, tenantId, userId);
+  if (!slot) return null;
+  const pantry = await listPantryItems(tenantId, userId);
+  return buildConsumePreview(ingredientsFromSlot(slot), pantry);
 }
 
 export async function applyPantryConsumeFromSlot(

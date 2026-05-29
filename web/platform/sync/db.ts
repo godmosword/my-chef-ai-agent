@@ -14,6 +14,7 @@ export type MutationType =
   | "favorite_add"
   | "favorite_remove"
   | "rating"
+  | "record_cook"
   | "tag_add"
   | "tag_remove";
 

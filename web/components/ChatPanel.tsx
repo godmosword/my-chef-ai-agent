@@ -1,12 +1,14 @@
 "use client";
 
+/** @deprecated Use `/app` + InputHero; kept for `/legacy` until next major release. */
+
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { RecipeCard } from "./RecipeCard";
-import type { RecipePayload } from "@/domain/recipe/generate-recipe";
+import { LegacyRecipeCard } from "./LegacyRecipeCard";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 
 type ChatItem =
   | { id: string; role: "user"; text: string }
-  | { id: string; role: "assistant"; recipe: RecipePayload }
+  | { id: string; role: "assistant"; recipe: AiRecipePayload }
   | { id: string; role: "error"; text: string };
 
 type QuotaState = {
@@ -19,7 +21,7 @@ type QuotaState = {
 type FavoriteItem = {
   id: number;
   recipe_name: string;
-  recipe_data: RecipePayload;
+  recipe_data: AiRecipePayload;
   created_at: string;
 };
 
@@ -101,7 +103,7 @@ export function ChatPanel() {
         body: JSON.stringify({ message: text }),
       });
       const rawText = await res.text();
-      let data: { ok?: boolean; error?: string; recipe?: RecipePayload; quota?: QuotaState };
+      let data: { ok?: boolean; error?: string; recipe?: AiRecipePayload; quota?: QuotaState };
       try {
         data = rawText ? JSON.parse(rawText) : {};
       } catch {
@@ -120,7 +122,7 @@ export function ChatPanel() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          recipe: data.recipe as RecipePayload,
+          recipe: data.recipe as AiRecipePayload,
         },
       ]);
       if (data.quota) {
@@ -174,7 +176,7 @@ export function ChatPanel() {
     flash(`已切換：${data.label}`);
   }
 
-  async function generateHero(recipe: RecipePayload): Promise<string | null> {
+  async function generateHero(recipe: AiRecipePayload): Promise<string | null> {
     const res = await fetch("/api/recipes/hero", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -193,7 +195,7 @@ export function ChatPanel() {
   }
 
   async function downloadPoster(
-    recipe: RecipePayload,
+    recipe: AiRecipePayload,
     photoUrl?: string | null,
   ) {
     const res = await fetch("/api/recipes/poster", {
@@ -224,7 +226,7 @@ export function ChatPanel() {
     flash("海報 HTML 已下載（可用瀏覽器列印為 PDF）");
   }
 
-  async function saveFavorite(recipe: RecipePayload) {
+  async function saveFavorite(recipe: AiRecipePayload) {
     const res = await fetch("/api/favorites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -353,7 +355,7 @@ export function ChatPanel() {
           }
           return (
             <div key={item.id} className="bubble bubble--assistant">
-              <RecipeCard
+              <LegacyRecipeCard
                 recipe={item.recipe}
                 onFavorite={saveFavorite}
                 favoritesEnabled={favoritesEnabled}

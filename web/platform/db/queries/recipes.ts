@@ -1,5 +1,5 @@
 import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
-import type { RecipePayload as AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
 import {
   aiRecipeToPayload,
   buildTagsFromContext,

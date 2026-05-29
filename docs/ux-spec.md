@@ -1009,7 +1009,7 @@ const TIME_GREETINGS = [
   lib/recipe/cuisine-meta.ts            ← 分類 → 顏色 + emoji mapping
 
 修改：
-  components/RecipeCard.tsx
+  components/LegacyRecipeCard.tsx
   app/layout.tsx                         ← 字體載入統一
   components/app-home/InspirationCards.tsx
 ```

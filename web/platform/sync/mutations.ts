@@ -52,6 +52,11 @@ async function sendMutation(m: PendingMutation): Promise<void> {
       dequeuePendingRating(recipe_id);
       return;
     }
+    case "record_cook": {
+      const { recipe_id } = m.payload as { recipe_id: string };
+      await recordRecipeCook(recipe_id, { record_cook: true });
+      return;
+    }
     default:
       throw new Error(`Unsupported mutation: ${m.type}`);
   }

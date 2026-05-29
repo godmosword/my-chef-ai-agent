@@ -71,7 +71,7 @@ export function CookingModeClient({
     if (recordToastShown.current) return;
     recordToastShown.current = true;
     toast({
-      title: "已記錄完成",
+      title: "烹飪完成",
       description: "這道菜已加入你的料理書紀錄",
     });
   }, [toast]);
@@ -117,7 +117,7 @@ export function CookingModeClient({
   }, [recipe.id, cookSource, enterFullscreen, exitFullscreen]);
 
   useEffect(() => {
-    if (!completed) return;
+    if (!completed || isDemoCook) return;
     const mins = Math.max(
       1,
       Math.round((Date.now() - startedAtRef.current) / 60_000),
@@ -128,8 +128,20 @@ export function CookingModeClient({
       duration_bucket: cookDurationBucket(mins),
       rating_bucket: cookRatingBucket(lastRatingRef.current),
     });
+    void recordRecipeCook(recipe.id, { record_cook: true }).catch(async () => {
+      await enqueueMutation({
+        type: "record_cook",
+        payload: { recipe_id: recipe.id },
+      });
+    });
     showRecordToast();
-  }, [completed, recipe.id, cookSource, showRecordToast]);
+  }, [
+    completed,
+    recipe.id,
+    cookSource,
+    showRecordToast,
+    isDemoCook,
+  ]);
 
   useEffect(() => {
     if (completed || isDemoCook) return;
@@ -209,9 +221,8 @@ export function CookingModeClient({
   const handleRate = async (stars: number) => {
     lastRatingRef.current = stars;
     try {
-      await recordRecipeCook(recipe.id, { rating: stars, record_cook: true });
+      await recordRecipeCook(recipe.id, { rating: stars });
       dequeuePendingRating(recipe.id);
-      showRecordToast();
     } catch {
       await enqueueMutation({
         type: "rating",

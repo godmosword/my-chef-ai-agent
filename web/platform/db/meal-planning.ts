@@ -441,6 +441,18 @@ export async function getMealSlot(
   return row ? slotFromRow(row) : null;
 }
 
+/** Slot must belong to the given meal plan (guards mismatched planId in URLs). */
+export async function getMealSlotForPlan(
+  slotId: number,
+  planId: number,
+  tenantId: string,
+  userId: string,
+): Promise<MealSlotRow | null> {
+  const slot = await getMealSlot(slotId, tenantId, userId);
+  if (!slot || slot.meal_plan_id !== planId) return null;
+  return slot;
+}
+
 export async function updateMealSlot(
   slotId: number,
   tenantId: string,

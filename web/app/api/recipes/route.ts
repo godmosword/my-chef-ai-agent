@@ -17,6 +17,7 @@ import {
 } from "@/platform/config/personalization-ui-config";
 import { shouldPromptOnboarding } from "@/platform/db/personalization-onboarding";
 import { getSessionUserId } from "@/platform/identity/session";
+import { refundQuota } from "@/platform/db/quota";
 import { touchLastInteraction } from "@/platform/db/notification-prefs";
 import type { RecipePayload } from "@chef/shared-types";
 import {
@@ -128,15 +129,40 @@ export async function POST(request: Request) {
 
     let recipe: RecipePayload;
     if (isDatabaseConfigured()) {
-      const persisted = await createRecipeFromAi({
-        userId,
-        tenantId: DEFAULT_TENANT_ID,
-        aiRecipe: result.recipe,
-        sourcePrompt: message,
-        contextTags: context_tags,
-        deepResearch: enable_deep_research,
-      });
-      recipe = persisted ?? aiRecipeToPayload(result.recipe);
+      let persisted: RecipePayload | null;
+      try {
+        persisted = await createRecipeFromAi({
+          userId,
+          tenantId: DEFAULT_TENANT_ID,
+          aiRecipe: result.recipe,
+          sourcePrompt: message,
+          contextTags: context_tags,
+          deepResearch: enable_deep_research,
+        });
+      } catch (persistErr) {
+        await refundQuota(
+          userId,
+          DEFAULT_TENANT_ID,
+          1,
+          "text_recipe_persist_failed",
+          "text",
+        );
+        throw persistErr;
+      }
+      if (!persisted) {
+        await refundQuota(
+          userId,
+          DEFAULT_TENANT_ID,
+          1,
+          "text_recipe_persist_failed",
+          "text",
+        );
+        return NextResponse.json(
+          { ok: false, error: "食譜無法寫入資料庫，請稍後再試。" },
+          { status: 502 },
+        );
+      }
+      recipe = persisted;
 
       const autoHeroEnv = process.env.AUTO_HERO_IMAGE !== "0";
       const recipeId = recipe.id;

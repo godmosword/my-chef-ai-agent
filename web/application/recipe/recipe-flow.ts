@@ -16,7 +16,7 @@ import {
 } from "@/domain/recipe/prompt-helpers";
 import {
   generateRecipe,
-  type RecipePayload,
+  type AiRecipePayload,
 } from "@/domain/recipe/generate-recipe";
 import { DEFAULT_TENANT_ID, MAX_HISTORY_TURNS } from "@/platform/config/app-config";
 import { getUserCuisineContext } from "@/platform/db/cuisine";
@@ -26,11 +26,16 @@ import {
   type MemoryMessage,
 } from "@/platform/db/memory";
 import { getUserPreferences } from "@/platform/db/preferences";
-import { consumeQuota, type QuotaBucket } from "@/platform/db/quota";
+import {
+  checkQuota,
+  consumeQuota,
+  quotaDecisionToBuckets,
+  type QuotaBucket,
+} from "@/platform/db/quota";
 import { recordPersonalizationInject } from "@/platform/observability/personalization-metrics";
 
 export type RecipeFlowResult = {
-  recipe: RecipePayload;
+  recipe: AiRecipePayload;
   raw: string;
   applied_personalization?: AppliedPersonalization;
   quota: {
@@ -59,15 +64,9 @@ export async function runRecipeFlow(
   tenantId: string = DEFAULT_TENANT_ID,
   options?: RecipeFlowOptions,
 ): Promise<RecipeFlowResult> {
-  const quota = await consumeQuota(
-    userId,
-    tenantId,
-    1,
-    "text_recipe_generation",
-    "text",
-  );
-  if (!quota.allowed) {
-    throw new QuotaExceededError(quota);
+  const preQuota = await checkQuota(userId, tenantId, "text");
+  if (!preQuota.allowed) {
+    throw new QuotaExceededError(quotaDecisionToBuckets(preQuota));
   }
 
   const scenarioPrefix = buildScenarioPrefix(userMessage);
@@ -151,6 +150,17 @@ export async function runRecipeFlow(
 
   const { raw, recipe } = await generateRecipe(apiMessages, userId);
 
+  const charged = await consumeQuota(
+    userId,
+    tenantId,
+    1,
+    "text_recipe_generation",
+    "text",
+  );
+  if (!charged.allowed) {
+    throw new QuotaExceededError(quotaDecisionToBuckets(charged));
+  }
+
   const toSave: MemoryMessage[] = [
     ...fullHistory,
     { role: "user", content: effectiveMessage, timestamp: nowIso },
@@ -174,14 +184,7 @@ export async function runRecipeFlow(
     recipe,
     raw,
     applied_personalization,
-    quota: {
-      plan_key: quota.plan_key,
-      limit: quota.limit,
-      used: quota.used,
-      remaining: quota.remaining,
-      text: quota.text,
-      image: quota.image,
-    },
+    quota: quotaDecisionToBuckets(charged),
   };
 }
 
