@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  PantryListResponseSchema,
+  PantrySummaryResponseSchema,
+} from "@chef/shared-types";
+import {
   categorizeForDisplay,
   expiryLabel,
   formatQuantityForDisplay,
@@ -11,6 +15,7 @@ import {
   type PantryDisplayItem,
 } from "@/domain/pantry/pantry-ui";
 import { parseManualPantryText } from "@/application/pantry/vision/manual-entry";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { Button } from "@/components/primitives/Button";
 import { Input } from "@/components/primitives/Input";
 import { displayDateKey } from "@/lib/locale/datetime";
@@ -55,9 +60,9 @@ function PantryPageInner() {
         fetch("/api/me/pantry/summary"),
       ]);
       if (!isActive()) return;
-      const listData = (await listRes.json()) as { items: PantryRow[] };
-      setItems(listData.items ?? []);
-      setSummary((await sumRes.json()) as Summary);
+      const listData = await parseApiResponse(listRes, PantryListResponseSchema);
+      setItems(listData.items as PantryRow[]);
+      setSummary(await parseApiResponse(sumRes, PantrySummaryResponseSchema));
     } catch {
       if (isActive()) setMessage("無法載入冰箱庫存");
     } finally {

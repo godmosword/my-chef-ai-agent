@@ -150,3 +150,16 @@ export const PantryListResponseSchema = z.object({
   items: z.array(PantryDisplayItemSchema),
   groups: z.array(z.unknown()).optional(),
 });
+
+/** Response of GET /api/me/pantry/summary (success case). */
+export const PantrySummaryResponseSchema = z
+  .object({
+    total_count: z.number(),
+    expiring_count: z.number(),
+    expired_count: z.number(),
+    by_category: z.record(z.string(), z.number()).optional(),
+  })
+  .passthrough();
+export type PantrySummaryResponse = z.infer<
+  typeof PantrySummaryResponseSchema
+>;
