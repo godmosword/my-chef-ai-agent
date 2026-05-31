@@ -10,12 +10,19 @@ import { RecipeSafetyNotice } from "@/components/recipe/RecipeSafetyNotice";
 import { buildDecisionSummary } from "@/domain/recipe/decision-summary";
 import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 import { WhyThisRecipe } from "@/components/personalization/WhyThisRecipe";
-import type { RecipePayload } from "@chef/shared-types";
+import {
+  DietaryPreferencesResponseSchema,
+  PantryAnnotateResponseSchema,
+  type RecipePayload,
+} from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { formatStepForPantry } from "@/domain/pantry/step-note";
 import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
 import { formatIngredient, formatStep, formatStepTip } from "@/domain/recipe/recipe-steps";
-import { dietaryAvoidDisplayLabels } from "@/domain/settings/dietary-preferences";
-import type { DietaryPreferences } from "@/domain/settings/dietary-preferences";
+import {
+  dietaryAvoidDisplayLabels,
+  normalizeDietaryPreferences,
+} from "@/domain/settings/dietary-preferences";
 
 function isQuotaError(message: string): boolean {
   return message.includes("額度") || message.includes("429");
@@ -51,9 +58,13 @@ export function StreamingRecipe({
       try {
         const res = await fetch("/api/me/dietary-preferences");
         if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { preferences: DietaryPreferences };
+        const data = await parseApiResponse(res, DietaryPreferencesResponseSchema);
         if (!cancelled) {
-          setAvoidLabels(dietaryAvoidDisplayLabels(data.preferences));
+          setAvoidLabels(
+            dietaryAvoidDisplayLabels(
+              normalizeDietaryPreferences(data.preferences),
+            ),
+          );
         }
       } catch {
         /* ignore */
@@ -79,13 +90,9 @@ export function StreamingRecipe({
           body: JSON.stringify({ ingredients: recipe.ingredients }),
         });
         if (!res.ok || cancelled) return;
-        const data = (await res.json()) as {
-          annotations: Array<{ name: string; in_pantry: boolean }>;
-          match_count: number;
-          total: number;
-        };
+        const data = await parseApiResponse(res, PantryAnnotateResponseSchema);
         if (!cancelled) {
-          setPantryAnnotations(data.annotations ?? []);
+          setPantryAnnotations(data.annotations);
           if (data.total > 0) {
             setPantryMatchSummary(
               `本食譜可用冰箱現有 ${data.match_count}/${data.total} 項食材`,

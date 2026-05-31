@@ -151,6 +151,25 @@ export const PantryListResponseSchema = z.object({
   groups: z.array(z.unknown()).optional(),
 });
 
+/** Response of POST /api/me/pantry/annotate (success case). */
+export const PantryAnnotateResponseSchema = z
+  .object({
+    ok: z.boolean().optional(),
+    annotations: z
+      .array(
+        z
+          .object({ name: z.string(), in_pantry: z.boolean() })
+          .passthrough(),
+      )
+      .default([]),
+    match_count: z.number(),
+    total: z.number(),
+  })
+  .passthrough();
+export type PantryAnnotateResponse = z.infer<
+  typeof PantryAnnotateResponseSchema
+>;
+
 /** Response of GET /api/me/pantry/summary (success case). */
 export const PantrySummaryResponseSchema = z
   .object({

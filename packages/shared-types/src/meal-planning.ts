@@ -30,3 +30,34 @@ export const MealPlanSlotConsumeSchema = z.object({
   consume_all: z.boolean().optional(),
 });
 export type MealPlanSlotConsume = z.infer<typeof MealPlanSlotConsumeSchema>;
+
+/**
+ * Completed meal-plan review insights. Lenient (passthrough) so added
+ * metrics don't break the review page.
+ */
+export const MealPlanInsightsSchema = z
+  .object({
+    plan_name: z.string(),
+    date_range: z.tuple([z.string(), z.string()]),
+    slots_cooked: z.number(),
+    slots_skipped: z.number(),
+    slots_swapped: z.number(),
+    slots_total: z.number(),
+    cook_rate: z.number(),
+    estimated_total_cost: z.number().nullable(),
+    actual_total_cost: z.number().nullable(),
+    skip_reasons_summary: z.record(z.string(), z.number()),
+    expiring_items_wasted: z.array(z.string()),
+    new_dishes_tried: z.array(z.string()),
+  })
+  .passthrough();
+export type MealPlanInsights = z.infer<typeof MealPlanInsightsSchema>;
+
+/** Response of GET /api/me/meal-plans/[planId]/insights (success case). */
+export const MealPlanInsightsResponseSchema = z.object({
+  ok: z.boolean().optional(),
+  insights: MealPlanInsightsSchema.optional(),
+});
+export type MealPlanInsightsResponse = z.infer<
+  typeof MealPlanInsightsResponseSchema
+>;

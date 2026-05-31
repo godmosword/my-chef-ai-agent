@@ -2,23 +2,15 @@
 
 import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
+import {
+  type MealPlanInsights,
+  MealPlanInsightsResponseSchema,
+} from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { BackLink } from "@/components/patterns/BackLink";
 import { useMountAsync } from "@/hooks/useMountAsync";
 
-type Insights = {
-  plan_name: string;
-  date_range: [string, string];
-  slots_cooked: number;
-  slots_skipped: number;
-  slots_swapped: number;
-  slots_total: number;
-  cook_rate: number;
-  estimated_total_cost: number | null;
-  actual_total_cost: number | null;
-  skip_reasons_summary: Record<string, number>;
-  expiring_items_wasted: string[];
-  new_dishes_tried: string[];
-};
+type Insights = MealPlanInsights;
 
 export default function PlanReviewPage() {
   const params = useParams();
@@ -30,8 +22,7 @@ export default function PlanReviewPage() {
     setLoadFailed(false);
     try {
       const res = await fetch(`/api/me/meal-plans/${planId}/insights`);
-      if (!res.ok) throw new Error("load failed");
-      const json = (await res.json()) as { insights?: Insights };
+      const json = await parseApiResponse(res, MealPlanInsightsResponseSchema);
       if (!isActive()) return;
       if (json.insights) setInsights(json.insights);
       else setLoadFailed(true);

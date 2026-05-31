@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PantryListResponseSchema } from "@chef/shared-types";
 import {
   categorizeForDisplay,
   formatQuantityForDisplay,
   itemToCleanFridgeLine,
   type PantryDisplayItem,
 } from "@/domain/pantry/pantry-ui";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { Button } from "@/components/primitives/Button";
 
 export type CleanFridgeDialogProps = {
@@ -33,9 +35,9 @@ export function CleanFridgeDialog({
     void (async () => {
       try {
         const res = await fetch("/api/me/pantry?include_expired=0");
-        const data = (await res.json()) as { items: PantryApiItem[] };
+        const data = await parseApiResponse(res, PantryListResponseSchema);
         if (cancelled) return;
-        const list = data.items ?? [];
+        const list = data.items as PantryApiItem[];
         setItems(list);
         setSelected(new Set(list.map((i) => i.id!)));
       } catch {

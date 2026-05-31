@@ -14,6 +14,8 @@ import { useTonightPantry } from "@/hooks/useTonightPantry";
 import { TonightPantryPanel } from "@/components/app-home/TonightPantryPanel";
 import { AddToWeekPlanButton } from "@/components/app-home/AddToWeekPlanButton";
 import { FLAGS } from "@/platform/config/flags";
+import { PantryListResponseSchema } from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { listRecipes } from "@/application/api/recipes";
 import { reportRegenerateFeedback } from "@/application/api/recipe-feedback";
 import { OnboardingBanner } from "@/components/personalization/OnboardingBanner";
@@ -80,8 +82,8 @@ export default function TodayPage() {
       if (FLAGS.pantryTonight && isCleanFridgeMessage(message)) {
         try {
           const res = await fetch("/api/me/pantry?include_expired=0");
-          const data = (await res.json()) as { items: unknown[] };
-          if ((data.items?.length ?? 0) > 0) {
+          const data = await parseApiResponse(res, PantryListResponseSchema);
+          if (data.items.length > 0) {
             setPendingMessage(message);
             setCleanFridgeOpen(true);
             return;
