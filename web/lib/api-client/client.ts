@@ -73,29 +73,3 @@ export async function apiFetch<T>(
 
   return data;
 }
-
-export async function parseApiResponse<S extends z.ZodTypeAny>(
-  response: Response,
-  schema: S,
-): Promise<z.infer<S>> {
-  const text = await response.text();
-  const data = parseJsonText<unknown>(text, response.status);
-  const envelope = data as { ok?: boolean };
-
-  if (!response.ok || envelope.ok === false) {
-    throw new ApiError(
-      errorMessageFromEnvelope(data, response.status),
-      response.status,
-      data,
-    );
-  }
-
-  const parsed = schema.safeParse(data);
-  if (!parsed.success) {
-    throw new ApiError("Invalid API response", response.status, {
-      issues: parsed.error.flatten(),
-      data,
-    });
-  }
-  return parsed.data;
-}

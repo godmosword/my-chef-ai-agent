@@ -36,7 +36,3 @@ apps/web/.next/
 apps/web/out/
 
 packages/design-tokens/dist/
-
-# Local agent / IDE (not shared project config)
-.claude/
-.cursor/skills/

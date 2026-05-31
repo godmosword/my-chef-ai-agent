@@ -21,7 +21,6 @@
 - **Playwright E2E**：改以 `prepare:standalone` + `start:standalone` 啟動（對齊 Docker／Cloud Run），不再使用與 `output: standalone` 不相容的 `next start`。
 - **Code review 收尾（階段 7–8）**：移除已廢棄 `NEXT_PUBLIC_NEW_UI`（`playwright.config.ts`、`build:e2e`）；同步 `web/README.md`（Landing 為預設、`/legacy` 301、API 清單）。
 - **E2E**：`recipe-funnel-mocked` 新增 Library 列表用例；`GET /api/recipes?…` 以 `addInitScript` fetch stub 攔截（Playwright glob 無法匹配 query string）。
-- **API client**：補上 `parseApiResponse` 匯出（對齊 `client.test.ts` 與 application re-export）。
 - **E2E**：`fillHeroPrompt` 等待 submit 啟用，修正 Tonight 生成測試 flaky timeout。
 - **domain 邊界**：瀏覽器 `localStorage`／`sessionStorage` 自 `domain/` 移至 `platform/browser-storage/`；`domain/calendar/week` 改為純日期鍵邏輯，時區包裝留在 `lib/locale/week`。
 

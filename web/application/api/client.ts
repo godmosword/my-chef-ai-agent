@@ -1,1 +1,1 @@
-export { ApiError, apiFetch, parseApiResponse } from "@/lib/api-client/client";
+export { ApiError, apiFetch } from "@/lib/api-client/client";
