@@ -1,11 +1,14 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { DietaryPreferencesResponseSchema } from "@chef/shared-types";
 import {
   DIETARY_PRESET_OPTIONS,
   type DietaryPreferences,
   type DietaryPresetKey,
+  normalizeDietaryPreferences,
 } from "@/domain/settings/dietary-preferences";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { useToast } from "@/components/providers/ToastProvider";
 import { useMountAsync } from "@/hooks/useMountAsync";
 
@@ -19,9 +22,8 @@ export function DietaryPreferencesPanel() {
     setLoading(true);
     try {
       const res = await fetch("/api/me/dietary-preferences");
-      if (!res.ok) throw new Error("load failed");
-      const data = (await res.json()) as { preferences: DietaryPreferences };
-      if (isActive()) setPrefs(data.preferences);
+      const data = await parseApiResponse(res, DietaryPreferencesResponseSchema);
+      if (isActive()) setPrefs(normalizeDietaryPreferences(data.preferences));
     } catch {
       /* ignore */
     } finally {

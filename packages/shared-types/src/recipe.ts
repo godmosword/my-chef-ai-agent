@@ -90,6 +90,15 @@ export const HeroStatusSchema = z.enum([
 ]);
 export type HeroStatus = z.infer<typeof HeroStatusSchema>;
 
+/** Response of GET /api/recipes/[id]/hero-status (success case). */
+export const HeroStatusResponseSchema = z.object({
+  ok: z.boolean(),
+  hero_status: HeroStatusSchema,
+  hero_url: z.string().nullable(),
+  hero_error: z.string().nullable(),
+});
+export type HeroStatusResponse = z.infer<typeof HeroStatusResponseSchema>;
+
 export const RecipeSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string(),

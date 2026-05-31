@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { HeroStatus } from "@chef/shared-types";
+import { type HeroStatus, HeroStatusResponseSchema } from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { capture } from "@/platform/analytics/events";
 
 const MAX_POLLS = 24;
-
-type HeroStatusResponse = {
-  ok: boolean;
-  hero_status: HeroStatus;
-  hero_url: string | null;
-  hero_error: string | null;
-};
 
 export function useHeroPolling(
   recipeId: string | undefined,
@@ -53,7 +47,7 @@ export function useHeroPolling(
       try {
         const res = await fetch(`/api/recipes/${recipeId}/hero-status`);
         if (!res.ok || cancelled) return;
-        const data = (await res.json()) as HeroStatusResponse;
+        const data = await parseApiResponse(res, HeroStatusResponseSchema);
         if (cancelled || !data.ok) return;
 
         setStatus(data.hero_status);

@@ -11,3 +11,28 @@ export const NotificationInboxMarkReadSchema = z.object({
 export type NotificationInboxMarkRead = z.infer<
   typeof NotificationInboxMarkReadSchema
 >;
+
+/**
+ * A single unread notification item. Lenient (passthrough) because the
+ * server row carries extra fields the UI ignores, and payload shape varies
+ * by `kind`.
+ */
+export const NotificationInboxItemSchema = z
+  .object({
+    id: z.number(),
+    kind: z.string(),
+    payload: z.record(z.string(), z.unknown()).default({}),
+  })
+  .passthrough();
+export type NotificationInboxItem = z.infer<
+  typeof NotificationInboxItemSchema
+>;
+
+/** Response of GET /api/me/notifications/inbox (success case). */
+export const NotificationInboxResponseSchema = z.object({
+  ok: z.boolean().optional(),
+  items: z.array(NotificationInboxItemSchema).default([]),
+});
+export type NotificationInboxResponse = z.infer<
+  typeof NotificationInboxResponseSchema
+>;

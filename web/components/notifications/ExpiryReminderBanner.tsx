@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
+import {
+  type NotificationInboxItem,
+  NotificationInboxResponseSchema,
+} from "@chef/shared-types";
 import { EXPIRY_DISCLAIMER_TEXT } from "@/application/notifications/expiry-reminder-payload";
 import { Button } from "@/components/primitives/Button";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { useMountAsync } from "@/hooks/useMountAsync";
 
-type InboxItem = {
-  id: number;
-  kind: string;
-  payload: Record<string, unknown>;
-};
+type InboxItem = NotificationInboxItem;
 
 type ExpiryItem = {
   id: number;
@@ -25,8 +26,8 @@ export function ExpiryReminderBanner() {
   const load = useCallback(async (isActive: () => boolean = () => true) => {
     try {
       const res = await fetch("/api/me/notifications/inbox");
-      const data = (await res.json()) as { items?: InboxItem[] };
-      if (isActive()) setItems(data.items ?? []);
+      const data = await parseApiResponse(res, NotificationInboxResponseSchema);
+      if (isActive()) setItems(data.items);
     } catch {
       if (isActive()) setItems([]);
     }
