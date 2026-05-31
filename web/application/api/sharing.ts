@@ -1,17 +1,25 @@
 import { apiFetch } from "@/application/api/client";
-import type { ShareRecipeResponse } from "@chef/shared-types";
+import type {
+  ShareRecipeResponse,
+  SharedRecipeLikeResponse,
+} from "@chef/shared-types";
+import {
+  CreateShareLinkResponseSchema,
+  SharedRecipeLikeResponseSchema,
+} from "@chef/shared-types";
 
 export async function createShareLink(
   recipeId: string,
   republish = false,
 ): Promise<ShareRecipeResponse> {
-  const res = await apiFetch<{ ok: true } & ShareRecipeResponse>(
+  const res = await apiFetch(
     `/api/recipes/${recipeId}/share`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(republish ? { republish: true } : {}),
     },
+    CreateShareLinkResponseSchema,
   );
   return {
     share_token: res.share_token,
@@ -32,20 +40,22 @@ export async function recordShareView(token: string): Promise<void> {
   }
 }
 
-export async function likeSharedRecipe(token: string): Promise<{
-  like_count: number;
-  liked: boolean;
-}> {
-  const res = await fetch(`/api/r/${token}/like`, { method: "POST" });
-  const data = await res.json();
-  return data;
+export async function likeSharedRecipe(
+  token: string,
+): Promise<SharedRecipeLikeResponse> {
+  return apiFetch(
+    `/api/r/${token}/like`,
+    { method: "POST" },
+    SharedRecipeLikeResponseSchema,
+  );
 }
 
-export async function unlikeSharedRecipe(token: string): Promise<{
-  like_count: number;
-  liked: boolean;
-}> {
-  const res = await fetch(`/api/r/${token}/like`, { method: "DELETE" });
-  const data = await res.json();
-  return data;
+export async function unlikeSharedRecipe(
+  token: string,
+): Promise<SharedRecipeLikeResponse> {
+  return apiFetch(
+    `/api/r/${token}/like`,
+    { method: "DELETE" },
+    SharedRecipeLikeResponseSchema,
+  );
 }

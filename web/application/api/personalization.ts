@@ -1,27 +1,36 @@
 import { apiFetch } from "./client";
-import type { HouseholdMember, TasteProfile } from "@/platform/db/personalization";
-import type { OnboardingStatus } from "@/domain/personalization/profile-types";
+import type {
+  HouseholdCreate,
+  HouseholdMemberResponse,
+  HouseholdPatch,
+  OnboardingStatus,
+  PatchPersonalizationResponse,
+  PersonalizationBundle,
+  TasteProfile,
+} from "@chef/shared-types";
+import {
+  HouseholdMemberResponseSchema,
+  OnboardingStatusResponseSchema,
+  PatchPersonalizationResponseSchema,
+  PersonalizationBundleSchema,
+} from "@chef/shared-types";
 import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 
-export type PersonalizationBundle = {
-  ok: true;
-  db_configured: boolean;
-  taste_profile: TasteProfile | null;
-  household_members: HouseholdMember[];
-  onboarding_status: OnboardingStatus;
-};
-
 export async function fetchPersonalization(): Promise<PersonalizationBundle> {
-  return apiFetch<PersonalizationBundle>("/api/me/personalization");
+  return apiFetch(
+    "/api/me/personalization",
+    undefined,
+    PersonalizationBundleSchema,
+  );
 }
 
 export async function patchPersonalization(
   patch: Partial<TasteProfile>,
-): Promise<{ ok: true; taste_profile: TasteProfile }> {
+): Promise<PatchPersonalizationResponse> {
   return apiFetch("/api/me/personalization", {
     method: "PATCH",
     body: JSON.stringify(patch),
-  });
+  }, PatchPersonalizationResponseSchema);
 }
 
 export async function deletePersonalization(
@@ -34,24 +43,22 @@ export async function deletePersonalization(
 }
 
 export async function createHouseholdMember(
-  body: Parameters<typeof import("@/platform/db/personalization").addHouseholdMember>[2] & {
-    name: string;
-  },
-): Promise<{ ok: true; member: HouseholdMember }> {
+  body: HouseholdCreate,
+): Promise<HouseholdMemberResponse> {
   return apiFetch("/api/me/household", {
     method: "POST",
     body: JSON.stringify(body),
-  });
+  }, HouseholdMemberResponseSchema);
 }
 
 export async function updateHouseholdMemberApi(
   memberId: number,
-  patch: Record<string, unknown>,
-): Promise<{ ok: true; member: HouseholdMember }> {
+  patch: HouseholdPatch,
+): Promise<HouseholdMemberResponse> {
   return apiFetch(`/api/me/household/${memberId}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
-  });
+  }, HouseholdMemberResponseSchema);
 }
 
 export async function deleteHouseholdMemberApi(memberId: number): Promise<void> {
@@ -68,10 +75,12 @@ export async function setOnboardingStatusApi(
 }
 
 export async function fetchOnboardingStatus(): Promise<OnboardingStatus> {
-  const res = await apiFetch<{ ok: true; status: OnboardingStatus }>(
+  const res = await apiFetch(
     "/api/me/onboarding/status",
+    undefined,
+    OnboardingStatusResponseSchema,
   );
   return res.status;
 }
 
-export type { AppliedPersonalization };
+export type { AppliedPersonalization, PersonalizationBundle };

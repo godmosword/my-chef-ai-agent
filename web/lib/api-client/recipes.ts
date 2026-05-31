@@ -1,20 +1,22 @@
-import type { RecipePayload, RecipeWithLatestVersion } from "@chef/shared-types";
+import type {
+  AddFavoriteResponse,
+  FavoriteItem,
+  GetRecipeResponse,
+  ListFavoritesResponse,
+  ListRecipesResponse,
+  RecipePayload,
+  RecordRecipeCookResponse,
+  RemoveFavoriteResponse,
+} from "@chef/shared-types";
+import {
+  AddFavoriteResponseSchema,
+  GetRecipeResponseSchema,
+  ListFavoritesResponseSchema,
+  ListRecipesResponseSchema,
+  RecordRecipeCookResponseSchema,
+  RemoveFavoriteResponseSchema,
+} from "@chef/shared-types";
 import { apiFetch } from "./client";
-
-export type ListRecipesResponse = {
-  ok: true;
-  items: RecipeWithLatestVersion[];
-  next_cursor: string | null;
-  db_configured: boolean;
-};
-
-export type FavoriteItem = {
-  id: number;
-  recipe_id?: string;
-  recipe_name: string;
-  recipe_data?: RecipePayload;
-  created_at: string;
-};
 
 export async function listRecipes(params?: {
   q?: string;
@@ -32,44 +34,50 @@ export async function listRecipes(params?: {
   if (params?.limit) sp.set("limit", String(params.limit));
   if (params?.cursor) sp.set("cursor", params.cursor);
   const qs = sp.toString();
-  return apiFetch<ListRecipesResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
+  return apiFetch(
+    `/api/recipes${qs ? `?${qs}` : ""}`,
+    undefined,
+    ListRecipesResponseSchema,
+  );
 }
 
-export async function getRecipe(id: string): Promise<{ ok: true; recipe: RecipePayload }> {
-  return apiFetch<{ ok: true; recipe: RecipePayload }>(`/api/recipes/${id}`);
+export async function getRecipe(id: string): Promise<GetRecipeResponse> {
+  return apiFetch(`/api/recipes/${id}`, undefined, GetRecipeResponseSchema);
 }
 
 export async function recordRecipeCook(
   id: string,
   body: { rating?: number; record_cook?: boolean },
-): Promise<{ ok: true; updated: true }> {
+): Promise<RecordRecipeCookResponse> {
   return apiFetch(`/api/recipes/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
-  });
+  }, RecordRecipeCookResponseSchema);
 }
 
-export async function listFavorites(): Promise<{
-  ok: true;
-  items: FavoriteItem[];
-  db_configured: boolean;
-}> {
-  return apiFetch<{ ok: true; items: FavoriteItem[]; db_configured: boolean }>(
+export async function listFavorites(): Promise<ListFavoritesResponse> {
+  return apiFetch(
     "/api/favorites",
+    undefined,
+    ListFavoritesResponseSchema,
   );
 }
 
-export async function addFavoriteByRecipeId(recipeId: string): Promise<{ ok: true; saved: true }> {
+export async function addFavoriteByRecipeId(
+  recipeId: string,
+): Promise<AddFavoriteResponse> {
   return apiFetch("/api/favorites", {
     method: "POST",
     body: JSON.stringify({ recipe_id: recipeId }),
-  });
+  }, AddFavoriteResponseSchema);
 }
 
 export async function removeFavoriteByRecipeId(
   recipeId: string,
-): Promise<{ ok: true; deleted: boolean }> {
+): Promise<RemoveFavoriteResponse> {
   return apiFetch(`/api/favorites/by-recipe/${encodeURIComponent(recipeId)}`, {
     method: "DELETE",
-  });
+  }, RemoveFavoriteResponseSchema);
 }
+
+export type { FavoriteItem, ListRecipesResponse, RecipePayload };

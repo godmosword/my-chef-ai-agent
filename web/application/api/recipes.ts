@@ -1,6 +1,16 @@
 import { apiFetch } from "./client";
 import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
-import type { GenerateRecipeRequest, RecipePayload } from "@chef/shared-types";
+import type {
+  DeleteRecipeResponse,
+  GenerateRecipeRequest,
+  GenerateRecipeResponse,
+  QuotaResponse,
+} from "@chef/shared-types";
+import {
+  DeleteRecipeResponseSchema,
+  GenerateRecipeResponseSchema,
+  QuotaResponseSchema,
+} from "@chef/shared-types";
 
 export {
   addFavoriteByRecipeId,
@@ -10,44 +20,25 @@ export {
   removeFavoriteByRecipeId,
 } from "@/lib/api-client/recipes";
 
-export type QuotaResponse = {
-  ok: true;
-  db_configured: boolean;
-  text: { used: number; limit: number; remaining: number };
-  image: { used: number; limit: number; remaining: number };
-};
-
-export type GenerateRecipeResponse = {
-  ok: true;
-  recipe: RecipePayload;
-  applied_personalization?: AppliedPersonalization | null;
-  suggest_onboarding?: boolean;
-  quota?: {
-    remaining: number;
-    limit: number;
-    used: number;
-    text: QuotaResponse["text"];
-    image: QuotaResponse["image"];
-  };
-};
-
 export async function fetchQuota(): Promise<QuotaResponse> {
-  return apiFetch<QuotaResponse>("/api/quota");
+  return apiFetch("/api/quota", undefined, QuotaResponseSchema);
 }
 
 export async function generateRecipe(
   body: GenerateRecipeRequest,
 ): Promise<GenerateRecipeResponse> {
-  return apiFetch<GenerateRecipeResponse>("/api/recipes", {
+  return apiFetch("/api/recipes", {
     method: "POST",
     body: JSON.stringify(body),
-  });
+  }, GenerateRecipeResponseSchema);
 }
 
 export async function deleteRecipe(
   id: string,
-): Promise<{ ok: true; deleted: true }> {
+): Promise<DeleteRecipeResponse> {
   return apiFetch(`/api/recipes/${encodeURIComponent(id)}`, {
     method: "DELETE",
-  });
+  }, DeleteRecipeResponseSchema);
 }
+
+export type { AppliedPersonalization, GenerateRecipeResponse, QuotaResponse };

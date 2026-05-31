@@ -172,6 +172,11 @@ export function PlanPageClient() {
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
+          {FLAGS.mealPlan && (
+            <Button asChild variant="secondary">
+              <Link href="/app/plan/generate">AI 規劃</Link>
+            </Button>
+          )}
           {FLAGS.mealPlan && <ShareWeekPlanButton weekOf={weekOf} />}
           <Button asChild variant="secondary">
             <Link href={`/app/shopping?week_of=${weekOf}`}>
