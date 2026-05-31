@@ -10,3 +10,4 @@ export * from "./notifications";
 export * from "./dietary";
 export * from "./profile";
 export * from "./meal-planning";
+export * from "./dashboard";

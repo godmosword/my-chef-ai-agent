@@ -1,22 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  type SharedShoppingListPayload,
+  type ShoppingListItem,
+  SharedShoppingListResponseSchema,
+} from "@chef/shared-types";
 import { SECTION_DISPLAY_ORDER, SECTION_LABELS } from "@/domain/shopping-list/sections";
 import type { ShoppingSection } from "@/domain/shopping-list/sections";
+import { ApiError, parseApiResponse } from "@/lib/api-client/client";
 
-type Item = {
-  id: number;
-  display_name: string;
-  quantity_display: string;
-  is_checked: boolean;
-  section: string;
-};
-
-type Payload = {
-  name: string | null;
-  progress: { total: number; checked: number };
-  items: Item[];
-};
+type Item = ShoppingListItem;
+type Payload = SharedShoppingListPayload;
 
 export function SharedShoppingClient({ token }: { token: string }) {
   const [data, setData] = useState<Payload | null>(null);
@@ -27,16 +22,12 @@ export function SharedShoppingClient({ token }: { token: string }) {
     setLoading(true);
     try {
       const res = await fetch(`/api/shared/shopping-lists/${token}`);
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? "無法載入");
-        setData(null);
-        return;
-      }
+      const json = await parseApiResponse(res, SharedShoppingListResponseSchema);
       setData(json.list);
       setError(null);
-    } catch {
-      setError("連線失敗");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "連線失敗");
+      setData(null);
     } finally {
       setLoading(false);
     }

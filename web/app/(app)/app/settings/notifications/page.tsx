@@ -1,33 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import {
+  type NotificationPreferences,
+  NotificationPreferencesResponseSchema,
+} from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { BackLink } from "@/components/patterns/BackLink";
 import { Button } from "@/components/primitives/Button";
 import { useMountAsync } from "@/hooks/useMountAsync";
 
-type Prefs = {
-  expiry_reminders_enabled: boolean;
-  expiry_warn_days: number;
-  expiry_reminder_frequency: string;
-  quiet_hours_start: number;
-  quiet_hours_end: number;
-  weekly_digest_enabled: boolean;
-  weekly_digest_day: number;
-  weekly_digest_hour: number;
-  snooze_until: string | null;
-  last_reminder_sent_at: string | null;
-  daily_meal_push_enabled: boolean;
-  daily_meal_morning_enabled: boolean;
-  daily_meal_morning_hour: number;
-  daily_meal_evening_enabled: boolean;
-  daily_meal_evening_hour: number;
-  shopping_reminder_enabled: boolean;
-  shopping_reminder_day: number;
-  shopping_reminder_hour: number;
-  weekly_review_enabled: boolean;
-  weekly_review_day: number;
-  weekly_review_hour: number;
-};
+type Prefs = NotificationPreferences;
 
 export default function NotificationSettingsPage() {
   const [prefs, setPrefs] = useState<Prefs | null>(null);
@@ -38,8 +21,10 @@ export default function NotificationSettingsPage() {
     setLoadFailed(false);
     try {
       const res = await fetch("/api/me/notifications");
-      if (!res.ok) throw new Error("load failed");
-      const data = (await res.json()) as { preferences?: Prefs };
+      const data = await parseApiResponse(
+        res,
+        NotificationPreferencesResponseSchema,
+      );
       if (!isActive()) return;
       if (data.preferences) setPrefs(data.preferences);
       else setLoadFailed(true);

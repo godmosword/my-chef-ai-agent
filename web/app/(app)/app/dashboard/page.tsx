@@ -2,24 +2,10 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { type Dashboard, DashboardResponseSchema } from "@chef/shared-types";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { BackLink } from "@/components/patterns/BackLink";
 import { useMountAsync } from "@/hooks/useMountAsync";
-
-type Dashboard = {
-  streak_weeks: number;
-  avg_cook_rate: number;
-  avg_weekly_cost: number | null;
-  waste_rate: number;
-  active_plan: { id: number; start_date: string; end_date: string; name: string | null } | null;
-  last_completed_insights: {
-    plan_id: number;
-    plan_name: string;
-    cook_rate: number;
-    slots_cooked: number;
-    slots_total: number;
-  } | null;
-  cook_rate_history: { plan_id: number; end_date: string; cook_rate: number }[];
-};
 
 export default function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
@@ -29,8 +15,7 @@ export default function DashboardPage() {
     setLoadFailed(false);
     try {
       const res = await fetch("/api/me/dashboard");
-      if (!res.ok) throw new Error("load failed");
-      const json = (await res.json()) as { dashboard?: Dashboard };
+      const json = await parseApiResponse(res, DashboardResponseSchema);
       if (!isActive()) return;
       if (json.dashboard) setData(json.dashboard);
       else setLoadFailed(true);

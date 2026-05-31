@@ -2,28 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  type ShoppingListItem,
+  type ShoppingListPayload,
+  ShoppingListResponseSchema,
+} from "@chef/shared-types";
 import { SECTION_DISPLAY_ORDER, SECTION_LABELS } from "@/domain/shopping-list/sections";
 import type { ShoppingSection } from "@/domain/shopping-list/sections";
+import { parseApiResponse } from "@/lib/api-client/client";
 import { Button } from "@/components/primitives/Button";
 import { useToast } from "@/components/providers/ToastProvider";
 
-type Item = {
-  id: number;
-  display_name: string;
-  quantity_display: string;
-  estimated_total_price: number | null;
-  pantry_coverage_note: string | null;
-  is_checked: boolean;
-  section: string;
-};
-
-type ListPayload = {
-  id: number;
-  name: string | null;
-  estimated_total_cost: number | null;
-  progress: { total: number; checked: number };
-  items: Item[];
-};
+type Item = ShoppingListItem;
+type ListPayload = ShoppingListPayload;
 
 export function PlanShoppingClient({ planId }: { planId: string }) {
   const { toast } = useToast();
@@ -35,17 +26,17 @@ export function PlanShoppingClient({ planId }: { planId: string }) {
     setLoading(true);
     try {
       let res = await fetch("/api/me/shopping-lists/active");
-      let json = await res.json();
-      if (!json.list?.id) {
+      let data = await parseApiResponse(res, ShoppingListResponseSchema);
+      if (!data.list?.id) {
         res = await fetch("/api/me/shopping-lists", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ meal_plan_id: Number(planId) }),
         });
-        json = await res.json();
+        data = await parseApiResponse(res, ShoppingListResponseSchema);
       }
-      if (!res.ok || !json.list) throw new Error(json.error ?? "載入失敗");
-      setList(json.list);
+      if (!data.list) throw new Error("載入失敗");
+      setList(data.list);
     } catch (e) {
       toast({
         title: "無法載入採買清單",
