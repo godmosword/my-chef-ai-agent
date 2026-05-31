@@ -9,6 +9,10 @@
 
 ### Changed
 
+- **Legacy HTTP 移除**：刪除無前端引用的 `DELETE /api/memory`、`GET|PUT /api/cuisine`、`POST /api/recipes/hero`（依菜名）、`POST /api/recipes/poster` 及 `application/poster/recipe-poster-html.ts`；`platform/db/memory`、`platform/db/cuisine` 仍供 recipe-flow 使用。
+- **server-only 護欄**：`platform/db/client.ts` 引入 `server-only`；Vitest 以 `vitest.setup.ts` mock；`confidenceLabel` 自 `review-commit` 拆出，避免 client 頁誤拉 DB。
+- **display-name 邊界**：`readDisplayName`／`writeDisplayName` 移至 `platform/browser-storage/display-name.ts`；React hook 獨立為 `lib/profile/use-display-name.ts`。
+- **響應式小修**：Library 列表模式小螢幕改 card 列（`md+` 仍為表格）；Plan 格 `min-h` 改為 `3.25rem`／`sm:4.5rem`。
 - **metadataBase**：根 layout 以 `getSiteUrl()` 設定，build 不再 fallback `localhost` 警告；OG／Twitter 相對路徑可正確解析。
 - **Playwright E2E**：改以 `prepare:standalone` + `start:standalone` 啟動（對齊 Docker／Cloud Run），不再使用與 `output: standalone` 不相容的 `next start`。
 - **Code review 收尾（階段 7–8）**：移除已廢棄 `NEXT_PUBLIC_NEW_UI`（`playwright.config.ts`、`build:e2e`）；同步 `web/README.md`（Landing 為預設、`/legacy` 301、API 清單）。
@@ -17,7 +21,7 @@
 
 ### Developer / 維運
 
-- **階段 7 響應式自查**（只列、未改 UI）：`viewportFit: cover` + TabBar／main `safe-area-inset-*` 已覆蓋行動端；`md:` 斷點分離 sidebar／tab bar；`100dvh` 用於 App shell 與烹飪模式；橫向 scroll 用於 RecentRecipes／QuickChips／Achievements（預期）。**低風險**：Library 列表 `min-w-[32rem]` 小螢幕需橫向捲動；Plan 格 `min-h-[4.5rem]` 週末視窗可能偏擠。
+- **階段 7 響應式自查**：`viewportFit: cover` + TabBar／main `safe-area-inset-*` 已覆蓋行動端；Library 列表小螢幕 card、Plan 格 min-h 已調整；其餘見原自查（RecentRecipes 橫向 scroll 等為預期）。
 - **階段 8 驗證**：`pnpm lint` ✅、`pnpm test` ✅、`pnpm build` ✅（shared First Load JS **104 kB**；最重頁 `/app/pantry/scan` **158 kB**、 `/app/plan` **171 kB**）；Playwright 3/3 ✅（本機需 `pnpm exec playwright install chromium`）。
 
 ### Fixed
