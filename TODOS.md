@@ -72,6 +72,7 @@
 
 | 時間 | 內容 |
 |------|------|
+| 2026-05-31 | **Code review 階段 1–8 收尾**：Legacy ChatPanel 移除（`ec201f9`）；server/client 邊界、響應式自查、build／E2E／bundle 驗證；`NEXT_PUBLIC_NEW_UI` 清掉。 |
 | 2026-05-27 | **架構一次搬遷 + P0**：`domain/`／`application/`／`platform/`；個人化 PM-1～4、冰箱 PT-1～4、MP-1 後端；migration `0010`–`0016`。 |
 | 2026-05-26 | **E2E + step_tip + 剩菜續作**：Playwright 漏斗（mock API + demo cook）；`step_tip` 生成／詳情／烹飪；完成頁剩菜 prefill；`CookingModeClient` 完成後停止 URL sync。 |
 | 2026-05-26 | **產品進化規格**：[`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)；Wave 1 實作計畫 [`2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。 |

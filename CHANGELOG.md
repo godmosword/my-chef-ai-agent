@@ -7,6 +7,16 @@
 ---
 ## [Unreleased]
 
+### Changed
+
+- **Code review 收尾（階段 7–8）**：移除已廢棄 `NEXT_PUBLIC_NEW_UI`（`playwright.config.ts`、`build:e2e`）；同步 `web/README.md`（Landing 為預設、`/legacy` 301、API 清單）。
+- **E2E**：`fillHeroPrompt` 等待 submit 啟用，修正 Tonight 生成測試 flaky timeout。
+
+### Developer / 維運
+
+- **階段 7 響應式自查**（只列、未改 UI）：`viewportFit: cover` + TabBar／main `safe-area-inset-*` 已覆蓋行動端；`md:` 斷點分離 sidebar／tab bar；`100dvh` 用於 App shell 與烹飪模式；橫向 scroll 用於 RecentRecipes／QuickChips／Achievements（預期）。**低風險**：Library 列表 `min-w-[32rem]` 小螢幕需橫向捲動；Plan 格 `min-h-[4.5rem]` 週末視窗可能偏擠；`metadataBase` 未設（build 警告，OG 預覽用 localhost）。
+- **階段 8 驗證**：`pnpm lint` ✅、`pnpm test` ✅、`pnpm build` ✅（shared First Load JS **104 kB**；最重頁 `/app/pantry/scan` **158 kB**、 `/app/plan` **171 kB**）；Playwright 3/3 ✅（本機需 `pnpm exec playwright install chromium`）。
+
 ### Fixed
 
 - **Vercel deploy**：`web/vercel.json` cron 由 `5 * * * *`（每小時）改為 **每日／每週** 排程，符合 Hobby「每日最多執行一次」限制；補上 `meal-plan-daily`（預設對齊 Asia/Taipei 09:00／17:00 兩次觸發）。先前 `02d4226` 起 Production 建置失敗、線上仍停在 `121ce92`。

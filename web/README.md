@@ -15,15 +15,15 @@ pnpm dev:web
 
 開啟 http://localhost:3000
 
-### 新 UI（Prompt 3）
+### App UI（Today / Library / Me）
 
 | 變數 | 說明 |
 |------|------|
-| `NEXT_PUBLIC_NEW_UI=1` | `/` 為 Landing；`/app` 為 Today／Library／Me |
 | `NEXT_PUBLIC_COOKING_MODE_ENABLED=1` | 食譜詳情顯示「進入烹飪模式」 |
 | `NEXT_PUBLIC_PANTRY_TONIGHT=1` | Tonight「今晚清冰箱」清單（最多 5 樣）；生成／採買／步驟整合 |
 | `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1` | 側欄 Plan／Shopping；週曆與採買聚合 API；生成後可「加入本週菜單」 |
-| （未設或 `0`） | `/` 為經典 `ChatPanel`；`/legacy` 永遠可用 |
+
+`/` 固定為 Landing；`/app` 為 Tonight／Library／Me。舊 `/legacy` 聊天 UI 已移除，middleware 會 301 導向 `/`。
 
 規格：[`docs/superpowers/specs/2026-05-23-today-library-ui.md`](../docs/superpowers/specs/2026-05-23-today-library-ui.md)、[`2026-05-23-cooking-mode.md`](../docs/superpowers/specs/2026-05-23-cooking-mode.md)、[`2026-05-23-meal-planner.md`](../docs/superpowers/specs/2026-05-23-meal-planner.md)
 
@@ -37,7 +37,7 @@ pnpm dev:web
 4. **Install Command**（建議）：`cd .. && pnpm install --frozen-lockfile`
 5. **Build Command**（建議）：`cd .. && pnpm tokens:build && pnpm -F @chef/web build`
 6. 設定 `GEMINI_API_KEY`；Neon 連結後有 `DATABASE_URL`
-7. （建議）`NEXT_PUBLIC_NEW_UI=1`、`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`、`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`、`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_DISPLAY_TIMEZONE=Asia/Taipei`
+7. （建議）`NEXT_PUBLIC_COOKING_MODE_ENABLED=1`、`NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`、`NEXT_PUBLIC_SITE_URL`、`NEXT_PUBLIC_DISPLAY_TIMEZONE=Asia/Taipei`
 
 `MODEL_NAME` 等見 [`vercel.json`](vercel.json)，通常不必在 Dashboard 重複設定。
 
@@ -67,13 +67,10 @@ pnpm dev:web
 - `GET /api/health`、`GET /api/quota`（`text`／`image` 配額 bucket）
 - `GET|POST /api/recipes`（POST 產生食譜並可持久化；GET 列表）
 - `GET|PATCH|DELETE /api/recipes/[id]`（PATCH：`rating`、`record_cook`）、`POST /api/recipes/[id]/tags`、`GET /api/recipes/[id]/versions`
-- `POST /api/recipes/hero`（legacy 手動主圖；**image** 配額）
 - `GET /api/recipes/[id]/hero-status`（主圖狀態 polling）、`POST /api/recipes/[id]/hero`（重生主圖）
 - `POST /api/recipes/[id]/steps/[stepIndex]/image`（按需產生單一步驟插圖；**image** 配額 1 次）
-- `POST /api/recipes/poster`
-- `GET|PUT /api/cuisine`、`DELETE /api/memory`
 - `GET|PATCH /api/me/dietary-preferences`（家庭飲食偏好與需避開食材）
-- `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data`）、`DELETE /api/favorites/:id`
+- `GET|POST /api/favorites`（`recipe_id` 或 legacy `recipe_name`+`recipe_data` body）、`DELETE /api/favorites/:id`
 - `GET /api/plan?week_of=`、`PUT /api/plan/:date/:slot`、`GET /api/plan/shopping/:week`（需 `MEAL_PLAN` flag；legacy 週曆 `meal_calendar_entries`）
 - **MP-1 週菜單規劃（後端）**：`generateMealPlan()`、`expandSlotToFullRecipe()`（`web/application/meal-planning/`）；表 `meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`（migration `0016`）。**尚無 HTTP 觸發**（MP-2 UI）。伺服器 env 見 `.env.example` 的 `ENABLE_MEAL_PLANNING`、`MEAL_PLAN_*`。
 
@@ -90,8 +87,9 @@ pnpm -F @chef/web db:migrate
 `db:migrate` 會自動讀取 `web/.env.local` 的 `DATABASE_URL`（Neon URL 請用雙引號包住，避免 `&` 被 shell 誤解析）。
 
 ```bash
-pnpm -F @chef/web test        # Vitest（約 199 passed）
-pnpm -F @chef/web test:e2e    # Playwright；CI 於 build 後執行
+pnpm -F @chef/web test        # Vitest
+pnpm -F @chef/web test:e2e    # Playwright（build:e2e 後 next start；CI 於 web-ci.yml）
+pnpm -F @chef/web build       # Production build + bundle 摘要
 ```
 
 ## 圖片與配額策略

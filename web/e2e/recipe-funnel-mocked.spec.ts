@@ -5,6 +5,7 @@ import {
   completeCookingSteps,
   dismissBlockingOverlays,
   dismissCookingOnboarding,
+  fillHeroPrompt,
   installRecipeApiMocks,
 } from "./helpers";
 
@@ -17,7 +18,7 @@ test.describe("recipe funnel (mocked API)", () => {
   test("Tonight 生成顯示菜名", async ({ page }) => {
     await page.goto("/app");
     await dismissBlockingOverlays(page);
-    await page.getByLabel("描述你想吃的料理").fill("30分鐘咖哩");
+    await fillHeroPrompt(page, "30分鐘咖哩");
     await page.getByRole("button", { name: "生成食譜" }).click();
     await expect(page.getByRole("heading", { name: "E2E 測試咖哩" })).toBeVisible({
       timeout: 45_000,

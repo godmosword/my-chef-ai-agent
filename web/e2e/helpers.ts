@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export const MOCK_RECIPE_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -34,6 +34,17 @@ export async function dismissCookingOnboarding(page: Page) {
 }
 
 /** After navigation, skip resume / app onboarding if they appear. */
+/** Fill Tonight hero prompt and wait until React enables submit. */
+export async function fillHeroPrompt(page: Page, text: string) {
+  const prompt = page.locator("#hero-prompt");
+  await prompt.waitFor({ state: "visible" });
+  await prompt.click();
+  await prompt.fill(text);
+  await expect(prompt).toHaveValue(text);
+  const submit = page.getByRole("button", { name: "生成食譜" });
+  await expect(submit).toBeEnabled({ timeout: 15_000 });
+}
+
 export async function dismissBlockingOverlays(page: Page) {
   for (const name of ["略過", "跳過"]) {
     const btn = page.getByRole("button", { name });
