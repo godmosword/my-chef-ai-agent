@@ -138,9 +138,6 @@ export default function DashboardPage() {
       )}
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/app/plan/generate" className="text-brand-primary underline">
-          AI 規劃本週菜單
-        </Link>
         <Link href="/app/plan" className="text-brand-primary underline">
           週菜單
         </Link>

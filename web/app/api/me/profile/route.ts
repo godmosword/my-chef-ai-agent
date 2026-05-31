@@ -6,7 +6,18 @@ import { countFavoritesForUser } from "@/platform/db/favorites";
 import { getRecipeActivityForUser } from "@/platform/db/queries/recipes";
 import { countSharedRecipesForUser } from "@/platform/db/queries/sharing";
 import { getSessionUserId } from "@/platform/identity/session";
-import type { ProfileResponse } from "@chef/shared-types";
+
+interface ProfileResponse {
+  ok: true;
+  db_configured: boolean;
+  recipe_count: number;
+  shared_count: number;
+  favorites_count: number;
+  current_streak: number;
+  longest_streak: number;
+  first_recipe_at: string | null;
+  last_recipe_at: string | null;
+}
 
 function computeStreaks(activeDates: string[]): {
   current: number;

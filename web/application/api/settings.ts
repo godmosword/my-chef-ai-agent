@@ -1,32 +1,28 @@
-import type {
-  DeleteAccountResponse,
-  SettingsResponse,
-  UpdateSettingsResponse,
-  UpdateUserSettings,
-} from "@chef/shared-types";
-import {
-  DeleteAccountResponseSchema,
-  SettingsResponseSchema,
-  UpdateSettingsResponseSchema,
-} from "@chef/shared-types";
+import type { UpdateUserSettings, UserSettings } from "@chef/shared-types";
 import { apiFetch } from "./client";
 
+export type SettingsResponse = {
+  ok: true;
+  settings: UserSettings;
+  db_configured: boolean;
+  recipe_count: number;
+  shared_count: number;
+};
+
 export async function fetchUserSettings(): Promise<SettingsResponse> {
-  return apiFetch("/api/me/settings", undefined, SettingsResponseSchema);
+  return apiFetch<SettingsResponse>("/api/me/settings");
 }
 
 export async function updateUserSettings(
   patch: UpdateUserSettings,
-): Promise<UpdateSettingsResponse> {
+): Promise<{ ok: true; settings: UserSettings }> {
   return apiFetch("/api/me/settings", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
-  }, UpdateSettingsResponseSchema);
+  });
 }
 
-export async function deleteAccount(): Promise<DeleteAccountResponse> {
-  return apiFetch("/api/me", { method: "DELETE" }, DeleteAccountResponseSchema);
+export async function deleteAccount(): Promise<{ ok: true; deleted: boolean }> {
+  return apiFetch("/api/me", { method: "DELETE" });
 }
-
-export type { SettingsResponse };

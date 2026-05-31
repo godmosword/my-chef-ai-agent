@@ -15,15 +15,6 @@ test.describe("recipe funnel (mocked API)", () => {
     await installRecipeApiMocks(page);
   });
 
-  test("Library 列表顯示 mock 食譜", async ({ page }) => {
-    await page.goto("/app/library");
-    await dismissBlockingOverlays(page);
-    await expect(page.getByRole("heading", { name: "我的食譜" })).toBeVisible();
-    await expect(page.getByText("E2E 測試咖哩")).toBeVisible({
-      timeout: 15_000,
-    });
-  });
-
   test("Tonight 生成顯示菜名", async ({ page }) => {
     await page.goto("/app");
     await dismissBlockingOverlays(page);

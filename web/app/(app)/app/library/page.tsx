@@ -170,39 +170,8 @@ export default function LibraryPage() {
           ))}
         </div>
       ) : (
-        <>
-          <ul className="space-y-2 md:hidden" role="list">
-            {filtered.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-default p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/app/library/${r.id}`}
-                    className="font-medium text-brand-primary hover:underline"
-                  >
-                    {r.title}
-                  </Link>
-                  <p className="mt-0.5 text-xs text-text-muted">
-                    {[r.cuisine, r.lastCookedAt ? formatRelativeTime(r.lastCookedAt) : null]
-                      .filter(Boolean)
-                      .join(" · ") || "—"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  aria-label={`刪除 ${r.title}`}
-                  className="shrink-0 rounded-lg p-2 text-text-muted hover:bg-surface-muted hover:text-danger"
-                  onClick={() => setDeleteTarget({ id: r.id, title: r.title })}
-                >
-                  <Trash2 className="size-4" aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <div className="hidden overflow-x-auto rounded-lg border border-border-default md:block">
-            <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border-default">
+          <table className="w-full min-w-[32rem] text-left text-sm">
             <thead className="border-b border-border-default bg-surface-muted">
               <tr>
                 <th className="px-4 py-2 font-medium text-text-ink">名稱</th>
@@ -245,7 +214,6 @@ export default function LibraryPage() {
             </tbody>
           </table>
         </div>
-        </>
       )}
 
       <DeleteRecipeDialog

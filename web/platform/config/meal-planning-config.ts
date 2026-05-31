@@ -41,9 +41,3 @@ export function mealPlanWeekendMaxTime(): number {
     parseInt(process.env.MEAL_PLAN_WEEKEND_MAX_TIME || "60", 10) || 60,
   );
 }
-
-export function isMealPlanningEnabled(): boolean {
-  const v = process.env.ENABLE_MEAL_PLANNING;
-  if (v == null || v === "") return true;
-  return v === "1" || v.toLowerCase() === "true";
-}

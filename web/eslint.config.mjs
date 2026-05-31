@@ -23,7 +23,6 @@ export default tseslint.config(
       "node_modules/**",
       "public/**",
       "scripts/**",
-      "test-results/**",
       "**/*.test.ts",
     ],
   },

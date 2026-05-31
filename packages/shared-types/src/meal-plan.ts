@@ -70,24 +70,3 @@ export const PutMealPlanSlotSchema = z.object({
   notes: z.string().max(500).nullable().optional(),
 });
 export type PutMealPlanSlot = z.infer<typeof PutMealPlanSlotSchema>;
-
-export const WeekPlanResponseSchema = WeekPlanSchema.extend({
-  ok: z.literal(true),
-});
-export type WeekPlanResponse = z.infer<typeof WeekPlanResponseSchema>;
-
-export const PutMealPlanSlotResponseSchema = z.object({
-  ok: z.literal(true),
-  slot: MealPlanSlotSchema,
-});
-export type PutMealPlanSlotResponse = z.infer<
-  typeof PutMealPlanSlotResponseSchema
->;
-
-export const AggregatedShoppingListResponseSchema =
-  AggregatedShoppingListSchema.extend({
-    ok: z.literal(true),
-  });
-export type AggregatedShoppingListResponse = z.infer<
-  typeof AggregatedShoppingListResponseSchema
->;

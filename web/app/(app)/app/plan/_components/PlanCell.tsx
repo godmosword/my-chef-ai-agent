@@ -33,7 +33,7 @@ export function PlanCell({ slot, isToday, isPast, onActivate }: PlanCellProps) {
     <div
       ref={setRef}
       className={cn(
-        "relative min-h-[3.25rem] sm:min-h-[4.5rem] rounded-lg border p-2 transition-colors",
+        "relative min-h-[4.5rem] rounded-lg border p-2 transition-colors",
         slot.filled
           ? "border-border-default bg-surface-default"
           : "border-dashed border-border-default bg-surface-muted",
@@ -69,7 +69,7 @@ export function PlanCell({ slot, isToday, isPast, onActivate }: PlanCellProps) {
       ) : (
         <button
           type="button"
-          className="flex h-full min-h-[3rem] sm:min-h-[4rem] w-full flex-col items-center justify-center gap-1 text-text-muted hover:text-brand-primary"
+          className="flex h-full min-h-[4rem] w-full flex-col items-center justify-center gap-1 text-text-muted hover:text-brand-primary"
           onClick={onActivate}
           aria-label="新增餐點"
         >

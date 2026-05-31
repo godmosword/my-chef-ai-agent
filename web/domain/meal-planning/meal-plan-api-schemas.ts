@@ -1,13 +1,9 @@
-export {
-  CreateMealPlanSchema,
-  MealPatternSchema,
-  MealPlanSlotConsumeSchema,
-  MealPlanSlotSkippedSchema,
-} from "@chef/shared-types";
+import { z } from "zod";
 
-export type {
-  CreateMealPlan,
-  MealPattern,
-  MealPlanSlotConsume,
-  MealPlanSlotSkipped,
-} from "@chef/shared-types";
+export const MealPlanSlotSkippedSchema = z.object({
+  reason: z.string().min(1).max(64),
+});
+
+export const MealPlanSlotConsumeSchema = z.object({
+  consume_all: z.boolean().optional(),
+});
