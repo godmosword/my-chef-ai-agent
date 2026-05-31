@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { PantryReviewSessionPayload } from "@/application/pantry/vision/review-types";
-import { confidenceLabel } from "@/application/pantry/vision/review-commit";
+import { confidenceLabel } from "@/application/pantry/vision/confidence-label";
 
 type VisionResponse =
   | { status: "review"; session_id: string; session_type: string; payload: PantryReviewSessionPayload }

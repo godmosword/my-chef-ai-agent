@@ -21,10 +21,10 @@
 ## P1 — 週菜單與習慣（P0 完成後）
 
 - [x] **MP-1**：`meal_plans`／`meal_slots`／`meal_plan_pantry_snapshot`、兩段式規劃演算法、lazy 展開食譜（migration `0016`）
-- [ ] **MP-2**：週菜單規劃 UI（觸發規劃、檢視 slots、啟用計畫）
+- [x] **MP-2**：週菜單規劃 UI（`/app/plan/generate` 觸發、`/app/plan/sessions/[id]` 檢視 slots、`POST …/activate` 啟用）
 - [x] **MP-3**：採買清單合併與分類（`shopping_lists`／`shopping_list_items`、merge 引擎、Web API、`/app/plan/[planId]/shopping`、`/shop/[token]` 分享；migration `0017`；LINE N/A）
 - [x] **MP-4**：每日菜單／晚餐提醒／採買提醒／週回顧（App 收件匣 + Cron `meal-plan-daily`）；slot cooked/skip + pantry 扣減 API；`/app/dashboard`、`/app/plan/[id]/review`；migration `0018`；LINE N/A
-- [x] **P1**：MP-1～MP-4 後端與 Web 執行迴路已閉環（MP-2 規劃 UI 仍待補）
+- [x] **P1**：MP-1～MP-4 後端與 Web 執行迴路已閉環（含 MP-2 規劃 UI）
 - [ ] **P1-3**：通知 Web Push（需使用者授權，補強收件匣）
 - [ ] **P2**：語音引導烹飪、超市整合、營養追蹤（placeholder）
 
@@ -72,7 +72,10 @@
 
 | 時間 | 內容 |
 |------|------|
-| 2026-05-31 | **Code review 階段 1–8 收尾**：Legacy ChatPanel 移除（`ec201f9`）；server/client 邊界、響應式自查、build／E2E／bundle 驗證；`NEXT_PUBLIC_NEW_UI` 清掉。 |
+| 2026-05-31 | **Library 列表 E2E**：`recipe-funnel-mocked` 補 mock 列表用例；fetch stub 處理帶 query 的 `GET /api/recipes`。 |
+| 2026-05-31 | **MP-2 週菜單規劃 UI**：`POST /api/me/meal-plans` 觸發 AI 規劃、草稿檢視、啟用計畫；`/app/plan/generate`、`/app/plan/sessions/[id]`。 |
+| 2026-05-31 | **Code review 低優先收尾**：Legacy API（memory／cuisine／hero／poster）移除；`server-only` DB 護欄；display-name 拆至 browser-storage；Library／Plan 響應式小修。 |
+| 2026-05-31 | **Code review 階段 1–8 收尾**：Legacy ChatPanel 移除（`ec201f9`）；server/client 邊界、響應式自查、build／E2E／bundle 驗證；`NEXT_PUBLIC_NEW_UI` 清掉；`metadataBase`、standalone E2E（`97b37fc`）。 |
 | 2026-05-27 | **架構一次搬遷 + P0**：`domain/`／`application/`／`platform/`；個人化 PM-1～4、冰箱 PT-1～4、MP-1 後端；migration `0010`–`0016`。 |
 | 2026-05-26 | **E2E + step_tip + 剩菜續作**：Playwright 漏斗（mock API + demo cook）；`step_tip` 生成／詳情／烹飪；完成頁剩菜 prefill；`CookingModeClient` 完成後停止 URL sync。 |
 | 2026-05-26 | **產品進化規格**：[`2026-05-26-product-evolution-design.md`](docs/superpowers/specs/2026-05-26-product-evolution-design.md)；Wave 1 實作計畫 [`2026-05-26-wave1-cook-success-plan.md`](docs/superpowers/plans/2026-05-26-wave1-cook-success-plan.md)。 |
@@ -117,9 +120,8 @@
 
 - [ ] **健康檢查**：`GET /api/health` 回 `ai_configured: true`、正確 `model`
 - [ ] **聊天**：輸入菜名 → 食譜卡顯示
-- [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏、可切換菜系、可清除記憶
-- [x] **主圖 + 按需步驟插圖**：新食譜預設只處理成品主圖；步驟圖需使用者主動按鈕觸發並使用 1 次 image 配額
-- [ ] **海報**：「下載海報」取得 HTML 且可列印
+- [ ] **Neon**：有 `DATABASE_URL` 時顯示今日配額、可收藏；菜系偏好改在 `/app/profile` 管理（legacy `/api/cuisine` 已移除）
+- [x] **主圖 + 按需步驟插圖**：新食譜預設只處理成品主圖；步驟圖需使用者主動按鈕觸發並使用 1 次 image 配額（legacy 依菜名 hero／HTML 海報 API 已移除）
 
 ---
 
@@ -163,7 +165,7 @@
 
 > 規格：[`docs/superpowers/specs/2026-05-23-meal-planner.md`](docs/superpowers/specs/2026-05-23-meal-planner.md)
 
-- [ ] **Vercel**：Dashboard 加 `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`（與 `NEW_UI` 一併）
+- [ ] **Vercel**：Dashboard 加 `NEXT_PUBLIC_MEAL_PLAN_ENABLED=1`（`NEXT_PUBLIC_NEW_UI` 已移除，Landing 為預設）
 - [ ] **真機驗收**：週曆 DnD（touch 長按）、跨週導覽、採買列印預覽
 - [ ] **聚合單元測試**：`shopping-list-aggregation.test.ts`（可選）
 - [ ] **PDF API**：目前 print-only；若要做伺服器 PDF 另開項
@@ -173,7 +175,7 @@
 > 規格：[`docs/superpowers/specs/2026-05-23-cooking-mode.md`](docs/superpowers/specs/2026-05-23-cooking-mode.md)
 
 - [ ] **真機驗收**：Wake Lock 5 分鐘、背景計時、震動／鈴聲、iOS Safari 全螢幕（見規格 §13）
-- [ ] **E2E**：進入 cook → 切步 → 完成評分（Playwright）
+- [x] **E2E**：進入 cook → 切步 → 完成評分 — `demo-cook-funnel`／`recipe-funnel-mocked`（2026-05-31）
 
 ### Prompt 3 後續（UI）
 
@@ -183,7 +185,7 @@
 - [ ] **⌘K CommandBar**
 - [x] **Library 收藏切換** UI 接 `POST/DELETE /api/favorites`（2026-05-24）
 - [ ] **菜系篩選計數** 由 API 提供 aggregate
-- [ ] **E2E**：Today 生成、Library 列表（Playwright）
+- [x] **E2E**：Today 生成、Library 列表（Playwright）— `recipe-funnel-mocked` 含 Tonight 生成與 Library 列表（2026-05-31）
 
 ### Frontend Wave 4（旅程切片）
 

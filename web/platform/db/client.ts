@@ -1,3 +1,5 @@
+import "server-only";
+
 import { neon } from "@neondatabase/serverless";
 
 let _sql: ReturnType<typeof neon> | null = null;

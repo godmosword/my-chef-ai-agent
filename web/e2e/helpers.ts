@@ -21,6 +21,19 @@ const MOCK_RECIPE = {
   photo_url: "/marketing/hero-three-cup-chicken.jpg",
 };
 
+const MOCK_LIST_ITEM = {
+  id: MOCK_RECIPE_ID,
+  user_id: "e2e-user",
+  title: "E2E 測試咖哩",
+  cuisine: "家常",
+  hero_url: MOCK_RECIPE.photo_url,
+  hero_status: "ready" as const,
+  tags: [],
+  created_at: "2026-05-01T00:00:00.000Z",
+  updated_at: "2026-05-01T00:00:00.000Z",
+  version_no: 1,
+};
+
 export async function dismissCookingOnboarding(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem("cooking_onboarded_v1", "1");
@@ -71,6 +84,37 @@ export async function dismissBlockingOverlays(page: Page) {
 export async function installRecipeApiMocks(page: Page) {
   const shareToken = "e2e-share-token-000000000001";
 
+  await page.addInitScript((listItem) => {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      const reqUrl =
+        typeof input === "string"
+          ? input
+          : input instanceof Request
+            ? input.url
+            : String(input);
+      const method =
+        init?.method ?? (input instanceof Request ? input.method : "GET");
+      try {
+        const path = new URL(reqUrl, window.location.origin).pathname;
+        if (path === "/api/recipes" && method === "GET") {
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              items: [listItem],
+              next_cursor: null,
+              db_configured: true,
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+      } catch {
+        /* fall through */
+      }
+      return originalFetch(input, init);
+    };
+  }, MOCK_LIST_ITEM);
+
   await page.route("**/api/quota", async (route) => {
     await route.fulfill({
       json: {
@@ -116,7 +160,27 @@ export async function installRecipeApiMocks(page: Page) {
     await route.fulfill({ json: { ok: true } });
   });
 
-  // Single handler for recipe id routes (share + hero-status + GET/PATCH); avoids route.fallback().
+  await page.route("**/api/recipes", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          ok: true,
+          recipe: MOCK_RECIPE,
+          quota: {
+            remaining: 19,
+            limit: 20,
+            used: 1,
+            text: { used: 1, limit: 20, remaining: 19 },
+            image: { used: 0, limit: 5, remaining: 5 },
+          },
+        },
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  // Registered after list handler so id routes win when both patterns match.
   await page.route(`**/api/recipes/${MOCK_RECIPE_ID}**`, async (route) => {
     const url = route.request().url();
     const method = route.request().method();
@@ -155,37 +219,6 @@ export async function installRecipeApiMocks(page: Page) {
     }
     if (method === "PATCH") {
       await route.fulfill({ json: { ok: true, recipe: MOCK_RECIPE } });
-      return;
-    }
-    await route.continue();
-  });
-
-  await page.route("**/api/recipes", async (route) => {
-    if (route.request().method() === "POST") {
-      await route.fulfill({
-        json: {
-          ok: true,
-          recipe: MOCK_RECIPE,
-          quota: {
-            remaining: 19,
-            limit: 20,
-            used: 1,
-            text: { used: 1, limit: 20, remaining: 19 },
-            image: { used: 0, limit: 5, remaining: 5 },
-          },
-        },
-      });
-      return;
-    }
-    if (route.request().method() === "GET") {
-      await route.fulfill({
-        json: {
-          ok: true,
-          items: [{ ...MOCK_RECIPE, id: MOCK_RECIPE_ID }],
-          next_cursor: null,
-          db_configured: true,
-        },
-      });
       return;
     }
     await route.continue();

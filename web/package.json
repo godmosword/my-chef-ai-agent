@@ -42,6 +42,7 @@
     "posthog-js": "^1.249.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "^0.0.1",
     "serwist": "^9.5.11",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "3",

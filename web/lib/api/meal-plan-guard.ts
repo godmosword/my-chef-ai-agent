@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isMealPlanningEnabled } from "@/platform/config/meal-planning-config";
 import { isMealPlanExecutionPushEnabled } from "@/platform/config/meal-plan-execution-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
@@ -29,6 +30,18 @@ export async function requireMealPlanSession(): Promise<
     );
   }
   return { userId, tenantId: DEFAULT_TENANT_ID };
+}
+
+export async function requireMealPlanningSession(): Promise<
+  MealPlanSession | NextResponse
+> {
+  if (!isMealPlanningEnabled()) {
+    return NextResponse.json(
+      { error: "Meal planning disabled" },
+      { status: 503 },
+    );
+  }
+  return requireMealPlanSession();
 }
 
 export async function requireMealPlanSlotRoute(
