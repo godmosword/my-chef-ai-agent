@@ -7,7 +7,7 @@ import {
   dequeuePendingRating,
   loadPendingRatings,
   type PendingRating,
-} from "@/domain/cook/ratingQueue";
+} from "@/platform/browser-storage/cooking-rating-queue";
 import {
   getOfflineDb,
   type MutationType,

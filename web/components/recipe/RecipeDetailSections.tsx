@@ -8,7 +8,7 @@ import { FLAGS } from "@/platform/config/flags";
 import { useTonightPantry } from "@/hooks/useTonightPantry";
 import { ServingToggle } from "@/components/recipe/ServingToggle";
 import { scaleIngredient } from "@/domain/recipe/recipe-scale";
-import { readProgress, writeProgress } from "@/domain/recipe/recipe-progress";
+import { readProgress, writeProgress } from "@/platform/browser-storage/recipe-progress";
 import { cn } from "@/lib/utils/cn";
 import { StepImageButton } from "@/components/recipe/StepImageButton";
 

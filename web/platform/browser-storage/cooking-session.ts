@@ -1,4 +1,4 @@
-import type { ActiveTimer } from "./types";
+import type { ActiveTimer } from "@/domain/cook/types";
 
 export type CookingSessionSnapshot = {
   currentStep: number;

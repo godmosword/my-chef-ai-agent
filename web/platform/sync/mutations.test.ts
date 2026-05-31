@@ -10,7 +10,7 @@ vi.mock("@/lib/api-client/recipes", () => ({
   removeFavoriteByRecipeId: vi.fn(),
 }));
 
-vi.mock("@/domain/cook/ratingQueue", () => ({
+vi.mock("@/platform/browser-storage/cooking-rating-queue", () => ({
   dequeuePendingRating,
   loadPendingRatings: () => [],
 }));

@@ -9,12 +9,15 @@
 
 ### Changed
 
+- **metadataBase**：根 layout 以 `getSiteUrl()` 設定，build 不再 fallback `localhost` 警告；OG／Twitter 相對路徑可正確解析。
+- **Playwright E2E**：改以 `prepare:standalone` + `start:standalone` 啟動（對齊 Docker／Cloud Run），不再使用與 `output: standalone` 不相容的 `next start`。
 - **Code review 收尾（階段 7–8）**：移除已廢棄 `NEXT_PUBLIC_NEW_UI`（`playwright.config.ts`、`build:e2e`）；同步 `web/README.md`（Landing 為預設、`/legacy` 301、API 清單）。
 - **E2E**：`fillHeroPrompt` 等待 submit 啟用，修正 Tonight 生成測試 flaky timeout。
+- **domain 邊界**：瀏覽器 `localStorage`／`sessionStorage` 自 `domain/` 移至 `platform/browser-storage/`；`domain/calendar/week` 改為純日期鍵邏輯，時區包裝留在 `lib/locale/week`。
 
 ### Developer / 維運
 
-- **階段 7 響應式自查**（只列、未改 UI）：`viewportFit: cover` + TabBar／main `safe-area-inset-*` 已覆蓋行動端；`md:` 斷點分離 sidebar／tab bar；`100dvh` 用於 App shell 與烹飪模式；橫向 scroll 用於 RecentRecipes／QuickChips／Achievements（預期）。**低風險**：Library 列表 `min-w-[32rem]` 小螢幕需橫向捲動；Plan 格 `min-h-[4.5rem]` 週末視窗可能偏擠；`metadataBase` 未設（build 警告，OG 預覽用 localhost）。
+- **階段 7 響應式自查**（只列、未改 UI）：`viewportFit: cover` + TabBar／main `safe-area-inset-*` 已覆蓋行動端；`md:` 斷點分離 sidebar／tab bar；`100dvh` 用於 App shell 與烹飪模式；橫向 scroll 用於 RecentRecipes／QuickChips／Achievements（預期）。**低風險**：Library 列表 `min-w-[32rem]` 小螢幕需橫向捲動；Plan 格 `min-h-[4.5rem]` 週末視窗可能偏擠。
 - **階段 8 驗證**：`pnpm lint` ✅、`pnpm test` ✅、`pnpm build` ✅（shared First Load JS **104 kB**；最重頁 `/app/pantry/scan` **158 kB**、 `/app/plan` **171 kB**）；Playwright 3/3 ✅（本機需 `pnpm exec playwright install chromium`）。
 
 ### Fixed

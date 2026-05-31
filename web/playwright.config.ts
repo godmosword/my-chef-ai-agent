@@ -17,7 +17,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: `pnpm run build:e2e && pnpm exec next start -p ${PORT}`,
+    command: `pnpm run build:e2e && pnpm run prepare:standalone && PORT=${PORT} HOSTNAME=127.0.0.1 pnpm run start:standalone`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,

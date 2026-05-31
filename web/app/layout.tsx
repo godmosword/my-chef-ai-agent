@@ -8,6 +8,7 @@ import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { SettingsBootstrap } from "@/components/providers/SettingsBootstrap";
 import { THEME_BOOTSTRAP_SOURCE } from "@/lib/theme";
 import { tokenColors } from "@/lib/design/token-colors";
+import { getSiteUrl } from "@/platform/config/site-url";
 
 const notoSans = Noto_Sans_TC({
   subsets: ["latin"],
@@ -22,6 +23,7 @@ const notoSerif = Noto_Serif_TC({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "職人料理大腦",
   description: "你的私人料理大腦",
   manifest: "/manifest.webmanifest",

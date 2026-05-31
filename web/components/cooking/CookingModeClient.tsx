@@ -8,8 +8,8 @@ import {
   clearCookingSession,
   loadCookingSession,
   saveCookingSession,
-} from "@/domain/cook/session";
-import { dequeuePendingRating } from "@/domain/cook/ratingQueue";
+} from "@/platform/browser-storage/cooking-session";
+import { dequeuePendingRating } from "@/platform/browser-storage/cooking-rating-queue";
 import { enqueueMutation } from "@/platform/sync/mutations";
 import { useWakeLock } from "./hooks/useWakeLock";
 import { useFullscreen } from "./hooks/useFullscreen";

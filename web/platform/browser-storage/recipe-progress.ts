@@ -1,9 +1,3 @@
-/**
- * Per-recipe ingredient/step check progress, persisted to localStorage.
- * Expires after 24 hours — assumption: a single cooking session is
- * the unit; revisiting next week starts fresh.
- */
-
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 type Progress = {
@@ -44,7 +38,7 @@ export function writeProgress(recipeId: string, progress: Omit<Progress, "update
       JSON.stringify({ ...progress, updatedAt: Date.now() }),
     );
   } catch {
-    /* quota exceeded — fail silent */
+    /* quota exceeded: keep cooking UI usable */
   }
 }
 

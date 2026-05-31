@@ -88,7 +88,7 @@ pnpm -F @chef/web db:migrate
 
 ```bash
 pnpm -F @chef/web test        # Vitest
-pnpm -F @chef/web test:e2e    # Playwright（build:e2e 後 next start；CI 於 web-ci.yml）
+pnpm -F @chef/web test:e2e    # Playwright（build:e2e + standalone server；CI 於 web-ci.yml）
 pnpm -F @chef/web build       # Production build + bundle 摘要
 ```
 

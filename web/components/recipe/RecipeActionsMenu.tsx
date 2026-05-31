@@ -14,7 +14,7 @@ import {
 import { Sheet } from "@/components/primitives/Sheet";
 import { IconButton } from "@/components/primitives/IconButton";
 import { useToast } from "@/components/providers/ToastProvider";
-import { addIngredientsToShoppingDraft } from "@/domain/plan/add-from-recipe";
+import { addIngredientsToShoppingDraft } from "@/platform/browser-storage/shopping-draft";
 import { formatIngredient } from "@/domain/recipe/recipe-steps";
 import type { RecipePayload } from "@chef/shared-types";
 import { DeleteRecipeDialog } from "@/components/recipe/DeleteRecipeDialog";

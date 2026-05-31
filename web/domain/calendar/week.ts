@@ -1,23 +1,19 @@
-/** zh-TW week calendar: Monday as week start, user display timezone. */
-
-import {
-  DEFAULT_DISPLAY_TIMEZONE,
-  localDateKeyInTimeZone,
-  parseIsoDateLocal,
-} from "@/lib/locale/datetime";
+/** Week calendar domain rules: Monday as week start. */
 
 function formatIsoDate(d: Date): string {
-  return localDateKeyInTimeZone(d, DEFAULT_DISPLAY_TIMEZONE);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-export { parseIsoDateLocal };
+export function parseIsoDateLocal(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 
-/** Floor any date to Monday of that week (in display TZ). */
-export function floorToWeekMonday(isoOrDate: string | Date): string {
-  const iso =
-    typeof isoOrDate === "string"
-      ? isoOrDate
-      : localDateKeyInTimeZone(isoOrDate, DEFAULT_DISPLAY_TIMEZONE);
+/** Floor an ISO local date key to Monday of that week. */
+export function floorToWeekMonday(iso: string): string {
   const d = parseIsoDateLocal(iso);
   const day = d.getDay();
   const diff = (day + 6) % 7;
@@ -44,14 +40,14 @@ export function formatWeekRangeLabel(weekOfMonday: string): string {
   return `${s.getMonth() + 1}/${s.getDate()} - ${e.getMonth() + 1}/${e.getDate()}`;
 }
 
-export function isToday(iso: string, now = new Date()): boolean {
-  return iso === formatIsoDate(now);
+export function isToday(iso: string, todayIso: string): boolean {
+  return iso === todayIso;
 }
 
-export function isPastDate(iso: string, now = new Date()): boolean {
-  return parseIsoDateLocal(iso) < parseIsoDateLocal(formatIsoDate(now));
+export function isPastDate(iso: string, todayIso: string): boolean {
+  return parseIsoDateLocal(iso) < parseIsoDateLocal(todayIso);
 }
 
-export function currentWeekMonday(now = new Date()): string {
-  return floorToWeekMonday(now);
+export function currentWeekMonday(todayIso: string): string {
+  return floorToWeekMonday(todayIso);
 }
