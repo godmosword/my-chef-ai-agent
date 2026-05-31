@@ -5,12 +5,12 @@
  */
 import type { PantryCategory } from "@/domain/pantry/pantry-types";
 
-export type PriceBookEntry =
+type PriceBookEntry =
   | { unit: string; price: number; unit_per_g?: false }
   | { unit_per_g: true; price_per_g: number };
 
 /** ~80 common items; extend over time. */
-export const PRICE_BOOK_TWD: Record<string, PriceBookEntry> = {
+const PRICE_BOOK_TWD: Record<string, PriceBookEntry> = {
   tomato: { unit: "piece", price: 12 },
   cherry_tomato: { unit: "pack", price: 49 },
   scallion: { unit: "bunch", price: 25 },
@@ -57,7 +57,7 @@ export const PRICE_BOOK_TWD: Record<string, PriceBookEntry> = {
   cheese: { unit: "pack", price: 99 },
 };
 
-export const CATEGORY_DEFAULT_PRICE: Partial<
+const CATEGORY_DEFAULT_PRICE: Partial<
   Record<PantryCategory, { unit_per_g: true; price_per_g: number } | { unit: string; price: number }>
 > = {
   vegetable: { unit_per_g: true, price_per_g: 0.15 },

@@ -191,7 +191,7 @@ export function ruleBasedExtract(
   return dedupeSignals(signals);
 }
 
-export function messageHasRecipeFeedbackMarker(message: string): boolean {
+function messageHasRecipeFeedbackMarker(message: string): boolean {
   return RECIPE_FEEDBACK_MARKERS.test(message);
 }
 

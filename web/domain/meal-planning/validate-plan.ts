@@ -1,4 +1,4 @@
-import type { PersonalizationBlock } from "@/application/personalization/personalization-context";
+import type { PersonalizationBlock } from "@/domain/personalization/personalization-block";
 import { normalizeIngredientName } from "@/domain/pantry/pantry-normalization";
 import { detectSlotProtein } from "./protein-detect";
 import {

@@ -1,4 +1,4 @@
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 import type { CandidateSlot } from "./types";
 
 export function computePantryReuseScore(

@@ -8,7 +8,6 @@ const DIST = path.join(__dirname, "..", "dist");
 
 type ColorLeaf = { light: string; dark: string };
 type ValueLeaf = { value: string };
-type Leaf = ColorLeaf | ValueLeaf;
 
 type Tree = Record<string, unknown>;
 
@@ -129,7 +128,7 @@ ${darkLines.join("\n")}
 `;
 
 const tailwindColors: Record<string, string> = {};
-for (const [k, dot] of Object.entries(COLOR_PATH_MAP)) {
+for (const dot of Object.values(COLOR_PATH_MAP)) {
   const short = dot.replace(/^color\./, "").replace(/\./g, "-");
   tailwindColors[short] = `var(--${dot.replace(/\./g, "-")})`;
 }

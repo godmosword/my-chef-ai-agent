@@ -16,14 +16,17 @@
   --fg-inverse: var(--color-brand-greenText);
   --accent-50: var(--color-brand-primaryLight);
   --accent-100: var(--color-brand-primaryLight);
-  --accent-200: #dcc09a;
+  --accent-200: color-mix(in srgb, var(--color-brand-primary) 35%, white);
   --accent-500: var(--color-brand-primary);
   --accent-600: var(--color-brand-primaryDark);
-  --accent-700: #6b3d1f;
+  --accent-700: var(--color-cuisine-taiwanese);
   --success: var(--color-brand-green);
   --warning: var(--color-brand-primary);
   --danger: var(--color-cuisine-taiwanese);
-  --info: #4a6fa5;
+  --info: var(--color-cuisine-european);
+  --error-bg: color-mix(in srgb, var(--color-cuisine-taiwanese) 8%, var(--color-surface-default));
+  --error-border: color-mix(in srgb, var(--color-cuisine-taiwanese) 25%, var(--color-border-default));
+  --error-text: var(--color-cuisine-taiwanese);
 
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei",
     sans-serif;

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { PantryConsumeSchema } from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { consumePantryItem } from "@/platform/db/pantry";
 import { getSessionUserId } from "@/platform/identity/session";
@@ -11,24 +13,26 @@ export async function POST(request: Request, ctx: Ctx) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
   const itemId = parseInt(id, 10);
-  const body = (await request.json()) as {
-    full?: boolean;
-    amount?: number;
-    unit?: string;
-  };
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = PantryConsumeSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "amount or full required", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
 
   try {
-    if (body.full) {
+    if (parsed.data.full) {
       const result = await consumePantryItem(itemId, DEFAULT_TENANT_ID, userId, {});
       recordPantryConsume("button");
       return NextResponse.json({ item: result });
     }
-    if (body.amount == null) {
-      return NextResponse.json({ error: "amount or full required" }, { status: 400 });
-    }
     const result = await consumePantryItem(itemId, DEFAULT_TENANT_ID, userId, {
-      amount: body.amount,
-      unit: body.unit,
+      amount: parsed.data.amount!,
+      unit: parsed.data.unit,
     });
     recordPantryConsume("button");
     return NextResponse.json({ item: result });

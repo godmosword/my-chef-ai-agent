@@ -29,7 +29,7 @@ async function getPantryVisionUsed(
   }
 }
 
-export async function checkPantryVisionQuota(
+async function checkPantryVisionQuota(
   userId: string,
   tenantId: string,
 ): Promise<{ allowed: boolean; used: number; limit: number }> {

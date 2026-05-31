@@ -1,3 +1,5 @@
+import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals.js";
 import tseslint from "typescript-eslint";
 
 /** Pure domain modules must not depend on platform/application/UI. */
@@ -10,6 +12,10 @@ const domainPureFiles = [
   "domain/plan/filter-pantry.ts",
 ];
 
+const compat = new FlatCompat({
+  baseDirectory: import.meta.dirname,
+});
+
 export default tseslint.config(
   {
     ignores: [
@@ -17,9 +23,14 @@ export default tseslint.config(
       "node_modules/**",
       "public/**",
       "scripts/**",
-      "**/*.mjs",
       "**/*.test.ts",
     ],
+  },
+  ...compat.config(nextCoreWebVitals),
+  {
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
   },
   ...tseslint.configs.recommended.map((c) => ({
     ...c,

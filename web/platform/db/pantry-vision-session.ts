@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PantryReviewSessionPayload } from "@/application/pantry/vision/review-types";
+import type { PantryReviewSessionPayload } from "@/domain/pantry/vision/review-types";
 import { pantryReviewTtlSec } from "@/platform/config/pantry-vision-config";
 import { asRows, getSql } from "./client";
 

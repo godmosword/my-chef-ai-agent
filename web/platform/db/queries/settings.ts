@@ -15,7 +15,7 @@ const DEFAULTS: UserSettings = {
 
 export async function getUserSettings(
   userId: string,
-  tenantId: string,
+  _tenantId: string,
 ): Promise<UserSettings> {
   const db = getDb();
   if (!db) return DEFAULTS;

@@ -1,44 +1,33 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
+import { PatchDietaryPreferencesSchema } from "@/domain/settings/dietary-api-schemas";
 import {
   DIETARY_PRESET_OPTIONS,
   getDietaryPreferences,
   saveDietaryPreferences,
   type DietaryPresetKey,
 } from "@/platform/db/dietary-preferences";
-import { getSessionUserId } from "@/platform/identity/session";
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 
 const VALID_KEYS = new Set(DIETARY_PRESET_OPTIONS.map((p) => p.key));
 
-const PatchSchema = z.object({
-  tags: z.array(z.string()).optional(),
-  avoid_custom: z.string().max(500).optional(),
-});
-
 export async function GET() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  const preferences = await getDietaryPreferences(userId, DEFAULT_TENANT_ID);
+  const session = await requireApiSession({ requireDatabase: false });
+  if (session instanceof NextResponse) return session;
+  const preferences = await getDietaryPreferences(
+    session.userId,
+    session.tenantId,
+  );
   return NextResponse.json({ ok: true, preferences, presets: DIETARY_PRESET_OPTIONS });
 }
 
 export async function PATCH(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
+  const session = await requireApiSession({ requireDatabase: false });
+  if (session instanceof NextResponse) return session;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
-  const parsed = PatchSchema.safeParse(body);
+  const parsed = PatchDietaryPreferencesSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { ok: false, error: parsed.error.flatten() },
@@ -46,7 +35,10 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const current = await getDietaryPreferences(userId, DEFAULT_TENANT_ID);
+  const current = await getDietaryPreferences(
+    session.userId,
+    session.tenantId,
+  );
   const tags = (parsed.data.tags ?? current.tags).filter((t): t is DietaryPresetKey =>
     VALID_KEYS.has(t as DietaryPresetKey),
   );
@@ -57,6 +49,6 @@ export async function PATCH(request: Request) {
         ? parsed.data.avoid_custom
         : current.avoid_custom,
   };
-  await saveDietaryPreferences(userId, DEFAULT_TENANT_ID, next);
+  await saveDietaryPreferences(session.userId, session.tenantId, next);
   return NextResponse.json({ ok: true, preferences: next });
 }

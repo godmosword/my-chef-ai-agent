@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { PhoneFrame } from "@/components/marketing/PhoneFrame";
 import { LandingHeroMock } from "@/components/marketing/LandingHeroMock";
-import { appPrefillHref, MARKETING_SECTION } from "@/lib/marketing/content";
+import { MARKETING_SECTION } from "@/lib/marketing/content";
 import { capture } from "@/platform/analytics/events";
 
 const { hero } = MARKETING_SECTION;

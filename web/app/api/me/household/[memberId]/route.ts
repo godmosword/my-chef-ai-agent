@@ -1,38 +1,21 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
+import { HouseholdPatchSchema } from "@/domain/personalization/personalization-api-schemas";
 import {
   deleteHouseholdMember,
   updateHouseholdMember,
 } from "@/platform/db/personalization";
 import { checkPersonalizationPatchRateLimit } from "@/platform/db/personalization-rate-limit";
-import { getSessionUserId } from "@/platform/identity/session";
-
-const PatchSchema = z.object({
-  name: z.string().min(1).max(40).optional(),
-  relation: z.string().max(20).nullable().optional(),
-  age_group: z.string().max(20).nullable().optional(),
-  allergies: z.array(z.string()).optional(),
-  dislikes: z.array(z.string()).optional(),
-  dietary_restrictions: z.array(z.string()).optional(),
-  medical_conditions: z.array(z.string()).optional(),
-  texture_needs: z.array(z.string()).optional(),
-  notes: z.string().max(300).nullable().optional(),
-});
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ memberId: string }> },
 ) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "DATABASE_URL required" }, { status: 503 });
-  }
-  if (!checkPersonalizationPatchRateLimit(userId)) {
+  const session = await requireApiSession({
+    databaseError: "DATABASE_URL required",
+  });
+  if (session instanceof NextResponse) return session;
+  if (!checkPersonalizationPatchRateLimit(session.userId)) {
     return NextResponse.json({ ok: false, error: "Too many updates" }, { status: 429 });
   }
 
@@ -42,22 +25,18 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: "Invalid member id" }, { status: 400 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
-  const parsed = PatchSchema.safeParse(body);
+  const parsed = HouseholdPatchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });
   }
 
   const member = await updateHouseholdMember(
     memberId,
-    DEFAULT_TENANT_ID,
-    userId,
+    session.tenantId,
+    session.userId,
     parsed.data,
   );
   if (!member) {
@@ -70,13 +49,10 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ memberId: string }> },
 ) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "DATABASE_URL required" }, { status: 503 });
-  }
+  const session = await requireApiSession({
+    databaseError: "DATABASE_URL required",
+  });
+  if (session instanceof NextResponse) return session;
 
   const { memberId: rawId } = await params;
   const memberId = parseInt(rawId, 10);
@@ -86,8 +62,8 @@ export async function DELETE(
 
   const deleted = await deleteHouseholdMember(
     memberId,
-    DEFAULT_TENANT_ID,
-    userId,
+    session.tenantId,
+    session.userId,
   );
   if (!deleted) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });

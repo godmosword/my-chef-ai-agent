@@ -8,7 +8,7 @@ import {
 } from "@/domain/pantry/pantry-ui";
 import type { PantryItem } from "@/platform/db/pantry";
 
-export type ExpiryReminderItemView = {
+type ExpiryReminderItemView = {
   id: number;
   display_name: string;
   quantity_label: string;

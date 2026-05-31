@@ -1,4 +1,4 @@
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 
 function esc(s: string): string {
   return s
@@ -15,7 +15,9 @@ function listIngredients(recipe: AiRecipePayload): string {
     .map((ing) => {
       const name = typeof ing === "object" ? ing.name : String(ing);
       const price =
-        typeof ing === "object" && ing.price ? `（${ing.price}）` : "";
+        typeof ing === "object" && "price" in ing && ing.price
+          ? `（${ing.price}）`
+          : "";
       return `<li>${esc(String(name))}${esc(price)}</li>`;
     })
     .join("");
@@ -24,7 +26,7 @@ function listIngredients(recipe: AiRecipePayload): string {
 function listSteps(recipe: AiRecipePayload): string {
   const steps = recipe.steps || [];
   if (!steps.length) return "<li>依序料理</li>";
-  return steps.map((s, i) => `<li>${esc(String(s))}</li>`).join("");
+  return steps.map((s) => `<li>${esc(String(s))}</li>`).join("");
 }
 
 /** Printable HTML poster (no Playwright; user prints or saves as PDF). */

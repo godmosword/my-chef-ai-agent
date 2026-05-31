@@ -47,21 +47,21 @@ export function notificationIgnoreBackoffDays(): number {
   );
 }
 
-export function useItUpFullRecipesCount(): number {
+export function getUseItUpFullRecipesCount(): number {
   return Math.max(
     0,
     parseInt(process.env.USE_IT_UP_FULL_RECIPES_COUNT || "1", 10) || 1,
   );
 }
 
-export function useItUpCandidateMaxTokens(): number {
+export function getUseItUpCandidateMaxTokens(): number {
   return Math.max(
     100,
     parseInt(process.env.USE_IT_UP_CANDIDATE_MAX_TOKENS || "400", 10) || 400,
   );
 }
 
-export function useItUpCandidateTimeoutSec(): number {
+export function getUseItUpCandidateTimeoutSec(): number {
   return Math.max(
     3,
     parseInt(process.env.USE_IT_UP_CANDIDATE_TIMEOUT_SEC || "10", 10) || 10,

@@ -9,6 +9,14 @@ import {
   Serwist,
   StaleWhileRevalidate,
 } from "serwist";
+import {
+  DINNER_REMINDER_NOTIFICATION_TITLE,
+  dinnerReminderNotificationOptions,
+} from "@/domain/notifications/dinner-reminder-notification";
+import {
+  dinnerReminderDateKeyInTimeZone,
+  dinnerReminderPartsInTimeZone,
+} from "@/domain/notifications/dinner-reminder-time";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -140,33 +148,6 @@ type DinnerReminderPayload = {
   minute: number;
 };
 
-function partsInTimeZone(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value ?? 0);
-  return { hour: get("hour"), minute: get("minute") };
-}
-
-function ymdInTimeZone(date: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const get = (type: string) =>
-    parts.find((p) => p.type === type)?.value ?? "00";
-  return `${get("year")}-${get("month")}-${get("day")}`;
-}
-
 async function notifyClientsDinnerFired(channel: "sw" | "client"): Promise<void> {
   const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
   for (const client of clients) {
@@ -182,22 +163,20 @@ async function maybeShowDinnerReminder(): Promise<void> {
     const settings = (await res.json()) as DinnerReminderPayload;
     if (!settings.enabled) return;
     const now = new Date();
-    const p = partsInTimeZone(now, DISPLAY_TZ);
+    const p = dinnerReminderPartsInTimeZone(now, DISPLAY_TZ);
     if (p.hour !== settings.hour || p.minute !== settings.minute) return;
 
-    const todayYmd = ymdInTimeZone(now, DISPLAY_TZ);
+    const todayYmd = dinnerReminderDateKeyInTimeZone(now, DISPLAY_TZ);
     const lastRes = await cache.match(LAST_FIRED_KEY);
     if (lastRes) {
       const lastYmd = await lastRes.text();
       if (lastYmd === todayYmd) return;
     }
 
-    await self.registration.showNotification("今晚想吃什麼？", {
-      body: "點開職人料理，3 分鐘內想出晚餐",
-      tag: "chef-dinner-reminder",
-      icon: "/icons/icon-192.png",
-      data: { url: "/app" },
-    });
+    await self.registration.showNotification(
+      DINNER_REMINDER_NOTIFICATION_TITLE,
+      dinnerReminderNotificationOptions(),
+    );
 
     await cache.put(LAST_FIRED_KEY, new Response(todayYmd));
     await notifyClientsDinnerFired("sw");
@@ -217,7 +196,7 @@ self.addEventListener("message", (event) => {
           headers: { "Content-Type": "application/json" },
         }),
       ),
-    ),
+    ).catch(() => undefined),
   );
 });
 
@@ -234,18 +213,18 @@ self.addEventListener("notificationclick", (event) => {
         }
       }
       return self.clients.openWindow(url);
-    }),
+    }).catch(() => undefined),
   );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(maybeShowDinnerReminder());
+  event.waitUntil(maybeShowDinnerReminder().catch(() => undefined));
 });
 
 self.addEventListener("periodicsync", (event) => {
   const sync = event as ExtendableEvent & { tag?: string };
   if (sync.tag === "dinner-reminder") {
-    sync.waitUntil(maybeShowDinnerReminder());
+    sync.waitUntil(maybeShowDinnerReminder().catch(() => undefined));
   }
 });
 

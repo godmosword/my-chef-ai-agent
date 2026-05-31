@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { CheckShoppingItemSchema } from "@/domain/shopping-list/shopping-list-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { itemToJson } from "@/lib/api/shopping-list-json";
 import { isShoppingListEnabled, shoppingSharedCheckRateLimitPerMin } from "@/platform/config/shopping-list-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
@@ -23,8 +24,6 @@ function rateLimitOk(token: string): boolean {
   return true;
 }
 
-const Body = z.object({ checked: z.boolean().default(true) });
-
 export async function POST(request: Request, ctx: Ctx) {
   if (!isShoppingListEnabled() || !isDatabaseConfigured()) {
     return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -33,7 +32,11 @@ export async function POST(request: Request, ctx: Ctx) {
   if (!rateLimitOk(token)) {
     return NextResponse.json({ error: "Rate limited" }, { status: 429 });
   }
-  const parsed = Body.safeParse(await request.json().catch(() => ({ checked: true })));
+  const body = await readJsonBody(request);
+  const parsed =
+    body instanceof NextResponse
+      ? CheckShoppingItemSchema.safeParse({ checked: true })
+      : CheckShoppingItemSchema.safeParse(body);
   const checked = parsed.success ? parsed.data.checked : true;
   const item = await checkItemViaShareToken(token, Number(itemId), checked);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });

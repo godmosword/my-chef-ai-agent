@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
 import { BackLink } from "@/components/patterns/BackLink";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 type Insights = {
   plan_name: string;
@@ -23,16 +24,32 @@ export default function PlanReviewPage() {
   const params = useParams();
   const planId = params.planId as string;
   const [insights, setInsights] = useState<Insights | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/me/meal-plans/${planId}/insights`);
-    const json = await res.json();
-    if (json.insights) setInsights(json.insights);
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
+    setLoadFailed(false);
+    try {
+      const res = await fetch(`/api/me/meal-plans/${planId}/insights`);
+      if (!res.ok) throw new Error("load failed");
+      const json = (await res.json()) as { insights?: Insights };
+      if (!isActive()) return;
+      if (json.insights) setInsights(json.insights);
+      else setLoadFailed(true);
+    } catch {
+      if (isActive()) setLoadFailed(true);
+    }
   }, [planId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
+
+  if (loadFailed) {
+    return (
+      <div className="space-y-4">
+        <BackLink href="/app/dashboard" label="返回儀表板" />
+        <p className="text-sm text-text-muted">無法載入週回顧，請稍後再試。</p>
+      </div>
+    );
+  }
 
   if (!insights) {
     return (

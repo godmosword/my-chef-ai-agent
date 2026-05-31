@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 import { computeAggregatedIngredientNeeds } from "./aggregate-ingredients";
 import type { CandidateSlot } from "./types";
 

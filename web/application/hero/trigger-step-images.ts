@@ -74,15 +74,25 @@ export type TriggerStepImagesOptions = {
   recipe?: RecipePayload;
 };
 
-/** Generate AI images for cooking steps (openai_compatible + API key). */
-export async function triggerStepImagesGeneration(
-  opts: TriggerStepImagesOptions,
-): Promise<void> {
-  if (!shouldGenerateStepImages()) return;
+type StepImageContext =
+  | {
+      ok: true;
+      tenantId: string;
+      versionId: string;
+      recipeTitle: string;
+      steps: StoredStep[];
+    }
+  | {
+      ok: false;
+      reason: "no_db" | "recipe_not_found" | "version_not_found";
+    };
 
+async function loadStepImageContext(
+  opts: TriggerStepImagesOptions,
+): Promise<StepImageContext> {
   const tenantId = opts.tenantId ?? DEFAULT_TENANT_ID;
   const db = getDb();
-  if (!db) return;
+  if (!db) return { ok: false, reason: "no_db" };
 
   const [recipeRow] = await db
     .select({
@@ -100,92 +110,162 @@ export async function triggerStepImagesGeneration(
     )
     .limit(1);
 
-  if (!recipeRow?.latestVersionId) return;
-
-  const versionId = recipeRow.latestVersionId;
+  if (!recipeRow?.latestVersionId) {
+    return { ok: false, reason: "recipe_not_found" };
+  }
 
   const [versionRow] = await db
     .select({ steps: recipeVersions.steps })
     .from(recipeVersions)
-    .where(eq(recipeVersions.id, versionId))
+    .where(eq(recipeVersions.id, recipeRow.latestVersionId))
     .limit(1);
 
-  if (!versionRow) return;
+  if (!versionRow) return { ok: false, reason: "version_not_found" };
 
-  let steps = ensureStoredSteps(versionRow.steps as unknown[]);
+  return {
+    ok: true,
+    tenantId,
+    versionId: recipeRow.latestVersionId,
+    recipeTitle: recipeRow.title,
+    steps: ensureStoredSteps(versionRow.steps as unknown[]),
+  };
+}
+
+async function resolveRecipePayload(
+  opts: TriggerStepImagesOptions,
+  tenantId: string,
+): Promise<RecipePayload | null> {
+  if (opts.recipe) return opts.recipe;
+  return getRecipeForUser(opts.userId, tenantId, opts.recipeId);
+}
+
+function recipeNameForImage(recipe: RecipePayload, fallbackTitle: string): string {
+  return recipe.recipe_name?.trim() || fallbackTitle;
+}
+
+function imageGenerationTimeout(): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("image_generation_timeout")), IMAGE_TIMEOUT_MS);
+  });
+}
+
+async function generateStepImageUrl(
+  recipeName: string,
+  prompt: string,
+): Promise<string> {
+  const { image_url } = await Promise.race([
+    generateRecipeHeroImage(recipeName, { prompt }),
+    imageGenerationTimeout(),
+  ]);
+  return image_url;
+}
+
+type StoredStepImageResult =
+  | { status: "ready"; imageUrl: string; steps: StoredStep[] }
+  | { status: "quota" | "failed"; steps: StoredStep[] };
+
+async function generateAndStoreStepImage(input: {
+  opts: TriggerStepImagesOptions;
+  context: Extract<StepImageContext, { ok: true }>;
+  steps: StoredStep[];
+  stepIndex: number;
+  step: StoredStep;
+  recipe: RecipePayload;
+  recipeName: string;
+}): Promise<StoredStepImageResult> {
+  let steps = patchStoredStep(input.steps, input.stepIndex, {
+    image_status: "generating",
+    image_error: undefined,
+  });
+  await writeSteps(input.context.versionId, steps);
+
+  const text = stepText(input.step);
+  const prompt = buildStepImagePrompt(
+    input.recipe,
+    text,
+    input.stepIndex,
+    steps.length,
+  );
+
+  try {
+    const imageUrl = await generateStepImageUrl(input.recipeName, prompt);
+
+    const consumed = await consumeQuota(
+      input.opts.userId,
+      input.context.tenantId,
+      1,
+      "image_step_generation",
+      "image",
+    );
+    if (!consumed.allowed) {
+      steps = patchStoredStep(steps, input.stepIndex, {
+        image_status: "failed",
+        image_error: "image_quota_exceeded",
+      });
+      await writeSteps(input.context.versionId, steps);
+      return { status: "quota", steps };
+    }
+
+    steps = patchStoredStep(steps, input.stepIndex, {
+      image_status: "ready",
+      image_url: imageUrl,
+      image_error: undefined,
+    });
+    await writeSteps(input.context.versionId, steps);
+    return { status: "ready", imageUrl, steps };
+  } catch (err) {
+    const message = err instanceof Error ? err.message.slice(0, 200) : "unknown";
+    steps = patchStoredStep(steps, input.stepIndex, {
+      image_status: "failed",
+      image_error: message,
+    });
+    await writeSteps(input.context.versionId, steps);
+    return { status: "failed", steps };
+  }
+}
+
+/** Generate AI images for cooking steps (openai_compatible + API key). */
+export async function triggerStepImagesGeneration(
+  opts: TriggerStepImagesOptions,
+): Promise<void> {
+  if (!shouldGenerateStepImages()) return;
+
+  const context = await loadStepImageContext(opts);
+  if (!context.ok) return;
+
+  let steps = context.steps;
   const limit = Math.min(steps.length, maxStepImages());
   if (!limit) return;
 
-  let recipe = opts.recipe;
-  if (!recipe) {
-    recipe = (await getRecipeForUser(opts.userId, tenantId, opts.recipeId)) ?? undefined;
-  }
+  const recipe = await resolveRecipePayload(opts, context.tenantId);
   if (!recipe) return;
 
-  const recipeName = recipe.recipe_name?.trim() || recipeRow.title;
+  const recipeName = recipeNameForImage(recipe, context.recipeTitle);
 
   for (let i = 0; i < limit; i++) {
     const step = steps[i]!;
     if (step.image_status === "ready" && step.image_url?.trim()) continue;
 
-    const quota = await checkQuota(opts.userId, tenantId, "image");
+    const quota = await checkQuota(opts.userId, context.tenantId, "image");
     if (!quota.image.remaining) {
       steps = patchStoredStep(steps, i, {
         image_status: "failed",
         image_error: "image_quota_exceeded",
       });
-      await writeSteps(versionId, steps);
+      await writeSteps(context.versionId, steps);
       continue;
     }
 
-    steps = patchStoredStep(steps, i, {
-      image_status: "generating",
-      image_error: undefined,
+    const result = await generateAndStoreStepImage({
+      opts,
+      context,
+      steps,
+      stepIndex: i,
+      step,
+      recipe,
+      recipeName,
     });
-    await writeSteps(versionId, steps);
-
-    const text = stepText(step);
-    const prompt = buildStepImagePrompt(recipe, text, i, steps.length);
-
-    try {
-      const { image_url } = await Promise.race([
-        generateRecipeHeroImage(recipeName, { prompt }),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("image_generation_timeout")), IMAGE_TIMEOUT_MS);
-        }),
-      ]);
-
-      const consumed = await consumeQuota(
-        opts.userId,
-        tenantId,
-        1,
-        "image_step_generation",
-        "image",
-      );
-      if (!consumed.allowed) {
-        steps = patchStoredStep(steps, i, {
-          image_status: "failed",
-          image_error: "image_quota_exceeded",
-        });
-        await writeSteps(versionId, steps);
-        continue;
-      }
-
-      steps = patchStoredStep(steps, i, {
-        image_status: "ready",
-        image_url,
-        image_error: undefined,
-      });
-      await writeSteps(versionId, steps);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message.slice(0, 200) : "unknown";
-      steps = patchStoredStep(steps, i, {
-        image_status: "failed",
-        image_error: message,
-      });
-      await writeSteps(versionId, steps);
-    }
+    steps = result.steps;
   }
 }
 
@@ -216,40 +296,16 @@ export async function generateStepImageAtIndex(
 async function generateStepImageAtIndexUnlocked(
   opts: TriggerStepImagesOptions & { stepIndex: number },
 ): Promise<GenerateStepImageResult> {
-  const tenantId = opts.tenantId ?? DEFAULT_TENANT_ID;
-  const db = getDb();
-  if (!db) return { ok: false, error: "資料庫未設定", code: "no_db" };
-
-  const [recipeRow] = await db
-    .select({
-      id: recipes.id,
-      title: recipes.title,
-      latestVersionId: recipes.latestVersionId,
-    })
-    .from(recipes)
-    .where(
-      and(
-        eq(recipes.id, opts.recipeId),
-        eq(recipes.userId, opts.userId),
-        eq(recipes.tenantId, tenantId),
-      ),
-    )
-    .limit(1);
-
-  if (!recipeRow?.latestVersionId) {
+  const context = await loadStepImageContext(opts);
+  if (!context.ok && context.reason === "no_db") {
+    return { ok: false, error: "資料庫未設定", code: "no_db" };
+  }
+  if (!context.ok && context.reason === "recipe_not_found") {
     return { ok: false, error: "找不到食譜", code: "not_found" };
   }
+  if (!context.ok) return { ok: false, error: "找不到版本", code: "not_found" };
 
-  const versionId = recipeRow.latestVersionId;
-  const [versionRow] = await db
-    .select({ steps: recipeVersions.steps })
-    .from(recipeVersions)
-    .where(eq(recipeVersions.id, versionId))
-    .limit(1);
-
-  if (!versionRow) return { ok: false, error: "找不到版本", code: "not_found" };
-
-  let steps = ensureStoredSteps(versionRow.steps as unknown[]);
+  let steps = context.steps;
   const i = opts.stepIndex;
   if (i < 0 || i >= steps.length) {
     return { ok: false, error: "步驟不存在", code: "bad_index" };
@@ -263,66 +319,31 @@ async function generateStepImageAtIndexUnlocked(
     return { ok: true, image_url: step.image_url };
   }
 
-  const quota = await checkQuota(opts.userId, tenantId, "image");
+  const quota = await checkQuota(opts.userId, context.tenantId, "image");
   if (!quota.image.remaining) {
     return { ok: false, error: "今天的圖片額度已用完", code: "quota" };
   }
 
-  let recipe = opts.recipe;
-  if (!recipe) {
-    recipe = (await getRecipeForUser(opts.userId, tenantId, opts.recipeId)) ?? undefined;
-  }
+  const recipe = await resolveRecipePayload(opts, context.tenantId);
   if (!recipe) return { ok: false, error: "找不到食譜", code: "not_found" };
 
-  const recipeName = recipe.recipe_name?.trim() || recipeRow.title;
+  const recipeName = recipeNameForImage(recipe, context.recipeTitle);
 
-  steps = patchStoredStep(steps, i, {
-    image_status: "generating",
-    image_error: undefined,
+  const result = await generateAndStoreStepImage({
+    opts,
+    context,
+    steps,
+    stepIndex: i,
+    step,
+    recipe,
+    recipeName,
   });
-  await writeSteps(versionId, steps);
 
-  const text = stepText(step);
-  const prompt = buildStepImagePrompt(recipe, text, i, steps.length);
-
-  try {
-    const { image_url } = await Promise.race([
-      generateRecipeHeroImage(recipeName, { prompt }),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("image_generation_timeout")), IMAGE_TIMEOUT_MS);
-      }),
-    ]);
-
-    const consumed = await consumeQuota(
-      opts.userId,
-      tenantId,
-      1,
-      "image_step_generation",
-      "image",
-    );
-    if (!consumed.allowed) {
-      steps = patchStoredStep(steps, i, {
-        image_status: "failed",
-        image_error: "image_quota_exceeded",
-      });
-      await writeSteps(versionId, steps);
-      return { ok: false, error: "今天的圖片額度已用完", code: "quota" };
-    }
-
-    steps = patchStoredStep(steps, i, {
-      image_status: "ready",
-      image_url,
-      image_error: undefined,
-    });
-    await writeSteps(versionId, steps);
-    return { ok: true, image_url };
-  } catch (err) {
-    const message = err instanceof Error ? err.message.slice(0, 200) : "unknown";
-    steps = patchStoredStep(steps, i, {
-      image_status: "failed",
-      image_error: message,
-    });
-    await writeSteps(versionId, steps);
-    return { ok: false, error: "圖片暫時無法產生", code: "failed" };
+  if (result.status === "ready") {
+    return { ok: true, image_url: result.imageUrl };
   }
+  if (result.status === "quota") {
+    return { ok: false, error: "今天的圖片額度已用完", code: "quota" };
+  }
+  return { ok: false, error: "圖片暫時無法產生", code: "failed" };
 }

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { tokenColors } from "@/lib/design/token-colors";
 
 export const runtime = "edge";
 export const alt = "職人料理大腦 App 介面預覽";
@@ -6,6 +7,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function OpenGraphImage() {
+  const c = tokenColors;
   return new ImageResponse(
     (
       <div
@@ -16,11 +18,11 @@ export default function OpenGraphImage() {
           flexDirection: "column",
           justifyContent: "center",
           padding: 64,
-          background: "linear-gradient(135deg, #FAF7F2 0%, #F5EFE6 100%)",
+          background: `linear-gradient(135deg, ${c.backgroundAlt} 0%, ${c.surfaceMuted} 100%)`,
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 28, color: "#C8922A", letterSpacing: 2, textTransform: "uppercase" }}>
+        <div style={{ fontSize: 28, color: c.brandPrimary, letterSpacing: 2, textTransform: "uppercase" }}>
           AI · 料理書 · 廚房模式
         </div>
         <div
@@ -28,7 +30,7 @@ export default function OpenGraphImage() {
             marginTop: 24,
             fontSize: 56,
             fontWeight: 500,
-            color: "#1C1917",
+            color: c.textInk,
             lineHeight: 1.2,
             maxWidth: 720,
           }}
@@ -41,17 +43,17 @@ export default function OpenGraphImage() {
               width: 280,
               height: 210,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #E5A33D, #C8881A)",
+              background: `linear-gradient(135deg, ${c.brandPrimary}, ${c.brandPrimaryDark})`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fff",
+              color: c.brandGreenText,
               fontSize: 22,
             }}
           >
             三杯雞
           </div>
-          <div style={{ fontSize: 22, color: "#3D3530", lineHeight: 1.6, maxWidth: 480 }}>
+          <div style={{ fontSize: 22, color: c.textBody, lineHeight: 1.6, maxWidth: 480 }}>
             完整食譜、主圖與採買清單。
             <br />
             食譜會保存在這台裝置的料理書中。

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { categorizeForDisplay } from "@/domain/pantry/pantry-ui";
+import {
+  AddPantryItemSchema,
+  BulkAddPantrySchema,
+} from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isPantryEnabled } from "@/platform/config/pantry-config";
 import { pantryExpiryWarnDays } from "@/platform/config/pantry-config";
@@ -85,36 +90,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 });
   }
 
-  const body = (await request.json()) as {
-    raw_name?: string;
-    raw_quantity?: string | number | null;
-    raw_unit?: string | null;
-    expires_at?: string | null;
-    location?: string;
-    notes?: string | null;
-    items?: Array<{
-      raw_name: string;
-      raw_quantity?: string | number | null;
-      raw_unit?: string | null;
-    }>;
-  };
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
-  if (body.items?.length) {
-    const rows = await bulkAddPantryItems(DEFAULT_TENANT_ID, userId, body.items);
+  const bulk = BulkAddPantrySchema.safeParse(body);
+  if (bulk.success) {
+    const rows = await bulkAddPantryItems(
+      DEFAULT_TENANT_ID,
+      userId,
+      bulk.data.items,
+    );
     return NextResponse.json({ items: rows.map(toDisplayItem) });
   }
 
-  if (!body.raw_name?.trim()) {
-    return NextResponse.json({ error: "raw_name required" }, { status: 400 });
+  const single = AddPantryItemSchema.safeParse(body);
+  if (!single.success) {
+    return NextResponse.json(
+      { error: "raw_name or items required", details: single.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const row = await addPantryItem(DEFAULT_TENANT_ID, userId, {
-    raw_name: body.raw_name,
-    raw_quantity: body.raw_quantity,
-    raw_unit: body.raw_unit,
-    expires_at: body.expires_at ?? null,
-    location: body.location,
-    notes: body.notes,
+    raw_name: single.data.raw_name,
+    raw_quantity: single.data.raw_quantity,
+    raw_unit: single.data.raw_unit,
+    expires_at: single.data.expires_at ?? null,
+    location: single.data.location,
+    notes: single.data.notes,
     merge_strategy: "merge_if_same_expiry",
   });
   return NextResponse.json({ item: toDisplayItem(row) });

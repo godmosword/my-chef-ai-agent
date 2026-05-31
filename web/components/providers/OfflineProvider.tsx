@@ -5,9 +5,11 @@ import { flushMutations, migrateLegacyRatingQueue } from "@/platform/sync/mutati
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    void migrateLegacyRatingQueue().then(() => flushMutations());
+    void migrateLegacyRatingQueue()
+      .then(() => flushMutations())
+      .catch(() => {});
 
-    const onOnline = () => void flushMutations();
+    const onOnline = () => void flushMutations().catch(() => {});
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
   }, []);

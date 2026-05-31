@@ -25,7 +25,7 @@ disliked_cuisine, cooking_skill, cooking_time, household_member_info
 const llmLastCallByUser = new Map<string, number>();
 const LLM_RATE_LIMIT_MS = 30_000;
 
-export function isLlmRateLimited(userId: string): boolean {
+function isLlmRateLimited(userId: string): boolean {
   const last = llmLastCallByUser.get(userId);
   if (!last) return false;
   return Date.now() - last < LLM_RATE_LIMIT_MS;
@@ -122,9 +122,4 @@ export async function extractPreferencesViaLlm(
   } finally {
     clearTimeout(timer);
   }
-}
-
-/** Test helper */
-export function resetLlmRateLimitForTests(): void {
-  llmLastCallByUser.clear();
 }

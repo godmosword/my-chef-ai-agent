@@ -1,4 +1,4 @@
-import { floorToWeekMonday } from "@/lib/locale/week";
+import { floorToWeekMonday } from "@/domain/calendar/week";
 
 export function buildWeekPlanShareUrl(siteUrl: string, weekOf: string): string {
   const base = siteUrl.replace(/\/$/, "");

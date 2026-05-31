@@ -8,13 +8,10 @@ import type {
 import { ShoppingCategoryEnum } from "@chef/shared-types";
 import {
   mergeParsedItems,
-  normalizeName,
   parseAmountUnit,
+  parseShoppingList,
   toDisplayAmount,
 } from "@chef/shared-types";
-import { parseShoppingList } from "@chef/shared-types";
-import { floorToWeekMonday } from "@/lib/locale/week";
-import { listPlansWithShoppingForWeek } from "@/platform/db/queries/meal-plans";
 
 const EMPTY_GROUPS = (): Record<ShoppingCategory, AggregatedShoppingItem[]> => ({
   produce: [],
@@ -36,14 +33,18 @@ type LineItem = {
   source: ShoppingSource;
 };
 
-export async function aggregateShoppingList(
-  userId: string,
-  tenantId: string,
-  weekOfInput: string,
-): Promise<AggregatedShoppingList> {
-  const week_of = floorToWeekMonday(weekOfInput);
-  const plans = await listPlansWithShoppingForWeek(userId, tenantId, week_of);
+export type PlanShoppingRow = {
+  planDate: string;
+  slot: Slot;
+  servings: number;
+  recipeTitle: string;
+  shoppingList: unknown[];
+};
 
+export function aggregateShoppingListFromPlans(
+  week_of: string,
+  plans: PlanShoppingRow[],
+): AggregatedShoppingList {
   const lines: LineItem[] = [];
 
   for (const plan of plans) {
@@ -66,7 +67,7 @@ export async function aggregateShoppingList(
         parsed,
         source: {
           date: plan.planDate,
-          slot: plan.slot as Slot,
+          slot: plan.slot,
           recipe_title: plan.recipeTitle,
           servings: plan.servings,
         },

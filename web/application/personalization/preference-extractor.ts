@@ -21,10 +21,7 @@ export type {
   ExtractionResult,
   LastRecipeContext,
   PersistSignalsResult,
-  PreferenceSignal,
-  SignalType,
 } from "./preference-extractor-types";
-export { SIGNAL_TYPES } from "./preference-extractor-types";
 
 export async function extractSignals(
   message: string,

@@ -1,29 +1,15 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
 import { listRecipeVersions } from "@/platform/db/queries/recipes";
-import { getSessionUserId } from "@/platform/identity/session";
+import { requireApiSession } from "@/lib/api/route-helpers";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing session" },
-      { status: 401 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
-
-  const versions = await listRecipeVersions(userId, DEFAULT_TENANT_ID, id);
+  const versions = await listRecipeVersions(session.userId, session.tenantId, id);
   if (!versions.length) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }

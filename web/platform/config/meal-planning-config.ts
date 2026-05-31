@@ -1,17 +1,5 @@
 /** MP-1: meal planning configuration */
 
-export function isMealPlanningEnabled(): boolean {
-  return process.env.ENABLE_MEAL_PLANNING !== "0";
-}
-
-export function mealPlanMaxDays(): number {
-  return Math.max(1, parseInt(process.env.MEAL_PLAN_MAX_DAYS || "14", 10) || 14);
-}
-
-export function mealPlanDefaultDays(): number {
-  return Math.max(1, parseInt(process.env.MEAL_PLAN_DEFAULT_DAYS || "7", 10) || 7);
-}
-
 export function mealPlanLlmMaxTokens(): number {
   return Math.max(
     800,

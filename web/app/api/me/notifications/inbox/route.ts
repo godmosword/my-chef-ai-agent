@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { NotificationInboxMarkReadSchema } from "@/domain/notifications/notification-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import {
@@ -27,13 +29,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
   }
 
-  const body = (await request.json()) as { id?: number };
-  if (!body.id) {
-    return NextResponse.json({ ok: false, error: "Missing id" }, { status: 400 });
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = NotificationInboxMarkReadSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { ok: false, error: "Missing id", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const ok = await markNotificationRead(
-    body.id,
+    parsed.data.id,
     DEFAULT_TENANT_ID,
     userId,
   );

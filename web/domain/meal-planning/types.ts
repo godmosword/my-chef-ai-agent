@@ -1,9 +1,9 @@
 /** MP-1 meal planning domain types */
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-export type EffortLevel = "quick" | "medium" | "serious";
-export type IngredientUrgency = "urgent" | "soon" | "normal" | "none";
-export type ViolationSeverity = "critical" | "warning";
+type EffortLevel = "quick" | "medium" | "serious";
+type IngredientUrgency = "urgent" | "soon" | "normal" | "none";
+type ViolationSeverity = "critical" | "warning";
 export type PlanStatus = "draft" | "active" | "completed" | "abandoned" | "archived";
 export type SlotStatus = "planned" | "swapped_out" | "cooked" | "skipped";
 
@@ -66,10 +66,4 @@ export type AggregatedIngredient = {
   net_quantity: number | null;
   unit: string | null;
   vague: boolean;
-};
-
-export const DEFAULT_MEAL_PATTERN: MealPattern = {
-  breakfast: false,
-  lunch: true,
-  dinner: true,
 };

@@ -1,11 +1,9 @@
-import { ApiError } from "@/application/api/client";
+import { ApiError } from "@/lib/api-client/client";
 import {
   getRecipe,
   listFavorites,
   listRecipes,
-  type FavoriteItem,
-  type ListRecipesResponse,
-} from "@/application/api/recipes";
+} from "@/lib/api-client/recipes";
 import { payloadToCard, recipeListItemToCard } from "@/domain/recipe/recipe-display";
 import type { RecipePayload } from "@chef/shared-types";
 import {

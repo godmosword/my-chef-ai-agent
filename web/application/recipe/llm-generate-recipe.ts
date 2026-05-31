@@ -1,9 +1,10 @@
 import OpenAI from "openai";
-import { resolveModelName } from "@/platform/config/app-config";
+import { parseAiRecipeJson } from "@/domain/recipe/ai-recipe-payload";
 import {
   AI_RETRY_EXTRA_PROMPT,
   AI_TRUNCATION_RECOVERY_PROMPT,
-} from "./prompts";
+} from "@/domain/recipe/prompts";
+import { resolveModelName } from "@/platform/config/app-config";
 
 const DEFAULT_MAX_COMPLETION_TOKENS = 896;
 
@@ -30,26 +31,6 @@ function formatAiError(err: unknown, model: string): Error {
   return new Error(String(err));
 }
 
-type KitchenTalk = { role: string; content: string };
-type Ingredient = { name: string; price?: string };
-
-/** Raw recipe JSON from the LLM before persistence / API enrichment. */
-export type AiRecipePayload = {
-  kitchen_talk?: KitchenTalk[];
-  theme?: string;
-  recipe_name?: string;
-  ingredients?: Ingredient[];
-  steps?: string[];
-  shopping_list?: string[];
-  estimated_total_cost?: string;
-  photo_url?: string;
-  prep_minutes?: number;
-  cook_minutes?: number;
-  servings?: number;
-  /** Optional note when recipe was adjusted for user constraints (≤60 chars). */
-  personalization_note?: string;
-};
-
 function getClient(): OpenAI {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) {
@@ -62,24 +43,10 @@ function getClient(): OpenAI {
   });
 }
 
-function parseRecipeJson(raw: string): AiRecipePayload {
-  const trimmed = raw.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start < 0 || end <= start) {
-    throw new Error("No JSON object in model output");
-  }
-  const parsed = JSON.parse(trimmed.slice(start, end + 1)) as AiRecipePayload;
-  if (!parsed.recipe_name) {
-    throw new Error("Missing recipe_name in JSON");
-  }
-  return parsed;
-}
-
-export async function generateRecipe(
+export async function generateRecipeWithLlm(
   apiMessages: OpenAI.Chat.ChatCompletionMessageParam[],
   userId: string,
-): Promise<{ raw: string; recipe: AiRecipePayload }> {
+): Promise<{ raw: string; recipe: ReturnType<typeof parseAiRecipeJson> }> {
   const model = resolveModelName();
   const maxTokens = Math.max(
     512,
@@ -93,7 +60,6 @@ export async function generateRecipe(
   const client = getClient();
 
   let retryPrompt: OpenAI.Chat.ChatCompletionMessageParam | null = null;
-  let lastRaw = "";
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -114,11 +80,10 @@ export async function generateRecipe(
 
     const choice = response.choices[0];
     const content = choice?.message?.content?.trim() || "";
-    lastRaw = content;
     const finish = (choice?.finish_reason || "").toLowerCase();
 
     try {
-      const recipe = parseRecipeJson(content);
+      const recipe = parseAiRecipeJson(content);
       return { raw: content, recipe };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));

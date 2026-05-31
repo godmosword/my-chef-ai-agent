@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { BackLink } from "@/components/patterns/BackLink";
 import { Button } from "@/components/primitives/Button";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 type Prefs = {
   expiry_reminders_enabled: boolean;
@@ -31,16 +32,23 @@ type Prefs = {
 export default function NotificationSettingsPage() {
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/me/notifications");
-    const data = await res.json();
-    if (data.preferences) setPrefs(data.preferences);
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
+    setLoadFailed(false);
+    try {
+      const res = await fetch("/api/me/notifications");
+      if (!res.ok) throw new Error("load failed");
+      const data = (await res.json()) as { preferences?: Prefs };
+      if (!isActive()) return;
+      if (data.preferences) setPrefs(data.preferences);
+      else setLoadFailed(true);
+    } catch {
+      if (isActive()) setLoadFailed(true);
+    }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   const patch = async (body: Partial<Prefs>) => {
     setSaving(true);
@@ -71,6 +79,15 @@ export default function NotificationSettingsPage() {
       setSaving(false);
     }
   };
+
+  if (loadFailed) {
+    return (
+      <div className="space-y-4">
+        <BackLink href="/app/settings" label="返回偏好" />
+        <p className="text-sm text-text-muted">無法載入通知設定，請稍後再試。</p>
+      </div>
+    );
+  }
 
   if (!prefs) {
     return (

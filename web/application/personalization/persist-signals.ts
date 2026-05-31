@@ -16,21 +16,6 @@ import type {
   PreferenceSignal,
 } from "./preference-extractor-types";
 
-/** Safe log shape — never includes medical_conditions or allergies text. */
-export function householdMemberForLog(member: HouseholdMember): Record<string, unknown> {
-  return {
-    id: member.id,
-    name: member.name,
-    relation: member.relation,
-    age_group: member.age_group,
-    dietary_restrictions_count: member.dietary_restrictions.length,
-    dislikes_count: member.dislikes.length,
-    texture_needs_count: member.texture_needs.length,
-    has_medical_conditions: member.medical_conditions.length > 0,
-    has_allergies: member.allergies.length > 0,
-  };
-}
-
 async function findMemberByName(
   tenantId: string,
   userId: string,

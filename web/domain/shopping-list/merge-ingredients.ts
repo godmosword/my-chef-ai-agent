@@ -6,7 +6,7 @@ import {
   normalizeIngredientName,
 } from "@/domain/pantry/pantry-normalization";
 import type { PantryCategory } from "@/domain/pantry/pantry-types";
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 import { formatQuantityDisplay } from "./format-quantity";
 import { estimatePrice } from "./price-book";
 import { resolveSection, type ShoppingSection } from "./sections";
@@ -104,7 +104,6 @@ function buildCoverageNote(
   pantryUnit: string,
   netQty: number,
   netUnit: string,
-  displayName: string,
 ): string {
   const have = formatQuantityDisplay(pantryQty, pantryUnit);
   const need = formatQuantityDisplay(netQty, netUnit);
@@ -267,7 +266,6 @@ export function mergeIngredientsFromPlan(
             pantrySum.unit,
             netQty,
             netUnit,
-            display_name,
           );
         }
       }

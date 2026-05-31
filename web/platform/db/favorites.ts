@@ -1,4 +1,4 @@
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import { and, desc, eq } from "drizzle-orm";
 import { asRows, getSql } from "./client";
 import { getDb } from "./drizzle";

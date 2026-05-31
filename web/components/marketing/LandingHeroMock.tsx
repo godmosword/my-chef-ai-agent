@@ -2,7 +2,7 @@ import { MARKETING_SECTION } from "@/lib/marketing/content";
 
 const { hero } = MARKETING_SECTION;
 const demo = hero.demoRecipe;
-const accent: [string, string] = ["#E5A33D", "#C8881A"];
+const accent = "linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-primaryDark))";
 
 /** Decorative preview: Tonight input + recipe summary, no hero image. */
 export function LandingHeroMock() {
@@ -24,7 +24,7 @@ export function LandingHeroMock() {
         <span
           className="absolute inset-x-0 top-0 h-1"
           style={{
-            background: `linear-gradient(90deg, ${accent[0]}, ${accent[1]})`,
+            background: accent,
           }}
         />
         <div className="flex items-start justify-between gap-2 pt-1">

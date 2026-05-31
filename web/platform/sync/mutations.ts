@@ -2,7 +2,7 @@ import {
   addFavoriteByRecipeId,
   recordRecipeCook,
   removeFavoriteByRecipeId,
-} from "@/application/api/recipes";
+} from "@/lib/api-client/recipes";
 import {
   dequeuePendingRating,
   loadPendingRatings,
@@ -27,7 +27,7 @@ export async function enqueueMutation(
     ...m,
   });
   if (isBrowserOnline()) {
-    void flushMutations();
+    void flushMutations().catch(() => {});
   }
 }
 

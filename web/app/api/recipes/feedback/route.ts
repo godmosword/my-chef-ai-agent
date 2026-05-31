@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { RecipeFeedbackSchema } from "@/domain/recipe/recipe-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isPreferenceExtractionEnabled } from "@/platform/config/preference-extraction-config";
 import {
@@ -7,18 +8,6 @@ import {
   handleRegenerateFeedback,
 } from "@/application/personalization/preference-feedback";
 import { getSessionUserId } from "@/platform/identity/session";
-
-const FeedbackSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("regenerate"),
-    recipe_name: z.string().min(1).max(200),
-    cuisine: z.string().max(100).optional(),
-  }),
-  z.object({
-    action: z.literal("taste"),
-    text: z.string().min(1).max(50),
-  }),
-]);
 
 export async function POST(request: Request) {
   const userId = await getSessionUserId();
@@ -30,14 +19,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
-  const parsed = FeedbackSchema.safeParse(body);
+  const parsed = RecipeFeedbackSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { ok: false, error: parsed.error.flatten() },

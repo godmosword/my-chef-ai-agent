@@ -4,6 +4,7 @@ import type { MealPlanRow, MealSlotRow } from "@/platform/db/meal-planning";
 import {
   shouldSendDailyEvening,
   shouldSendDailyMorning,
+  shouldSendNextWeekNudge,
   shouldSendShoppingReminder,
   shouldSendWeeklyReview,
 } from "./meal-plan-notification-scheduler";
@@ -156,6 +157,80 @@ describe("shouldSendDailyMorning", () => {
       ).reason,
     ).toBe("disabled");
   });
+
+  it("rejects while snoozed", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs({ snooze_until: "2026-05-28T02:00:00.000Z" }),
+        nineAm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("snoozed");
+  });
+
+  it("rejects during morning backoff", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs({
+          meal_plan_morning_backoff_until: "2026-05-28T02:00:00.000Z",
+        }),
+        nineAm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("morning_backoff");
+  });
+
+  it("rejects when plan does not cover today", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs(),
+        nineAm,
+        plan({ start_date: "2026-05-20", end_date: "2026-05-27" }),
+        [slot()],
+      ).reason,
+    ).toBe("plan_not_today");
+  });
+
+  it("rejects when no slots exist today", () => {
+    expect(shouldSendDailyMorning(mpPrefs(), nineAm, plan(), []).reason).toBe(
+      "no_slots_today",
+    );
+  });
+
+  it("rejects morning hour covered by quiet hours", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs({ quiet_hours_end: 10 }),
+        nineAm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("morning_in_quiet_hours");
+  });
+
+  it("rejects duplicate morning sends within 12 hours", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs({ last_daily_morning_sent_at: "2026-05-28T00:30:00.000Z" }),
+        nineAm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("dedupe_12h");
+  });
+
+  it("rejects when ignored-count backoff is pending", () => {
+    expect(
+      shouldSendDailyMorning(
+        mpPrefs({ meal_plan_morning_ignored_count: 999 }),
+        nineAm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("ignored_backoff_pending");
+  });
 });
 
 describe("shouldSendDailyEvening", () => {
@@ -169,6 +244,57 @@ describe("shouldSendDailyEvening", () => {
       [slot("planned")],
     );
     expect(r.send).toBe(true);
+  });
+
+  it("rejects while snoozed", () => {
+    expect(
+      shouldSendDailyEvening(
+        mpPrefs({ snooze_until: "2026-05-28T10:00:00.000Z" }),
+        fivePm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("snoozed");
+  });
+
+  it("rejects when active plan does not include today", () => {
+    expect(
+      shouldSendDailyEvening(
+        mpPrefs(),
+        fivePm,
+        plan({ end_date: "2026-05-27" }),
+        [slot()],
+      ).reason,
+    ).toBe("plan_not_today");
+  });
+
+  it("rejects when every slot is already done", () => {
+    expect(
+      shouldSendDailyEvening(mpPrefs(), fivePm, plan(), [slot("cooked")])
+        .reason,
+    ).toBe("all_done_today");
+  });
+
+  it("rejects quiet hours", () => {
+    expect(
+      shouldSendDailyEvening(
+        mpPrefs({ quiet_hours_start: 16, quiet_hours_end: 20 }),
+        fivePm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("quiet_hours");
+  });
+
+  it("rejects duplicate evening sends within 12 hours", () => {
+    expect(
+      shouldSendDailyEvening(
+        mpPrefs({ last_daily_evening_sent_at: "2026-05-28T08:30:00.000Z" }),
+        fivePm,
+        plan(),
+        [slot()],
+      ).reason,
+    ).toBe("dedupe_12h");
   });
 });
 
@@ -193,6 +319,38 @@ describe("shouldSendShoppingReminder", () => {
       }).reason,
     ).toBe("no_unchecked_items");
   });
+
+  it("rejects when shopping reminders are disabled", () => {
+    expect(
+      shouldSendShoppingReminder(
+        mpPrefs({ shopping_reminder_enabled: false }),
+        friNine,
+        plan(),
+        { unchecked_count: 1, section_counts: {}, estimated_total: null },
+      ).reason,
+    ).toBe("disabled");
+  });
+
+  it("rejects when scheduled day does not match", () => {
+    expect(
+      shouldSendShoppingReminder(mpPrefs({ shopping_reminder_day: 4 }), friNine, plan(), {
+        unchecked_count: 1,
+        section_counts: {},
+        estimated_total: null,
+      }).reason,
+    ).toBe("wrong_day");
+  });
+
+  it("rejects duplicate shopping reminders within six days", () => {
+    expect(
+      shouldSendShoppingReminder(
+        mpPrefs({ last_shopping_reminder_sent_at: "2026-05-28T01:00:00.000Z" }),
+        friNine,
+        plan(),
+        { unchecked_count: 1, section_counts: {}, estimated_total: null },
+      ).reason,
+    ).toBe("dedupe_6d");
+  });
 });
 
 describe("shouldSendWeeklyReview", () => {
@@ -205,5 +363,77 @@ describe("shouldSendWeeklyReview", () => {
       plan({ end_date: "2026-05-30" }),
     );
     expect(r.send).toBe(true);
+  });
+
+  it("rejects active plans that are not ending yet", () => {
+    expect(
+      shouldSendWeeklyReview(
+        mpPrefs(),
+        satSeven,
+        plan({ end_date: "2026-06-01" }),
+      ).reason,
+    ).toBe("plan_not_ending");
+  });
+
+  it("rejects wrong review day", () => {
+    expect(
+      shouldSendWeeklyReview(
+        mpPrefs({ weekly_review_day: 5 }),
+        satSeven,
+        plan({ end_date: "2026-05-30" }),
+      ).reason,
+    ).toBe("wrong_day");
+  });
+
+  it("rejects duplicate weekly reviews within six days", () => {
+    expect(
+      shouldSendWeeklyReview(
+        mpPrefs({ last_weekly_review_sent_at: "2026-05-29T11:00:00.000Z" }),
+        satSeven,
+        plan({ end_date: "2026-05-30" }),
+      ).reason,
+    ).toBe("dedupe_6d");
+  });
+});
+
+describe("shouldSendNextWeekNudge", () => {
+  const sundaySeven = new Date("2026-05-31T11:00:00Z");
+
+  it("sends on Sunday evening after a completed plan", () => {
+    const r = shouldSendNextWeekNudge(
+      mpPrefs(),
+      sundaySeven,
+      false,
+      plan({ status: "completed", end_date: "2026-05-30" }),
+    );
+    expect(r).toEqual({ send: true, reason: "next_week_nudge_ok" });
+  });
+
+  it("rejects users with an active plan", () => {
+    expect(
+      shouldSendNextWeekNudge(
+        mpPrefs(),
+        sundaySeven,
+        true,
+        plan({ status: "completed" }),
+      ).reason,
+    ).toBe("has_active_plan");
+  });
+
+  it("rejects when no completed plan exists", () => {
+    expect(
+      shouldSendNextWeekNudge(mpPrefs(), sundaySeven, false, null).reason,
+    ).toBe("no_completed_plan");
+  });
+
+  it("rejects duplicate nudges within seven days", () => {
+    expect(
+      shouldSendNextWeekNudge(
+        mpPrefs({ last_next_week_nudge_sent_at: "2026-05-30T11:00:00.000Z" }),
+        sundaySeven,
+        false,
+        plan({ status: "completed" }),
+      ).reason,
+    ).toBe("dedupe_7d");
   });
 });

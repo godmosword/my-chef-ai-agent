@@ -1,6 +1,6 @@
 import { apiFetch } from "./client";
 import type { HouseholdMember, TasteProfile } from "@/platform/db/personalization";
-import type { OnboardingStatus } from "@/platform/db/personalization-types";
+import type { OnboardingStatus } from "@/domain/personalization/profile-types";
 import type { AppliedPersonalization } from "@/application/personalization/applied-personalization";
 
 export type PersonalizationBundle = {

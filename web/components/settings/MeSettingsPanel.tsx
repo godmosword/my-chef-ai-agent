@@ -21,6 +21,7 @@ import {
 } from "@/application/settings/apply";
 import { FLAGS } from "@/platform/config/flags";
 import { DietaryPreferencesPanel } from "@/components/settings/DietaryPreferencesPanel";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 export function MeSettingsPanel() {
   const router = useRouter();
@@ -46,10 +47,11 @@ export function MeSettingsPanel() {
     writeDisplayName(value);
   };
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
     try {
       const res = await fetchUserSettings();
+      if (!isActive()) return;
       setSettings(res.settings);
       applySettingsToDocument(res.settings);
       saveLocalSettings(res.settings);
@@ -57,13 +59,11 @@ export function MeSettingsPanel() {
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (isActive()) setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   const patch = useCallback(
     async (partial: Partial<UserSettings>) => {

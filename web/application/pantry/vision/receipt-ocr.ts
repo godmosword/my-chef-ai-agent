@@ -4,7 +4,7 @@ import {
   extractJsonObject,
 } from "./gemini-vision-client";
 
-export type ReceiptLineItem = {
+type ReceiptLineItem = {
   raw_name: string;
   quantity_text: string | null;
   unit_price: number | null;

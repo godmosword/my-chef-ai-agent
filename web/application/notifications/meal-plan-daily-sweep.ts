@@ -307,7 +307,7 @@ export async function runMealPlanDailySweep(
 }
 
 /** Morning push ignored → backoff after threshold (run hourly). */
-export async function updateMealPlanMorningEngagement(
+async function updateMealPlanMorningEngagement(
   tenantId: string,
   nowUtc: Date = new Date(),
 ): Promise<void> {

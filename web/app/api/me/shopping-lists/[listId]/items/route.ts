@@ -1,28 +1,23 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { AddShoppingItemSchema } from "@/domain/shopping-list/shopping-list-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { itemToJson, shoppingListToJson } from "@/lib/api/shopping-list-json";
-import { requireShoppingSession } from "@/lib/api/shopping-list-guard";
+import {
+  requireShoppingListRoute,
+  type ShoppingListRouteContext,
+} from "@/lib/api/shopping-list-guard";
 import {
   addShoppingItem,
   getShoppingList,
 } from "@/platform/db/shopping-lists";
 
-type Ctx = { params: Promise<{ listId: string }> };
-
-const Body = z.object({
-  raw_name: z.string().min(1),
-  raw_quantity: z.union([z.string(), z.number()]).optional(),
-  raw_unit: z.string().optional(),
-  section: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-export async function POST(request: Request, ctx: Ctx) {
-  const session = await requireShoppingSession();
-  if (session instanceof NextResponse) return session;
-  const { listId } = await ctx.params;
-  const id = Number(listId);
-  const parsed = Body.safeParse(await request.json());
+export async function POST(request: Request, ctx: ShoppingListRouteContext) {
+  const route = await requireShoppingListRoute(ctx);
+  if (route instanceof NextResponse) return route;
+  const { session, listId: id } = route;
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+  const parsed = AddShoppingItemSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }

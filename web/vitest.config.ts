@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+    },
   },
   resolve: {
     alias: {

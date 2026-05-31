@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { annotateRecipeIngredients } from "@/application/pantry/pantry-ingredient-match";
+import { PantryAnnotateSchema } from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import {
   pantryAnnotationTimeoutMs,
@@ -21,10 +23,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ annotations: [], match_count: 0, total: 0 });
   }
 
-  const body = (await request.json()) as {
-    ingredients?: Array<{ name?: string } | string>;
-  };
-  const ingredients = body.ingredients ?? [];
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = PantryAnnotateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+  const ingredients = parsed.data.ingredients;
 
   try {
     const result = await annotateRecipeIngredients(

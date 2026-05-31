@@ -1,6 +1,6 @@
 /** Detect main protein category from dish title + ingredients (MP-1). */
 
-export const PROTEIN_KEYWORDS: Record<string, string[]> = {
+const PROTEIN_KEYWORDS: Record<string, string[]> = {
   chicken: ["雞", "雞肉", "雞胸", "雞腿", "雞翅"],
   pork: ["豬", "豬肉", "豬排", "排骨", "肉絲", "五花"],
   beef: ["牛", "牛肉", "牛排"],
@@ -10,7 +10,7 @@ export const PROTEIN_KEYWORDS: Record<string, string[]> = {
   egg: ["蛋", "雞蛋"],
 };
 
-export function detectProtein(text: string): string | null {
+function detectProtein(text: string): string | null {
   const t = text.toLowerCase();
   for (const [protein, keywords] of Object.entries(PROTEIN_KEYWORDS)) {
     if (keywords.some((k) => t.includes(k))) return protein;

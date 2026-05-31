@@ -13,7 +13,3 @@ export function checkPersonalizationPatchRateLimit(userId: string): boolean {
   entry.count += 1;
   return true;
 }
-
-export function resetPersonalizationRateLimitForTests(): void {
-  patchCounts.clear();
-}

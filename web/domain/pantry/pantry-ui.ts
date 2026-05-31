@@ -2,7 +2,6 @@
  * Shared pantry display logic (PT-3) — used by Web UI and API responses.
  */
 import { PANTRY_UNITS } from "./pantry-types";
-import { convertToBase } from "./pantry-normalization";
 
 export type PantryDisplayItem = {
   id?: number | null;
@@ -15,20 +14,6 @@ export type PantryDisplayItem = {
   location: string;
   expires_at: string | null;
   confidence: number;
-};
-
-export const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  vegetable: ["蔬菜", "青菜", "菜"],
-  fruit: ["水果", "果類"],
-  meat: ["肉", "肉類", "雞肉", "豬肉", "牛肉"],
-  seafood: ["海鮮", "魚", "蝦"],
-  egg_dairy: ["蛋", "奶", "蛋奶", "牛奶", "雞蛋"],
-  seasoning: ["調味料", "調味"],
-  sauce: ["醬料", "醬"],
-  spice: ["香料"],
-  frozen: ["冷凍", "冰庫"],
-  grain: ["米", "麵", "主食"],
-  dry_goods: ["乾貨"],
 };
 
 const LOCATION_ZH: Record<string, string> = {
@@ -72,16 +57,6 @@ export function getLocationZh(location: string): string {
 export function getCategoryZh(category: string | null): string {
   if (!category) return "其他";
   return CATEGORY_ZH[category] ?? category;
-}
-
-export function parseCategoryFromKeyword(text: string): string | null {
-  const t = text.trim();
-  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    for (const kw of keywords) {
-      if (t.includes(kw)) return cat;
-    }
-  }
-  return null;
 }
 
 export function formatQuantityForDisplay(item: PantryDisplayItem): string {

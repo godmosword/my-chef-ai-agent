@@ -7,28 +7,15 @@ import {
   normalizeQuantityAndUnit,
   subtractQuantity,
 } from "@/domain/pantry/pantry-normalization";
-import type { MergeStrategy, PantryLocation, PantrySource } from "@/domain/pantry/pantry-types";
+import type {
+  MergeStrategy,
+  PantryItem,
+  PantryLocation,
+  PantrySource,
+} from "@/domain/pantry/pantry-types";
 import { asRows, getSql } from "./client";
 
-export type PantryItem = {
-  id: number;
-  tenant_id: string;
-  user_id: string;
-  item_key: string;
-  display_name: string;
-  category: string | null;
-  quantity: number | null;
-  unit: string | null;
-  quantity_text: string | null;
-  location: string;
-  expires_at: string | null;
-  purchased_at: string;
-  source: string;
-  confidence: number;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-};
+export type { PantryItem } from "@/domain/pantry/pantry-types";
 
 export type PantryItemInput = {
   raw_name: string;
@@ -50,7 +37,12 @@ function toIso(value: unknown): string {
 
 function toDateOnly(value: unknown): string | null {
   if (value == null) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
   const s = String(value);
   return s.slice(0, 10);
 }
@@ -448,25 +440,6 @@ export async function getPantrySummary(
     expired_count,
     by_category,
   };
-}
-
-/** Find active rows matching a spoken name (normalized item_key or display). */
-export async function findPantryItemsByName(
-  tenantId: string,
-  userId: string,
-  rawName: string,
-): Promise<PantryItem[]> {
-  const [itemKey] = normalizeIngredientName(rawName);
-  const sql = getSql();
-  if (!sql) return [];
-  const rows = await sql`
-    SELECT * FROM pantry_items
-    WHERE tenant_id = ${tenantId}
-      AND user_id = ${userId}
-      AND deleted_at IS NULL
-      AND (item_key = ${itemKey} OR display_name ILIKE ${"%" + rawName.trim() + "%"})
-  `;
-  return asRows<Record<string, unknown>>(rows).map(pantryItemFromRow);
 }
 
 export async function getPantryItem(

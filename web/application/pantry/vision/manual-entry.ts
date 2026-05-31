@@ -8,7 +8,7 @@ import { estimateExpiresAt } from "./map-to-pantry-inputs";
 const SEGMENT_SPLIT = /[、,，。;；\n]+/;
 
 /** Parse one segment like "番茄 3 顆" or "香菇 200g". */
-export function parseManualSegment(segment: string): PantryItemInput | null {
+function parseManualSegment(segment: string): PantryItemInput | null {
   const trimmed = segment.trim();
   if (!trimmed) return null;
 

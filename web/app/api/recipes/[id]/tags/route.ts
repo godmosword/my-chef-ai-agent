@@ -1,35 +1,17 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
 import { addRecipeTag } from "@/platform/db/queries/recipes";
-import { getSessionUserId } from "@/platform/identity/session";
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 import { AddTagRequestSchema } from "@chef/shared-types";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing session" },
-      { status: 401 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
   const parsed = AddTagRequestSchema.safeParse(body);
   if (!parsed.success) {
@@ -40,8 +22,8 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   const ok = await addRecipeTag(
-    userId,
-    DEFAULT_TENANT_ID,
+    session.userId,
+    session.tenantId,
     id,
     parsed.data.tag,
   );

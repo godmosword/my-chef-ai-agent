@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { EXPIRY_DISCLAIMER_TEXT } from "@/application/notifications/expiry-reminder-payload";
 import { Button } from "@/components/primitives/Button";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 type InboxItem = {
   id: number;
@@ -21,19 +22,17 @@ type ExpiryItem = {
 export function ExpiryReminderBanner() {
   const [items, setItems] = useState<InboxItem[]>([]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     try {
       const res = await fetch("/api/me/notifications/inbox");
       const data = (await res.json()) as { items?: InboxItem[] };
-      setItems(data.items ?? []);
+      if (isActive()) setItems(data.items ?? []);
     } catch {
-      setItems([]);
+      if (isActive()) setItems([]);
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   const dismiss = async (id: number) => {
     await fetch("/api/me/notifications/inbox", {

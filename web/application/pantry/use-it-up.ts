@@ -12,15 +12,16 @@ import {
   loadPersonalizationContext,
   renderPersonalizationBlock,
 } from "@/application/personalization/personalization-context";
-import { generateRecipe, type AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import { generateRecipeWithLlm } from "@/application/recipe/llm-generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import { checkQuota, consumeQuota } from "@/platform/db/quota";
 import { resolveModelName } from "@/platform/config/app-config";
 import {
-  useItUpCandidateMaxTokens,
-  useItUpCandidateTimeoutSec,
-  useItUpFullRecipesCount,
+  getUseItUpCandidateMaxTokens,
+  getUseItUpCandidateTimeoutSec,
+  getUseItUpFullRecipesCount,
 } from "@/platform/config/notification-config";
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 import { getTasteProfile } from "@/platform/db/personalization";
 import {
   recordUseItUp,
@@ -159,13 +160,13 @@ ${regeneratedNames.length ? regeneratedNames.join("、") : "（無）"}
     apiKey,
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     maxRetries: 0,
-    timeout: useItUpCandidateTimeoutSec() * 1000,
+    timeout: getUseItUpCandidateTimeoutSec() * 1000,
   });
 
   try {
     const res = await client.chat.completions.create({
       model: resolveModelName(),
-      max_tokens: useItUpCandidateMaxTokens(),
+      max_tokens: getUseItUpCandidateMaxTokens(),
       temperature: 0.4,
       messages: [{ role: "user", content: prompt }],
     });
@@ -197,7 +198,7 @@ async function expandFullRecipe(
   const systemParts = [cleanBlock, personalizationText].filter(Boolean);
   const userMessage = `請做「${title}」，優先用完快過期食材。`;
   try {
-    const { recipe } = await generateRecipe(
+    const { recipe } = await generateRecipeWithLlm(
       [
         {
           role: "system",
@@ -260,7 +261,7 @@ export async function suggestUseItUpRecipes(
     });
 
     const top = ranked.slice(0, max);
-    const fullCount = req.titles_only ? 0 : useItUpFullRecipesCount();
+    const fullCount = req.titles_only ? 0 : getUseItUpFullRecipesCount();
     const today = new Date().toISOString().slice(0, 10);
     const priorityLines = req.priority_ingredients.map((i) => lineForItem(i, today));
 

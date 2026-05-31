@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { UpdatePantryItemSchema } from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   deletePantryItem,
-  getPantryItem,
   updatePantryItem,
 } from "@/platform/db/pantry";
 import { getSessionUserId } from "@/platform/identity/session";
@@ -21,8 +22,23 @@ export async function PATCH(request: Request, ctx: Ctx) {
   if (!Number.isFinite(itemId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
-  const body = await request.json();
-  const updated = await updatePantryItem(itemId, DEFAULT_TENANT_ID, userId, body);
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = UpdatePantryItemSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const updated = await updatePantryItem(
+    itemId,
+    DEFAULT_TENANT_ID,
+    userId,
+    parsed.data,
+  );
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

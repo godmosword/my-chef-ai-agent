@@ -75,13 +75,4 @@ export function getPersonalizationMetricsSnapshot(): {
   };
 }
 
-/** Test helper */
-export function resetPersonalizationMetricsForTests(): void {
-  for (const k of Object.keys(loadTotal) as LoadResult[]) loadTotal[k] = 0;
-  for (const k of Object.keys(injectTotal) as InjectPath[]) injectTotal[k] = 0;
-  blockTokenBuckets.clear();
-  hardConstraintBuckets.clear();
-  lastOtelAttributes = null;
-}
-
 export type { InjectPath, LoadResult };

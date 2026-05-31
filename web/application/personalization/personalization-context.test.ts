@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  applyTokenBudget,
   buildPersonalizationBlock,
   emptyPersonalizationBlock,
   loadPersonalizationContext,

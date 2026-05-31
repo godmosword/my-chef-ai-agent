@@ -1,39 +1,20 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
-import { z } from "zod";
+import { PatchRecipeMetaSchema } from "@/domain/recipe/recipe-api-schemas";
 import {
   getRecipeForUser,
   patchRecipeMeta,
   softDeleteRecipe,
 } from "@/platform/db/queries/recipes";
-import { getSessionUserId } from "@/platform/identity/session";
-
-const PatchRecipeSchema = z.object({
-  rating: z.number().int().min(1).max(5).optional(),
-  record_cook: z.boolean().optional(),
-});
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing session" },
-      { status: 401 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
-
-  const recipe = await getRecipeForUser(userId, DEFAULT_TENANT_ID, id);
+  const recipe = await getRecipeForUser(session.userId, session.tenantId, id);
   if (!recipe) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
@@ -42,30 +23,14 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing session" },
-      { status: 401 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const parsed = PatchRecipeSchema.safeParse(body);
+  const parsed = PatchRecipeMetaSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { ok: false, error: parsed.error.flatten() },
@@ -80,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
   }
 
-  const ok = await patchRecipeMeta(userId, DEFAULT_TENANT_ID, id, {
+  const ok = await patchRecipeMeta(session.userId, session.tenantId, id, {
     rating: parsed.data.rating,
     recordCook: parsed.data.record_cook,
   });
@@ -93,23 +58,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing session" },
-      { status: 401 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
-
-  const deleted = await softDeleteRecipe(userId, DEFAULT_TENANT_ID, id);
+  const deleted = await softDeleteRecipe(session.userId, session.tenantId, id);
   if (!deleted) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }

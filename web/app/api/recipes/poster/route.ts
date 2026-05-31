@@ -1,26 +1,36 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import { buildRecipePosterHtml } from "@/application/poster/recipe-poster-html";
-import { getLastRecipeFromMemory } from "@/domain/recipe/recipe-memory";
-import { getSessionUserId } from "@/platform/identity/session";
+import { getLastRecipePayloadFromMemory } from "@/application/recipe/recipe-memory";
+import {
+  readJsonBody,
+  requireApiSession,
+} from "@/lib/api/route-helpers";
+
+type PosterRequestBody = {
+  recipe_data?: AiRecipePayload;
+  recipe_name?: string;
+  photo_url?: string;
+};
 
 export async function POST(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
-  let body: { recipe_data?: AiRecipePayload; recipe_name?: string; photo_url?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const json = await readJsonBody(request);
+  if (json instanceof NextResponse) return json;
+  const body = json as PosterRequestBody;
 
   let recipe = body.recipe_data;
+  if (!recipe?.recipe_name && body.recipe_name?.trim()) {
+    recipe = { recipe_name: body.recipe_name.trim() };
+  }
   if (!recipe?.recipe_name) {
-    recipe = (await getLastRecipeFromMemory(userId, DEFAULT_TENANT_ID)) ?? undefined;
+    recipe =
+      (await getLastRecipePayloadFromMemory(
+        session.userId,
+        session.tenantId,
+      )) ?? undefined;
   }
   if (!recipe?.recipe_name) {
     return NextResponse.json(

@@ -1,4 +1,4 @@
-import type { CandidateSlot, MealPattern, MealType } from "./types";
+import type { MealPattern, MealType } from "./types";
 
 export function enumerateExpectedSlots(
   startDate: string,
@@ -29,14 +29,6 @@ export function slotKey(
   slot_index: number,
 ): string {
   return `${slot_date}|${meal_type}|${slot_index}`;
-}
-
-export function indexSlots(slots: CandidateSlot[]): Map<string, number> {
-  const m = new Map<string, number>();
-  slots.forEach((s, i) => {
-    m.set(slotKey(s.slot_date, s.meal_type, s.slot_index), i);
-  });
-  return m;
 }
 
 export function isWeekendDate(dateStr: string): boolean {

@@ -1,24 +1,15 @@
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import type { LastRecipeContext } from "./last-recipe-context";
-import { getUserMemory } from "@/platform/db/memory";
 
-export async function getLastRecipeFromMemory(
-  userId: string,
-  tenantId: string,
-): Promise<AiRecipePayload | null> {
-  const ctx = await getLastRecipeContextFromMemory(userId, tenantId);
-  if (!ctx?.recipe_name) return null;
-  return {
-    recipe_name: ctx.recipe_name,
-    theme: ctx.cuisine,
-  };
-}
+export type RecipeMemoryMessage = {
+  role: string;
+  content: string;
+  timestamp?: string;
+};
 
-export async function getLastRecipeContextFromMemory(
-  userId: string,
-  tenantId: string,
-): Promise<LastRecipeContext | null> {
-  const history = await getUserMemory(userId, tenantId);
+export function parseLastRecipeContextFromMemory(
+  history: RecipeMemoryMessage[],
+): LastRecipeContext | null {
   for (let i = history.length - 1; i >= 0; i--) {
     const msg = history[i];
     if (msg.role !== "assistant" || !msg.content) continue;

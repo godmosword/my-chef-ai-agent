@@ -4,7 +4,7 @@ import type { PendingMutation } from "./db";
 const recordRecipeCook = vi.fn();
 const dequeuePendingRating = vi.fn();
 
-vi.mock("@/application/api/recipes", () => ({
+vi.mock("@/lib/api-client/recipes", () => ({
   recordRecipeCook,
   addFavoriteByRecipeId: vi.fn(),
   removeFavoriteByRecipeId: vi.fn(),

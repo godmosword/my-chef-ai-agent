@@ -32,9 +32,6 @@ export function Footer() {
           >
             GitHub
           </a>
-          <Link href="/legacy" className="text-xs hover:text-text-ink">
-            經典聊天介面
-          </Link>
         </nav>
       </div>
     </footer>

@@ -324,22 +324,6 @@ export async function activateMealPlan(
   });
 }
 
-export async function completeMealPlan(
-  planId: number,
-  tenantId: string,
-  userId: string,
-): Promise<MealPlanRow | null> {
-  return setPlanStatus(planId, tenantId, userId, "completed");
-}
-
-export async function abandonMealPlan(
-  planId: number,
-  tenantId: string,
-  userId: string,
-): Promise<MealPlanRow | null> {
-  return setPlanStatus(planId, tenantId, userId, "abandoned");
-}
-
 export async function updateMealPlanMeta(
   planId: number,
   tenantId: string,
@@ -366,21 +350,6 @@ export async function updateMealPlanMeta(
       updated_at = now()
     WHERE id = ${planId} AND tenant_id = ${tenantId} AND user_id = ${userId}
   `;
-}
-
-export async function deleteMealPlan(
-  planId: number,
-  tenantId: string,
-  userId: string,
-): Promise<boolean> {
-  const sql = getSql();
-  if (!sql) return false;
-  const rows = await sql`
-    DELETE FROM meal_plans
-    WHERE id = ${planId} AND tenant_id = ${tenantId} AND user_id = ${userId}
-    RETURNING id
-  `;
-  return asRows(rows).length > 0;
 }
 
 export async function bulkInsertMealSlots(
@@ -451,61 +420,6 @@ export async function getMealSlotForPlan(
   const slot = await getMealSlot(slotId, tenantId, userId);
   if (!slot || slot.meal_plan_id !== planId) return null;
   return slot;
-}
-
-export async function updateMealSlot(
-  slotId: number,
-  tenantId: string,
-  userId: string,
-  fields: Partial<{
-    dish_title: string;
-    cuisine: string;
-    key_ingredients: KeyIngredient[];
-    full_recipe_json: Record<string, unknown> | null;
-    status: SlotStatus;
-    notes: string;
-  }>,
-): Promise<MealSlotRow | null> {
-  const existing = await getMealSlot(slotId, tenantId, userId);
-  if (!existing) return null;
-  const sql = getSql();
-  if (!sql) return null;
-
-  const clearRecipe =
-    fields.dish_title != null && fields.dish_title !== existing.dish_title;
-
-  const rows = await sql`
-    UPDATE meal_slots SET
-      dish_title = ${fields.dish_title ?? existing.dish_title},
-      cuisine = ${fields.cuisine ?? existing.cuisine},
-      key_ingredients = ${JSON.stringify(fields.key_ingredients ?? existing.key_ingredients)}::jsonb,
-      full_recipe_json = ${clearRecipe ? null : fields.full_recipe_json !== undefined ? JSON.stringify(fields.full_recipe_json) : existing.full_recipe_json},
-      full_recipe_generated_at = ${clearRecipe ? null : existing.full_recipe_generated_at},
-      status = ${fields.status ?? existing.status},
-      notes = ${fields.notes !== undefined ? fields.notes : existing.notes},
-      updated_at = now()
-    WHERE id = ${slotId} AND tenant_id = ${tenantId} AND user_id = ${userId}
-    RETURNING *
-  `;
-  const row = asRows<Record<string, unknown>>(rows)[0];
-  return row ? slotFromRow(row) : null;
-}
-
-export async function listSlotsForDate(
-  tenantId: string,
-  userId: string,
-  date: string,
-): Promise<MealSlotRow[]> {
-  const sql = getSql();
-  if (!sql) return [];
-  const rows = await sql`
-    SELECT * FROM meal_slots
-    WHERE tenant_id = ${tenantId} AND user_id = ${userId}
-      AND slot_date = ${date}
-      AND status = 'planned'
-    ORDER BY meal_type ASC, slot_index ASC
-  `;
-  return asRows<Record<string, unknown>>(rows).map(slotFromRow);
 }
 
 export async function listSlotsForDateAll(

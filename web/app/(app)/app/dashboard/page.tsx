@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { BackLink } from "@/components/patterns/BackLink";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 type Dashboard = {
   streak_weeks: number;
@@ -22,16 +23,32 @@ type Dashboard = {
 
 export default function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/me/dashboard");
-    const json = await res.json();
-    if (json.dashboard) setData(json.dashboard);
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
+    setLoadFailed(false);
+    try {
+      const res = await fetch("/api/me/dashboard");
+      if (!res.ok) throw new Error("load failed");
+      const json = (await res.json()) as { dashboard?: Dashboard };
+      if (!isActive()) return;
+      if (json.dashboard) setData(json.dashboard);
+      else setLoadFailed(true);
+    } catch {
+      if (isActive()) setLoadFailed(true);
+    }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
+
+  if (loadFailed) {
+    return (
+      <div className="space-y-4">
+        <BackLink href="/app" label="返回" />
+        <p className="text-sm text-text-muted">無法載入儀表板，請稍後再試。</p>
+      </div>
+    );
+  }
 
   if (!data) {
     return (

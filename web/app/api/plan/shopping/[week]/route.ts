@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { aggregateShoppingList } from "@/domain/plan/shopping-list";
+import { aggregateShoppingList } from "@/application/plan/aggregate-shopping-list";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import { getSessionUserId } from "@/platform/identity/session";
 import { floorToWeekMonday } from "@/lib/locale/week";

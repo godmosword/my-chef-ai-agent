@@ -1,3 +1,5 @@
+import type { PersonalizationBlock } from "@/domain/personalization/personalization-block";
+import { emptyPersonalizationBlock } from "@/domain/personalization/personalization-block";
 import {
   isPersonalizationInjectionEnabled,
   personalizationLoadTimeoutMs,
@@ -75,30 +77,6 @@ const SCALE_LABELS: Record<
     4: "重油",
   },
 };
-
-export type PersonalizationBlock = {
-  hard_constraints: string[];
-  soft_preferences: string[];
-  household_notes: string[];
-  recent_dishes_to_avoid: string[];
-  skill_and_time: string | null;
-  confidence: number;
-  token_estimate: number;
-  is_empty: boolean;
-};
-
-export function emptyPersonalizationBlock(): PersonalizationBlock {
-  return {
-    hard_constraints: [],
-    soft_preferences: [],
-    household_notes: [],
-    recent_dishes_to_avoid: [],
-    skill_and_time: null,
-    confidence: 0,
-    token_estimate: 0,
-    is_empty: true,
-  };
-}
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length * 1.5);
@@ -267,7 +245,7 @@ export function buildPersonalizationBlock(
 }
 
 /** Drop P3 then trim P2; never drop P0/P1. */
-export function applyTokenBudget(
+function applyTokenBudget(
   block: PersonalizationBlock,
   maxTokens: number,
 ): void {
@@ -435,3 +413,6 @@ export async function loadPersonalizationContext(
     return emptyPersonalizationBlock();
   }
 }
+
+export type { PersonalizationBlock } from "@/domain/personalization/personalization-block";
+export { emptyPersonalizationBlock } from "@/domain/personalization/personalization-block";

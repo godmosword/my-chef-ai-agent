@@ -9,6 +9,8 @@ import {
   type ParsedAmount,
 } from "./unit-normalizer";
 
+type ParsedLine = { name: string; amount?: string; unit?: string };
+
 const SECTION_PREFIX =
   /^(蔬菜|蛋白質|肉類|海鮮|調味|醬料|乳品|主食|其他)[：:]\s*/i;
 
@@ -55,32 +57,65 @@ function stripSectionPrefix(line: string): string {
   return line.replace(SECTION_PREFIX, "").trim();
 }
 
+function parsedLine(name: string, amount?: string, unit?: string): ParsedLine {
+  const row: ParsedLine = { name };
+  if (amount !== undefined) row.amount = amount;
+  if (unit !== undefined) row.unit = unit;
+  return row;
+}
+
+function parsedShoppingRow(
+  name: string,
+  amount: string | number,
+  unit: string | undefined,
+  category: ShoppingCategory,
+  parsed: ParsedAmount | null,
+): ParsedShoppingRow {
+  const row: ParsedShoppingRow = {
+    name,
+    normalizedName: normalizeName(name),
+    amount,
+    category,
+    parsed,
+  };
+  if (unit !== undefined) row.unit = unit;
+  return row;
+}
+
 /** Parse trailing "300g", "3 顆", "2 大匙" from a shopping string line. */
-function parseStringLine(line: string): { name: string; amount?: string; unit?: string } {
+function parseStringLine(line: string): ParsedLine {
   const cleaned = stripSectionPrefix(line);
   const rangeMatch = cleaned.match(/^(.+?)\s+(\d+)\s*[-–]\s*(\d+)\s*(.+)$/);
   if (rangeMatch) {
-    return { name: rangeMatch[1].trim(), amount: `${rangeMatch[2]}-${rangeMatch[3]} ${rangeMatch[4].trim()}` };
+    const [, name, from, to, unit] = rangeMatch;
+    if (name && from && to && unit) {
+      return parsedLine(name.trim(), `${from}-${to} ${unit.trim()}`);
+    }
   }
 
   const fuzzyOnly = cleaned.match(/^(.+?)\s+(適量|少許|酌量|些許|一撮)$/);
   if (fuzzyOnly) {
-    return { name: fuzzyOnly[1].trim(), amount: fuzzyOnly[2] };
+    const [, name, amount] = fuzzyOnly;
+    if (name && amount) return parsedLine(name.trim(), amount);
   }
 
   const glued = cleaned.match(/^(.+?)\s*([\d.]+)\s*([a-zA-Z\u4e00-\u9fff]+)$/);
   if (glued) {
-    return { name: glued[1].trim(), amount: glued[2], unit: glued[3] };
+    const [, name, amount, unit] = glued;
+    if (name && amount && unit) return parsedLine(name.trim(), amount, unit);
   }
 
   const spaced = cleaned.match(/^(.+?)\s+([\d.]+)\s+(.+)$/);
   if (spaced) {
-    const tail = spaced[3].trim();
+    const [, name, amount, rawTail] = spaced;
+    if (!name || !amount || !rawTail) return { name: cleaned };
+    const tail = rawTail.trim();
     const parts = tail.split(/\s+/);
-    if (parts.length >= 2 && /^[\d.]+$/.test(parts[0])) {
-      return { name: spaced[1].trim(), amount: `${parts[0]} ${parts.slice(1).join(" ")}` };
+    const firstPart = parts[0];
+    if (parts.length >= 2 && firstPart && /^[\d.]+$/.test(firstPart)) {
+      return parsedLine(name.trim(), `${firstPart} ${parts.slice(1).join(" ")}`);
     }
-    return { name: spaced[1].trim(), amount: spaced[2], unit: tail };
+    return parsedLine(name.trim(), amount, tail);
   }
 
   return { name: cleaned };
@@ -94,14 +129,13 @@ export function parseShoppingListItem(raw: unknown): ParsedShoppingRow | null {
     if (!name) return null;
     const category = guessCategory(name);
     const parsed = parseAmountUnit(amount, unit);
-    return {
+    return parsedShoppingRow(
       name,
-      normalizedName: normalizeName(name),
-      amount: amount ?? (parsed?.kind === "fuzzy" ? "適量" : ""),
+      amount ?? (parsed?.kind === "fuzzy" ? "適量" : ""),
       unit,
       category,
       parsed,
-    };
+    );
   }
 
   const obj = ShoppingItemSchema.safeParse(raw);
@@ -114,14 +148,13 @@ export function parseShoppingListItem(raw: unknown): ParsedShoppingRow | null {
   const amount = typeof data === "object" ? data.amount : undefined;
   const unit = typeof data === "object" ? data.unit : undefined;
   const parsed = parseAmountUnit(amount, unit);
-  return {
-    name: name.trim(),
-    normalizedName: normalizeName(name),
-    amount: amount ?? (parsed?.kind === "fuzzy" ? "適量" : ""),
+  return parsedShoppingRow(
+    name.trim(),
+    amount ?? (parsed?.kind === "fuzzy" ? "適量" : ""),
     unit,
     category,
     parsed,
-  };
+  );
 }
 
 export function applyServingsScale(

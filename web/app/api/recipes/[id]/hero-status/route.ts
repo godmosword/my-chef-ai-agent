@@ -1,23 +1,17 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
 import { getRecipeHeroStatus } from "@/platform/db/queries/recipes";
-import { getSessionUserId } from "@/platform/identity/session";
+import { requireApiSession } from "@/lib/api/route-helpers";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "Database not configured" }, { status: 503 });
-  }
+  const session = await requireApiSession({
+    databaseError: "Database not configured",
+  });
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  const row = await getRecipeHeroStatus(userId, DEFAULT_TENANT_ID, id);
+  const row = await getRecipeHeroStatus(session.userId, session.tenantId, id);
   if (!row) {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }

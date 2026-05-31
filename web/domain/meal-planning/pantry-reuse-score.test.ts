@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computePantryReuseScore } from "./pantry-reuse-score";
 import type { CandidateSlot } from "./types";
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 
 describe("computePantryReuseScore", () => {
   it("all from pantry ~1.0", () => {

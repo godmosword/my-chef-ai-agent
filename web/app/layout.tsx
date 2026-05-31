@@ -7,6 +7,7 @@ import { OfflineProvider } from "@/components/providers/OfflineProvider";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { SettingsBootstrap } from "@/components/providers/SettingsBootstrap";
 import { THEME_BOOTSTRAP_SOURCE } from "@/lib/theme";
+import { tokenColors } from "@/lib/design/token-colors";
 
 const notoSans = Noto_Sans_TC({
   subsets: ["latin"],
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFAF5",
+  themeColor: tokenColors.background,
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

@@ -1,29 +1,23 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { MealPlanSlotSkippedSchema } from "@/domain/meal-planning/meal-plan-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { markSlotSkippedWithReason } from "@/application/meal-planning/meal-plan-slot-execution";
 import {
-  mealPlanExecutionEnabled,
-  requireMealPlanSession,
+  requireMealPlanSlotRoute,
   requireSlotInPlan,
+  type MealPlanSlotRouteContext,
 } from "@/lib/api/meal-plan-guard";
 
-const BodySchema = z.object({ reason: z.string().min(1).max(64) });
+export async function POST(request: Request, ctx: MealPlanSlotRouteContext) {
+  const route = await requireMealPlanSlotRoute(ctx);
+  if (route instanceof NextResponse) return route;
+  const { session, planId, slotId } = route;
 
-type Ctx = { params: Promise<{ planId: string; slotId: string }> };
-
-export async function POST(request: Request, ctx: Ctx) {
-  const disabled = mealPlanExecutionEnabled();
-  if (disabled) return disabled;
-  const session = await requireMealPlanSession();
-  if (session instanceof NextResponse) return session;
-
-  const { planId: planIdStr, slotId: slotIdStr } = await ctx.params;
-  const planId = parseInt(planIdStr, 10);
-  const slotId = parseInt(slotIdStr, 10);
-
-  const body = BodySchema.safeParse(await request.json());
-  if (!body.success) {
-    return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+  const parsed = MealPlanSlotSkippedSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
   const slotCheck = await requireSlotInPlan(
@@ -38,7 +32,7 @@ export async function POST(request: Request, ctx: Ctx) {
     slotId,
     session.tenantId,
     session.userId,
-    body.data.reason,
+    parsed.data.reason,
   );
   if (!slot) {
     return NextResponse.json({ error: "Slot not found" }, { status: 404 });

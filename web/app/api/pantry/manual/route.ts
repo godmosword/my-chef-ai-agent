@@ -3,6 +3,8 @@ import {
   formatManualSummary,
   parseManualPantryText,
 } from "@/application/pantry/vision/manual-entry";
+import { PantryManualTextSchema } from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isPantryEnabled } from "@/platform/config/pantry-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
@@ -21,8 +23,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 });
   }
 
-  const body = (await request.json()) as { text?: string };
-  const text = body.text?.trim() ?? "";
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = PantryManualTextSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "請輸入食材" }, { status: 400 });
+  }
+  const text = parsed.data.text.trim();
   if (!text) {
     return NextResponse.json({ error: "請輸入食材" }, { status: 400 });
   }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   DIETARY_PRESET_OPTIONS,
   type DietaryPreferences,
   type DietaryPresetKey,
-} from "@/platform/db/dietary-preferences";
+} from "@/domain/settings/dietary-preferences";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 export function DietaryPreferencesPanel() {
   const { toast } = useToast();
@@ -14,23 +15,21 @@ export function DietaryPreferencesPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
     try {
       const res = await fetch("/api/me/dietary-preferences");
       if (!res.ok) throw new Error("load failed");
       const data = (await res.json()) as { preferences: DietaryPreferences };
-      setPrefs(data.preferences);
+      if (isActive()) setPrefs(data.preferences);
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (isActive()) setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   const save = async (next: DietaryPreferences) => {
     setSaving(true);

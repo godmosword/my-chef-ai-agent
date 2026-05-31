@@ -28,20 +28,25 @@ export function CleanFridgeDialog({
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
     setLoading(true);
-    (async () => {
+    void (async () => {
       try {
         const res = await fetch("/api/me/pantry?include_expired=0");
         const data = (await res.json()) as { items: PantryApiItem[] };
+        if (cancelled) return;
         const list = data.items ?? [];
         setItems(list);
         setSelected(new Set(list.map((i) => i.id!)));
       } catch {
-        setItems([]);
+        if (!cancelled) setItems([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   if (!open) return null;

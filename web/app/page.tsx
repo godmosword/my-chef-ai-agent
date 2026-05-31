@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { FLAGS } from "@/platform/config/flags";
 import { LandingPage } from "@/components/marketing/LandingPage";
-import { ChatPanel } from "@/components/ChatPanel";
 import { getSiteUrl } from "@/platform/config/site-url";
 
 const siteUrl = getSiteUrl();
@@ -35,8 +33,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  if (FLAGS.newUI) {
-    return <LandingPage />;
-  }
-  return <ChatPanel />;
+  return <LandingPage />;
 }

@@ -17,8 +17,3 @@ export function isOnboardingFlowEnabled(): boolean {
 export function showAppliedPersonalization(): boolean {
   return envFlag("SHOW_APPLIED_PERSONALIZATION", true);
 }
-
-export function onboardingRetryMax(): number {
-  const n = parseInt(process.env.ONBOARDING_RETRY_MAX || "2", 10);
-  return Number.isFinite(n) ? n : 2;
-}

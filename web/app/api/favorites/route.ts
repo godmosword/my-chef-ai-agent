@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import {
+  AiRecipePayloadSchema,
+  type AiRecipePayload,
+} from "@/domain/recipe/ai-recipe-payload";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   insertFavoriteByRecipeId,
@@ -84,18 +87,17 @@ export async function POST(request: Request) {
   }
 
   const name = (legacy.data.recipe_name || "").trim();
-  const data = legacy.data.recipe_data as AiRecipePayload | undefined;
-  if (!name || !data) {
+  const recipeDataParsed = AiRecipePayloadSchema.safeParse(legacy.data.recipe_data);
+  if (!name || !recipeDataParsed.success) {
     return NextResponse.json(
-      { ok: false, error: "recipe_name and recipe_data required" },
+      { ok: false, error: "recipe_name and valid recipe_data required" },
       { status: 400 },
     );
   }
+  const data: AiRecipePayload = recipeDataParsed.data;
 
   const recipeId =
-    typeof (data as { id?: string }).id === "string"
-      ? (data as { id: string }).id
-      : undefined;
+    typeof data.id === "string" ? data.id : undefined;
 
   const ok = await insertFavoriteRecipe(
     userId,
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
       DEFAULT_TENANT_ID,
       userId,
       name,
-      (data as { cuisine?: string }).cuisine ?? data.theme ?? null,
+      (data.cuisine ?? data.theme ?? null),
     );
   }
   return NextResponse.json({ ok: true, saved: ok });

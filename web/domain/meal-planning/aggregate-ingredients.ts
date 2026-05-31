@@ -1,9 +1,8 @@
 import {
   addQuantities,
-  normalizeIngredientName,
   normalizeQuantityAndUnit,
 } from "@/domain/pantry/pantry-normalization";
-import type { PantryItem } from "@/platform/db/pantry";
+import type { PantryItem } from "@/domain/pantry/pantry-types";
 import type { AggregatedIngredient, CandidateSlot } from "./types";
 import { ingredientNameToKey } from "./validate-plan";
 
@@ -113,8 +112,6 @@ export function computeAggregatedIngredientNeeds(
         }
       }
     }
-    const unit = availableUnit;
-
     const need = acc.quantity ?? 0;
     const net = Math.max(0, need - available);
     out.push({

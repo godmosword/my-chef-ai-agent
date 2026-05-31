@@ -25,7 +25,6 @@ function timeOfDayGreeting(now = new Date()): string {
 
 /** Line shown after date in app home header. */
 export function getGreetingLine(now = new Date()): string {
-  const h = hourInTimeZone(now);
   const weekday = new Intl.DateTimeFormat("zh-TW", {
     timeZone: DEFAULT_DISPLAY_TIMEZONE,
     weekday: "long",

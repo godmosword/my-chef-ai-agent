@@ -6,7 +6,6 @@ import {
   notificationIgnoreBackoffThreshold,
 } from "@/platform/config/notification-config";
 import {
-  getNotificationPreferences,
   incrementIgnored,
   listNotificationPreferencesForTenant,
   resetIgnored,

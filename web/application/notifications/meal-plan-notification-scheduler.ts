@@ -19,15 +19,15 @@ function todayLocalStr(local: ReturnType<typeof getLocalParts>): string {
   return `${local.year}-${m}-${d}`;
 }
 
-export function planCoversDate(plan: MealPlanRow, dateStr: string): boolean {
+function planCoversDate(plan: MealPlanRow, dateStr: string): boolean {
   return plan.start_date <= dateStr && plan.end_date >= dateStr;
 }
 
-export function hasUncookedSlotsToday(slots: MealSlotRow[]): boolean {
+function hasUncookedSlotsToday(slots: MealSlotRow[]): boolean {
   return slots.some((s) => s.status === "planned");
 }
 
-export function hasUncookedDinnerToday(slots: MealSlotRow[]): boolean {
+function hasUncookedDinnerToday(slots: MealSlotRow[]): boolean {
   return slots.some(
     (s) =>
       s.status === "planned" &&
@@ -36,7 +36,7 @@ export function hasUncookedDinnerToday(slots: MealSlotRow[]): boolean {
 }
 
 /** Morning push blocked when user's quiet window covers the morning hour. */
-export function morningHourInQuietHours(prefs: NotificationPreferences): boolean {
+function morningHourInQuietHours(prefs: NotificationPreferences): boolean {
   const end = prefs.quiet_hours_end;
   const morning = prefs.daily_meal_morning_hour;
   if (end > morning) return true;

@@ -15,7 +15,7 @@ export const SIGNAL_TYPES = [
   "household_member_info",
 ] as const;
 
-export type SignalType = (typeof SIGNAL_TYPES)[number];
+type SignalType = (typeof SIGNAL_TYPES)[number];
 
 export type PreferenceSignal = {
   signal_type: SignalType;

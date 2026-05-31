@@ -2,7 +2,7 @@ import {
   normalizeIngredientName,
   normalizeQuantityAndUnit,
 } from "@/domain/pantry/pantry-normalization";
-import type { PantryCategory } from "@/domain/pantry/pantry-types";
+import type { EnrichedPantryInput } from "@/domain/pantry/vision/review-types";
 import type { PantryItemInput } from "@/platform/db/pantry";
 import type { FridgeRecognitionResult } from "./pantry-vision";
 import { parseReceiptDate, type ReceiptParseResult } from "./receipt-ocr";
@@ -63,7 +63,7 @@ export function toPantryInputs(
   return result.items.map((item) => {
     const [, , category] = normalizeIngredientName(item.raw_name);
     const qtyParts = parseQuantityGuess(item.quantity_guess);
-    const [quantity, unit, quantityText] = normalizeQuantityAndUnit(
+    const [quantity, unit] = normalizeQuantityAndUnit(
       qtyParts.raw_quantity,
       qtyParts.raw_unit,
     );
@@ -97,7 +97,7 @@ export function receiptToPantryInputs(
   return lines.map((line) => {
     const [, , category] = normalizeIngredientName(line.raw_name);
     const qtyParts = parseQuantityGuess(line.quantity_text);
-    const [quantity, unit, quantityText] = normalizeQuantityAndUnit(
+    const [quantity, unit] = normalizeQuantityAndUnit(
       qtyParts.raw_quantity,
       qtyParts.raw_unit,
     );
@@ -114,18 +114,7 @@ export function receiptToPantryInputs(
   });
 }
 
-export type EnrichedPantryInput = PantryItemInput & {
-  item_key?: string;
-  display_name?: string;
-  category?: PantryCategory | string;
-  recognition_confidence?: number;
-  user_edited?: boolean;
-  selected?: boolean;
-  unit_price?: number | null;
-  is_likely_food?: boolean;
-  quantity_text?: string;
-  purchased_at?: string | null;
-};
+export type { EnrichedPantryInput } from "@/domain/pantry/vision/review-types";
 
 export function enrichPantryInput(
   input: PantryItemInput,

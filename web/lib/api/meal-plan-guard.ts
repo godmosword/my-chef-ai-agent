@@ -9,8 +9,14 @@ import {
   type MealSlotRow,
 } from "@/platform/db/meal-planning";
 
+export type MealPlanSlotRouteContext = {
+  params: Promise<{ planId: string; slotId: string }>;
+};
+
+type MealPlanSession = { userId: string; tenantId: string };
+
 export async function requireMealPlanSession(): Promise<
-  { userId: string; tenantId: string } | NextResponse
+  MealPlanSession | NextResponse
 > {
   const userId = await getSessionUserId();
   if (!userId) {
@@ -23,6 +29,70 @@ export async function requireMealPlanSession(): Promise<
     );
   }
   return { userId, tenantId: DEFAULT_TENANT_ID };
+}
+
+export async function requireMealPlanSlotRoute(
+  context: MealPlanSlotRouteContext,
+): Promise<
+  | {
+      session: MealPlanSession;
+      planId: number;
+      slotId: number;
+    }
+  | NextResponse
+> {
+  const disabled = mealPlanExecutionEnabled();
+  if (disabled) return disabled;
+
+  const session = await requireMealPlanSession();
+  if (session instanceof NextResponse) return session;
+
+  const { planId: planIdStr, slotId: slotIdStr } = await context.params;
+  return {
+    session,
+    planId: parseInt(planIdStr, 10),
+    slotId: parseInt(slotIdStr, 10),
+  };
+}
+
+export async function requireMealPlanSlotInPlanRoute(
+  context: MealPlanSlotRouteContext,
+  options: { rejectInvalidIds?: boolean } = {},
+): Promise<
+  | {
+      session: MealPlanSession;
+      planId: number;
+      slotId: number;
+    }
+  | NextResponse
+> {
+  const route = await requireMealPlanSlotRoute(context);
+  if (route instanceof NextResponse) return route;
+
+  const { session, planId, slotId } = route;
+  if (options.rejectInvalidIds) {
+    const invalid = rejectInvalidMealPlanSlotIds(planId, slotId);
+    if (invalid) return invalid;
+  }
+
+  const slotCheck = await requireSlotInPlan(
+    planId,
+    slotId,
+    session.tenantId,
+    session.userId,
+  );
+  if (slotCheck instanceof NextResponse) return slotCheck;
+  return route;
+}
+
+function rejectInvalidMealPlanSlotIds(
+  planId: number,
+  slotId: number,
+): NextResponse | null {
+  if (!Number.isFinite(planId) || !Number.isFinite(slotId)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+  return null;
 }
 
 export async function requirePlanOwnership(
@@ -55,7 +125,7 @@ export async function requireSlotInPlan(
   return slot;
 }
 
-export function mealPlanExecutionEnabled(): NextResponse | null {
+function mealPlanExecutionEnabled(): NextResponse | null {
   if (!isMealPlanExecutionPushEnabled()) {
     return NextResponse.json(
       { error: "Meal plan execution disabled" },

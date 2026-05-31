@@ -21,7 +21,7 @@ export const PANTRY_CATEGORIES = [
 
 export type PantryCategory = (typeof PANTRY_CATEGORIES)[number];
 
-export const PANTRY_LOCATIONS = [
+const PANTRY_LOCATIONS = [
   "fridge_main",
   "fridge_door",
   "freezer",
@@ -32,7 +32,7 @@ export const PANTRY_LOCATIONS = [
 
 export type PantryLocation = (typeof PANTRY_LOCATIONS)[number];
 
-export const PANTRY_SOURCES = [
+const PANTRY_SOURCES = [
   "manual",
   "photo",
   "receipt",
@@ -78,3 +78,24 @@ export type MergeStrategy =
   | "always_merge"
   | "merge_if_same_expiry"
   | "never_merge";
+
+/** Persisted pantry row shape (mirrors DB columns). */
+export type PantryItem = {
+  id: number;
+  tenant_id: string;
+  user_id: string;
+  item_key: string;
+  display_name: string;
+  category: string | null;
+  quantity: number | null;
+  unit: string | null;
+  quantity_text: string | null;
+  location: string;
+  expires_at: string | null;
+  purchased_at: string;
+  source: string;
+  confidence: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};

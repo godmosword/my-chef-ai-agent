@@ -5,6 +5,10 @@ const SESSION_COOKIE = "chef_session";
 const ONE_YEAR_SEC = 60 * 60 * 24 * 365;
 
 export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === "/legacy") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   const existing = request.cookies.get(SESSION_COOKIE)?.value;
   if (existing) {
     return NextResponse.next();

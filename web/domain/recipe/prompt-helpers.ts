@@ -1,4 +1,4 @@
-import type { AiRecipePayload } from "./generate-recipe";
+import type { AiRecipePayload } from "./ai-recipe-payload";
 import { SYSTEM_PROMPT } from "./prompts";
 
 const SCENARIO_HINTS = [

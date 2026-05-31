@@ -14,12 +14,3 @@ export function pantryAnnotationTimeoutMs(): number {
   const n = parseInt(process.env.PANTRY_ANNOTATION_TIMEOUT_MS || "500", 10);
   return Number.isFinite(n) ? n : 500;
 }
-
-export function cleanFridgeUsePantry(): boolean {
-  return envFlag("CLEAN_FRIDGE_USE_PANTRY", true);
-}
-
-export function pantryFlexItemsPerGroup(): number {
-  const n = parseInt(process.env.PANTRY_FLEX_ITEMS_PER_GROUP || "5", 10);
-  return Number.isFinite(n) ? n : 5;
-}

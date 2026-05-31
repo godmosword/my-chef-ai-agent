@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
 import type { PublicRecipe } from "@chef/shared-types";
 import { getDb } from "../drizzle";
 import {
@@ -7,15 +7,94 @@ import {
   sharedRecipeLikes,
   sharedRecipeViews,
 } from "../schema";
+import { countUserRecipes } from "./recipe-counts";
 import { generateShareToken } from "@/platform/identity/token";
 
 const AUTHOR_DISPLAY = "匿名主廚";
+type DbClient = NonNullable<ReturnType<typeof getDb>>;
+type ShareMetaRow = {
+  shareToken: string | null;
+  publishedAt: Date | null;
+};
+type SharedRecipeLikeTarget = {
+  id: string;
+  likeCount: number;
+};
 
 export type ShareMeta = {
   share_token: string;
   share_url: string;
   published_at: string;
 };
+
+function shareMetaFromRow(
+  row: ShareMetaRow,
+  shareUrl: (token: string) => string,
+): ShareMeta {
+  return {
+    share_token: row.shareToken!,
+    share_url: shareUrl(row.shareToken!),
+    published_at: row.publishedAt!.toISOString(),
+  };
+}
+
+async function getSharedRecipeLikeTarget(
+  db: DbClient,
+  token: string,
+): Promise<SharedRecipeLikeTarget | null> {
+  const [recipe] = await db
+    .select({ id: recipes.id, likeCount: recipes.likeCount })
+    .from(recipes)
+    .where(and(eq(recipes.shareToken, token), isNull(recipes.deletedAt)))
+    .limit(1);
+
+  return recipe ?? null;
+}
+
+async function updateSharePublicationWithRetry(
+  db: DbClient,
+  options: {
+    latestVersionId: string;
+    where: SQL | undefined;
+    shareUrl: (token: string) => string;
+    requireReturnedToken?: boolean;
+    onEmptyUpdate?: () => Promise<ShareMeta | null>;
+  },
+): Promise<ShareMeta | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const token = generateShareToken();
+    const now = new Date();
+    try {
+      const updated = await db
+        .update(recipes)
+        .set({
+          shareToken: token,
+          publishedAt: now,
+          publishedVersionId: options.latestVersionId,
+          updatedAt: now,
+        })
+        .where(options.where)
+        .returning({
+          shareToken: recipes.shareToken,
+          publishedAt: recipes.publishedAt,
+        });
+
+      if (
+        updated.length &&
+        (!options.requireReturnedToken || updated[0]!.shareToken)
+      ) {
+        return shareMetaFromRow(updated[0]!, options.shareUrl);
+      }
+
+      const meta = await options.onEmptyUpdate?.();
+      if (meta) return meta;
+    } catch {
+      /* retry */
+    }
+  }
+
+  return null;
+}
 
 export async function publishRecipeShare(
   userId: string,
@@ -45,11 +124,7 @@ export async function publishRecipeShare(
   if (!existing) return null;
 
   if (existing.shareToken && existing.publishedAt) {
-    return {
-      share_token: existing.shareToken,
-      share_url: shareUrl(existing.shareToken),
-      published_at: existing.publishedAt.toISOString(),
-    };
+    return shareMetaFromRow(existing, shareUrl);
   }
 
   const [row] = await db
@@ -60,38 +135,15 @@ export async function publishRecipeShare(
 
   if (!row?.latestVersionId) return null;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const token = generateShareToken();
-    const now = new Date();
-    try {
-      const updated = await db
-        .update(recipes)
-        .set({
-          shareToken: token,
-          publishedAt: now,
-          publishedVersionId: row.latestVersionId,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(recipes.id, recipeId),
-            eq(recipes.userId, userId),
-            isNull(recipes.shareToken),
-          ),
-        )
-        .returning({
-          shareToken: recipes.shareToken,
-          publishedAt: recipes.publishedAt,
-        });
-
-      if (updated.length) {
-        return {
-          share_token: updated[0]!.shareToken!,
-          share_url: shareUrl(updated[0]!.shareToken!),
-          published_at: updated[0]!.publishedAt!.toISOString(),
-        };
-      }
-
+  return updateSharePublicationWithRetry(db, {
+    latestVersionId: row.latestVersionId,
+    shareUrl,
+    where: and(
+      eq(recipes.id, recipeId),
+      eq(recipes.userId, userId),
+      isNull(recipes.shareToken),
+    ),
+    onEmptyUpdate: async () => {
       const [again] = await db
         .select({
           shareToken: recipes.shareToken,
@@ -101,18 +153,11 @@ export async function publishRecipeShare(
         .where(eq(recipes.id, recipeId))
         .limit(1);
       if (again?.shareToken && again.publishedAt) {
-        return {
-          share_token: again.shareToken,
-          share_url: shareUrl(again.shareToken),
-          published_at: again.publishedAt.toISOString(),
-        };
+        return shareMetaFromRow(again, shareUrl);
       }
-    } catch {
-      /* unique violation — retry */
-    }
-  }
-
-  return null;
+      return null;
+    },
+  });
 }
 
 export async function republishRecipeShare(
@@ -139,43 +184,16 @@ export async function republishRecipeShare(
 
   if (!row?.latestVersionId) return null;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const token = generateShareToken();
-    const now = new Date();
-    try {
-      const updated = await db
-        .update(recipes)
-        .set({
-          shareToken: token,
-          publishedAt: now,
-          publishedVersionId: row.latestVersionId,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(recipes.id, recipeId),
-            eq(recipes.userId, userId),
-            eq(recipes.tenantId, tenantId),
-          ),
-        )
-        .returning({
-          shareToken: recipes.shareToken,
-          publishedAt: recipes.publishedAt,
-        });
-
-      if (updated.length && updated[0]!.shareToken) {
-        return {
-          share_token: updated[0]!.shareToken,
-          share_url: shareUrl(updated[0]!.shareToken),
-          published_at: updated[0]!.publishedAt!.toISOString(),
-        };
-      }
-    } catch {
-      /* retry */
-    }
-  }
-
-  return null;
+  return updateSharePublicationWithRetry(db, {
+    latestVersionId: row.latestVersionId,
+    shareUrl,
+    where: and(
+      eq(recipes.id, recipeId),
+      eq(recipes.userId, userId),
+      eq(recipes.tenantId, tenantId),
+    ),
+    requireReturnedToken: true,
+  });
 }
 
 export async function revokeRecipeShare(
@@ -279,12 +297,7 @@ export async function addPublicLike(
   const db = getDb();
   if (!db) return null;
 
-  const [recipe] = await db
-    .select({ id: recipes.id, likeCount: recipes.likeCount })
-    .from(recipes)
-    .where(and(eq(recipes.shareToken, token), isNull(recipes.deletedAt)))
-    .limit(1);
-
+  const recipe = await getSharedRecipeLikeTarget(db, token);
   if (!recipe) return null;
 
   const inserted = await db
@@ -313,12 +326,7 @@ export async function removePublicLike(
   const db = getDb();
   if (!db) return null;
 
-  const [recipe] = await db
-    .select({ id: recipes.id, likeCount: recipes.likeCount })
-    .from(recipes)
-    .where(and(eq(recipes.shareToken, token), isNull(recipes.deletedAt)))
-    .limit(1);
-
+  const recipe = await getSharedRecipeLikeTarget(db, token);
   if (!recipe) return null;
 
   const deleted = await db
@@ -348,20 +356,5 @@ export async function countSharedRecipesForUser(
   userId: string,
   tenantId: string,
 ): Promise<number> {
-  const db = getDb();
-  if (!db) return 0;
-
-  const rows = await db
-    .select({ id: recipes.id })
-    .from(recipes)
-    .where(
-      and(
-        eq(recipes.userId, userId),
-        eq(recipes.tenantId, tenantId),
-        isNull(recipes.deletedAt),
-        sql`${recipes.shareToken} IS NOT NULL`,
-      ),
-    );
-
-  return rows.length;
+  return countUserRecipes(userId, tenantId, sql`${recipes.shareToken} IS NOT NULL`);
 }

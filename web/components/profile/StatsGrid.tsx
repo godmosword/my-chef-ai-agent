@@ -22,8 +22,8 @@ export interface StatsGridProps {
 const ACCENT_CLASSES: Record<StatTile["accent"], string> = {
   amber: "bg-brand-primaryLight text-brand-primaryDark",
   green: "bg-brand-greenLight text-brand-green",
-  rose: "bg-[#FBE9E4] text-[#B0432D]",
-  purple: "bg-[#EFEAF7] text-[#5E4889]",
+  rose: "bg-brand-primaryLight text-cuisine-taiwanese",
+  purple: "bg-surface-muted text-brand-purple",
 };
 
 export function StatsGrid({

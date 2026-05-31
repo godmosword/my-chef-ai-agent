@@ -1,6 +1,6 @@
 /** Supermarket aisle sections for Taiwan shopping flow (MP-3). */
 
-export const SHOPPING_SECTIONS = [
+const SHOPPING_SECTIONS = [
   "produce_veg",
   "produce_fruit",
   "meat",
@@ -61,7 +61,7 @@ export const SECTION_LABELS: Record<ShoppingSection, string> = {
 
 import type { PantryCategory } from "@/domain/pantry/pantry-types";
 
-export const CATEGORY_TO_SECTION: Record<PantryCategory, ShoppingSection> = {
+const CATEGORY_TO_SECTION: Record<PantryCategory, ShoppingSection> = {
   vegetable: "produce_veg",
   fruit: "produce_fruit",
   meat: "meat",
@@ -81,7 +81,7 @@ export const CATEGORY_TO_SECTION: Record<PantryCategory, ShoppingSection> = {
 };
 
 /** Fresh aromatics live in produce, not dried spice aisle. */
-export const ITEM_KEY_SECTION_OVERRIDES: Record<string, ShoppingSection> = {
+const ITEM_KEY_SECTION_OVERRIDES: Record<string, ShoppingSection> = {
   cilantro: "produce_veg",
   basil: "produce_veg",
   thai_basil: "produce_veg",

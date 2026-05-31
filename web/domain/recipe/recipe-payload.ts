@@ -1,4 +1,4 @@
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import type { RecipePayload, RecipeTag, TagSource } from "@chef/shared-types";
 
 export function costToJsonb(

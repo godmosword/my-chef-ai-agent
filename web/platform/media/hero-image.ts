@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { buildHeroPrompt } from "@/application/hero/build-prompt";
+import { buildHeroPrompt } from "@/domain/recipe/hero-prompt";
 import type { RecipePayload } from "@chef/shared-types";
 
 const memoryCache = new Map<string, string>();
@@ -143,11 +143,4 @@ export async function generateRecipeHeroImage(
   } catch (err) {
     throw formatImageApiError(err, model);
   }
-}
-
-/** Legacy name-based entry (ChatPanel / POST /api/recipes/hero). */
-export async function generateRecipeHeroImageByName(
-  recipeName: string,
-): Promise<HeroImageResult> {
-  return generateRecipeHeroImage(recipeName);
 }

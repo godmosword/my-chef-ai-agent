@@ -41,16 +41,16 @@ export function useWakeLock() {
   }, []);
 
   useEffect(() => {
-    request();
+    void request().catch(() => {});
     const onVis = () => {
       if (document.visibilityState === "visible" && !lockRef.current) {
-        request();
+        void request().catch(() => {});
       }
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       document.removeEventListener("visibilitychange", onVis);
-      release();
+      void release().catch(() => {});
     };
   }, [request, release]);
 

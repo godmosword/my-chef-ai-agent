@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   getOrCreateNotificationPreferences,
   touchLastInteraction,
   updateNotificationPreferences,
 } from "@/platform/db/notification-prefs";
-import { getSessionUserId } from "@/platform/identity/session";
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 
 const PatchSchema = z
   .object({
@@ -37,28 +35,26 @@ const PatchSchema = z
   .strict();
 
 export async function GET() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "Database not configured" }, { status: 503 });
-  }
+  const session = await requireApiSession({
+    databaseError: "Database not configured",
+  });
+  if (session instanceof NextResponse) return session;
 
-  const prefs = await getOrCreateNotificationPreferences(DEFAULT_TENANT_ID, userId);
+  const prefs = await getOrCreateNotificationPreferences(
+    session.tenantId,
+    session.userId,
+  );
   return NextResponse.json({ ok: true, preferences: prefs });
 }
 
 export async function PATCH(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "Database not configured" }, { status: 503 });
-  }
+  const session = await requireApiSession({
+    databaseError: "Database not configured",
+  });
+  if (session instanceof NextResponse) return session;
 
-  const body = await request.json();
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -68,10 +64,10 @@ export async function PATCH(request: Request) {
   }
 
   const prefs = await updateNotificationPreferences(
-    DEFAULT_TENANT_ID,
-    userId,
+    session.tenantId,
+    session.userId,
     parsed.data,
   );
-  await touchLastInteraction(DEFAULT_TENANT_ID, userId);
+  await touchLastInteraction(session.tenantId, session.userId);
   return NextResponse.json({ ok: true, preferences: prefs });
 }

@@ -16,6 +16,7 @@ import { Input } from "@/components/primitives/Input";
 import { displayDateKey } from "@/lib/locale/datetime";
 import { UseItUpPanel } from "@/components/notifications/UseItUpPanel";
 import { useSearchParams } from "next/navigation";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 type PantryRow = PantryDisplayItem & {
   id: number;
@@ -40,7 +41,7 @@ function PantryPageInner() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
     try {
       const q =
@@ -53,19 +54,18 @@ function PantryPageInner() {
         fetch(`/api/me/pantry${q}`),
         fetch("/api/me/pantry/summary"),
       ]);
+      if (!isActive()) return;
       const listData = (await listRes.json()) as { items: PantryRow[] };
       setItems(listData.items ?? []);
       setSummary((await sumRes.json()) as Summary);
     } catch {
-      setMessage("無法載入冰箱庫存");
+      if (isActive()) setMessage("無法載入冰箱庫存");
     } finally {
-      setLoading(false);
+      if (isActive()) setLoading(false);
     }
   }, [filter]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   useEffect(() => {
     setHasUseItUpStored(Boolean(sessionStorage.getItem("chef_use_it_up_result")));

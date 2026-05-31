@@ -157,7 +157,7 @@ describe.skipIf(!hasDb)("personalization integration", () => {
     expect(profile?.loved_dishes.length).toBe(50);
     expect(profile?.loved_dishes[0]?.name).toBe("菜色-5");
     expect(profile?.loved_dishes.at(-1)?.name).toBe("菜色-54");
-  });
+  }, 15_000);
 
   it("add_household_member then list returns created_at order", async () => {
     const userId = testUser("household");

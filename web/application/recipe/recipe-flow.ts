@@ -14,10 +14,8 @@ import {
   condenseAssistantMessage,
   filterHistoryAfterContext,
 } from "@/domain/recipe/prompt-helpers";
-import {
-  generateRecipe,
-  type AiRecipePayload,
-} from "@/domain/recipe/generate-recipe";
+import { generateRecipeWithLlm } from "@/application/recipe/llm-generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import { DEFAULT_TENANT_ID, MAX_HISTORY_TURNS } from "@/platform/config/app-config";
 import { getUserCuisineContext } from "@/platform/db/cuisine";
 import {
@@ -148,7 +146,7 @@ export async function runRecipeFlow(
     }),
   );
 
-  const { raw, recipe } = await generateRecipe(apiMessages, userId);
+  const { raw, recipe } = await generateRecipeWithLlm(apiMessages, userId);
 
   const charged = await consumeQuota(
     userId,

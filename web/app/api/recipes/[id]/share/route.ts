@@ -1,38 +1,24 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
+import { RecipeShareRepublishSchema } from "@/domain/recipe/recipe-api-schemas";
 import {
   publishRecipeShare,
   republishRecipeShare,
   revokeRecipeShare,
 } from "@/platform/db/queries/sharing";
 import { buildShareUrl } from "@/platform/config/site-url";
-import { getSessionUserId } from "@/platform/identity/session";
-import { z } from "zod";
-
-const RepublishSchema = z.object({
-  republish: z.boolean().optional(),
-});
+import { requireApiSession } from "@/lib/api/route-helpers";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
   let republish = false;
   try {
     const body = await request.json();
-    const parsed = RepublishSchema.safeParse(body);
+    const parsed = RecipeShareRepublishSchema.safeParse(body);
     if (parsed.success) republish = parsed.data.republish === true;
   } catch {
     /* empty body */
@@ -40,8 +26,8 @@ export async function POST(request: Request, context: RouteContext) {
 
   const shareUrl = (token: string) => buildShareUrl(token);
   const meta = republish
-    ? await republishRecipeShare(userId, DEFAULT_TENANT_ID, id, shareUrl)
-    : await publishRecipeShare(userId, DEFAULT_TENANT_ID, id, shareUrl);
+    ? await republishRecipeShare(session.userId, session.tenantId, id, shareUrl)
+    : await publishRecipeShare(session.userId, session.tenantId, id, shareUrl);
 
   if (!meta) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
@@ -51,19 +37,11 @@ export async function POST(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "DATABASE_URL not configured" },
-      { status: 503 },
-    );
-  }
+  const session = await requireApiSession();
+  if (session instanceof NextResponse) return session;
 
   const { id } = await context.params;
-  const ok = await revokeRecipeShare(userId, DEFAULT_TENANT_ID, id);
+  const ok = await revokeRecipeShare(session.userId, session.tenantId, id);
   if (!ok) {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }

@@ -6,7 +6,7 @@ export type AppliedPersonalization = {
   household_considered: string[];
 };
 
-export function emptyAppliedPersonalization(): AppliedPersonalization {
+function emptyAppliedPersonalization(): AppliedPersonalization {
   return {
     hard_constraints_applied: [],
     soft_preferences_applied: [],

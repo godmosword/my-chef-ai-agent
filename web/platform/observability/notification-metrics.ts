@@ -97,18 +97,3 @@ export function getNotificationMetricsSnapshot(): Record<string, unknown> {
     otel_last_span: otelLastSpan,
   };
 }
-
-export function resetNotificationMetricsForTests(): void {
-  for (const o of [
-    sweepTotal,
-    decisionTotal,
-    pushTotal,
-    engagementTotal,
-    useItUpTotal,
-    useItUpCallTotal,
-  ]) {
-    for (const k of Object.keys(o)) delete o[k];
-  }
-  lastSweepDurationMs = 0;
-  otelLastSpan = null;
-}

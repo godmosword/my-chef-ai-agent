@@ -4,7 +4,7 @@ import {
   extractJsonObject,
 } from "./gemini-vision-client";
 
-export type FridgeRecognitionItem = {
+type FridgeRecognitionItem = {
   raw_name: string;
   quantity_guess: string | null;
   confidence: number;

@@ -28,7 +28,7 @@ export type ConsumeLine = {
 
 const VAGUE_UNITS = new Set(["適量", "少許", "些許", "適當"]);
 
-export function ingredientsFromSlot(slot: MealSlotRow): KeyIngredient[] {
+function ingredientsFromSlot(slot: MealSlotRow): KeyIngredient[] {
   const recipe = slot.full_recipe_json;
   if (recipe && Array.isArray(recipe.ingredients)) {
     return (recipe.ingredients as KeyIngredient[]).map((i) => ({

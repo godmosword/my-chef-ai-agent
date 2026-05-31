@@ -1,6 +1,5 @@
 type ViewKind = "overview" | "category" | "expiring";
 type ConsumePath = "button" | "natural_lang" | "recipe_consumed";
-type CleanFridgePath = "pantry" | "typing";
 
 const pantryViewTotal: Record<string, number> = {};
 const pantryConsumeTotal: Record<string, number> = {};
@@ -14,11 +13,6 @@ export function recordPantryView(view: ViewKind): void {
 
 export function recordPantryConsume(path: ConsumePath): void {
   pantryConsumeTotal[path] = (pantryConsumeTotal[path] ?? 0) + 1;
-}
-
-export function recordCleanFridge(path: CleanFridgePath, source: "empty" | "nonempty"): void {
-  const key = `${path}:${source}`;
-  cleanFridgeTotal[key] = (cleanFridgeTotal[key] ?? 0) + 1;
 }
 
 export function recordRecipePantryAnnotation(
@@ -45,12 +39,4 @@ export function getPantryMetricsSnapshot(): Record<string, unknown> {
     recipe_pantry_annotation_total: { ...recipeAnnotationTotal },
     recipe_pantry_match_rate: histogram,
   };
-}
-
-export function resetPantryMetricsForTests(): void {
-  for (const k of Object.keys(pantryViewTotal)) delete pantryViewTotal[k];
-  for (const k of Object.keys(pantryConsumeTotal)) delete pantryConsumeTotal[k];
-  for (const k of Object.keys(cleanFridgeTotal)) delete cleanFridgeTotal[k];
-  for (const k of Object.keys(recipeAnnotationTotal)) delete recipeAnnotationTotal[k];
-  recipeMatchRateBuckets.clear();
 }

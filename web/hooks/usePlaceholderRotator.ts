@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 const FADE_OUT_MS = 200;
 const GAP_MS = 150;
-const FADE_IN_MS = 250;
 const RESUME_DELAY_MS = 1500;
 
 export function usePlaceholderRotator(

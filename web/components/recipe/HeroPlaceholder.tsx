@@ -3,21 +3,21 @@
 import { ChefHat, Paintbrush } from "lucide-react";
 import type { HeroStatus } from "@chef/shared-types";
 
-const CUISINE_COLORS: Record<string, [string, string]> = {
-  台式: ["#E5A33D", "#C8881A"],
-  日式: ["#F5C4B3", "#D85A30"],
-  義式: ["#C0DD97", "#639922"],
-  中式: ["#FAC775", "#BA7517"],
-  韓式: ["#F7C1C1", "#A32D2D"],
-  泰式: ["#9FE1CB", "#1D9E75"],
-  西式: ["#B5D4F4", "#378ADD"],
-  default: ["#D9CFBE", "#A39A8E"],
+const CUISINE_GRADIENTS: Record<string, string> = {
+  台式: "linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-primaryDark))",
+  日式: "linear-gradient(135deg, var(--color-cuisine-japanese), var(--color-text-muted))",
+  義式: "linear-gradient(135deg, var(--color-brand-greenLight), var(--color-brand-green))",
+  中式: "linear-gradient(135deg, var(--color-brand-primaryLight), var(--color-brand-primary))",
+  韓式: "linear-gradient(135deg, var(--color-surface-muted), var(--color-cuisine-taiwanese))",
+  泰式: "linear-gradient(135deg, var(--color-brand-greenLight), var(--color-cuisine-thai))",
+  西式: "linear-gradient(135deg, var(--color-surface-alt), var(--color-cuisine-european))",
+  default: "linear-gradient(135deg, var(--color-surface-muted), var(--color-text-muted))",
 };
 
-function colorsForCuisine(cuisine?: string | null): [string, string] {
-  if (!cuisine?.trim()) return CUISINE_COLORS.default;
-  const key = Object.keys(CUISINE_COLORS).find((k) => cuisine.includes(k));
-  return key ? CUISINE_COLORS[key]! : CUISINE_COLORS.default;
+function gradientForCuisine(cuisine?: string | null): string {
+  if (!cuisine?.trim()) return CUISINE_GRADIENTS.default;
+  const key = Object.keys(CUISINE_GRADIENTS).find((k) => cuisine.includes(k));
+  return key ? CUISINE_GRADIENTS[key]! : CUISINE_GRADIENTS.default;
 }
 
 export type HeroPlaceholderProps = {
@@ -33,14 +33,14 @@ export function HeroPlaceholder({
   error,
   className,
 }: HeroPlaceholderProps) {
-  const [from, to] = colorsForCuisine(cuisine);
+  const gradient = gradientForCuisine(cuisine);
   const isLoading = status === "pending" || status === "generating";
   const showHat = status === "failed" || status === "skipped";
 
   return (
     <div
       className={className ?? "flex h-full w-full flex-col items-center justify-center relative gap-2 px-3 text-center"}
-      style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+      style={{ background: gradient }}
     >
       {isLoading && (
         <div className="flex items-center gap-2 rounded-full bg-black/30 px-3 py-1.5 backdrop-blur">

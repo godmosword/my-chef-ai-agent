@@ -1,5 +1,5 @@
 import { pantryVisionLowConfidenceThreshold } from "@/platform/config/pantry-vision-config";
-import { bulkAddPantryItems } from "@/platform/db/pantry";
+import { bulkAddPantryItems, type PantryItemInput } from "@/platform/db/pantry";
 import type { EnrichedPantryInput } from "./map-to-pantry-inputs";
 import type { PantryReviewSessionPayload } from "./review-types";
 
@@ -27,13 +27,13 @@ export async function commitPantryReviewSession(
   payload: PantryReviewSessionPayload,
 ): Promise<{ committed: number; items: Awaited<ReturnType<typeof bulkAddPantryItems>> }> {
   const eligible = itemsEligibleForCommit(payload.items);
-  const inputs = eligible.map((item) => ({
+  const inputs: PantryItemInput[] = eligible.map((item) => ({
     raw_name: item.raw_name,
     raw_quantity: item.raw_quantity,
     raw_unit: item.raw_unit,
     expires_at: item.expires_at,
-    location: item.location,
-    source: item.source,
+    location: item.location as PantryItemInput["location"],
+    source: item.source as PantryItemInput["source"],
     confidence: item.confidence,
     notes: item.notes,
     purchased_at: item.purchased_at,

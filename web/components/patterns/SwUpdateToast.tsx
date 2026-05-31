@@ -36,7 +36,7 @@ export function SwUpdateToast() {
       }
     };
 
-    void check();
+    void check().catch(() => {});
 
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);

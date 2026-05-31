@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyPersonalizationBlock } from "@/application/personalization/personalization-context";
+import { emptyPersonalizationBlock } from "@/domain/personalization/personalization-block";
 import { validatePlan } from "./validate-plan";
 import type { CandidateSlot, MealPlanConstraints } from "./types";
 

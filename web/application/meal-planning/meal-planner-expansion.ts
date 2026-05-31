@@ -2,7 +2,7 @@
  * MP-1: Lazy expand meal slot to full recipe JSON.
  */
 import { buildCleanFridgeSystemBlock } from "@/domain/pantry/clean-fridge-prompt";
-import { generateRecipe, type AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import { generateRecipeWithLlm } from "@/application/recipe/llm-generate-recipe";
 import {
   getMealSlot,
   saveSlotFullRecipe,
@@ -42,7 +42,7 @@ export async function expandSlotToFullRecipe(
   const userMessage = `請給我「${slot.dish_title}」的食譜，${slot.cuisine ?? "家常"}風味，約 ${slot.estimated_time_min ?? 30} 分鐘完成。`;
 
   try {
-    const { recipe } = await generateRecipe(
+    const { recipe } = await generateRecipeWithLlm(
       [
         {
           role: "system",
@@ -67,5 +67,3 @@ export async function expandSlotToFullRecipe(
     return null;
   }
 }
-
-export type { AiRecipePayload };

@@ -1,7 +1,7 @@
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import type { MealPlanSlot, PutMealPlanSlot, Slot, WeekPlan } from "@chef/shared-types";
 import { MEAL_SLOTS } from "@chef/shared-types";
-import { addDaysIso, floorToWeekMonday, weekDates } from "@/lib/locale/week";
+import { addDaysIso, floorToWeekMonday, weekDates } from "@/domain/calendar/week";
 import { getDb } from "../drizzle";
 import { mealCalendarEntries, recipeVersions, recipes } from "../schema";
 

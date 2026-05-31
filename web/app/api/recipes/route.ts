@@ -8,7 +8,7 @@ import { isHeroAutoEnabled } from "@/application/hero/preferences";
 import { markHeroSkipped, triggerHeroGeneration } from "@/application/hero/trigger";
 import { triggerStepImagesGeneration } from "@/application/hero/trigger-step-images";
 import { aiRecipeToPayload } from "@/domain/recipe/recipe-payload";
-import { getLastRecipeContextFromMemory } from "@/domain/recipe/recipe-memory";
+import { getLastRecipeContextFromMemory } from "@/application/recipe/recipe-memory";
 import { extractAndPersist } from "@/application/personalization/preference-extractor";
 import { isPreferenceExtractionEnabled } from "@/platform/config/preference-extraction-config";
 import {
@@ -26,6 +26,10 @@ import {
 } from "@chef/shared-types";
 
 export const maxDuration = 60;
+
+function logBackgroundError(label: string, err: unknown): void {
+  console.error(label, err instanceof Error ? err.message : err);
+}
 
 export async function GET(request: Request) {
   const userId = await getSessionUserId();
@@ -124,7 +128,9 @@ export async function POST(request: Request) {
     );
 
     if (isDatabaseConfigured()) {
-      void touchLastInteraction(DEFAULT_TENANT_ID, userId);
+      void touchLastInteraction(DEFAULT_TENANT_ID, userId).catch((err) =>
+        logBackgroundError("[recipes] touch interaction failed", err),
+      );
     }
 
     let recipe: RecipePayload;
@@ -176,7 +182,9 @@ export async function POST(request: Request) {
                 tenantId: DEFAULT_TENANT_ID,
                 recipe,
               });
-            })(),
+            })().catch((err) =>
+              logBackgroundError("[recipes] hero generation failed", err),
+            ),
           );
         } else {
           await markHeroSkipped(recipeId);
@@ -194,7 +202,9 @@ export async function POST(request: Request) {
             userId,
             tenantId: DEFAULT_TENANT_ID,
             recipe,
-          }),
+          }).catch((err) =>
+            logBackgroundError("[recipes] step image generation failed", err),
+          ),
         );
       }
     } else {
@@ -221,6 +231,8 @@ export async function POST(request: Request) {
           DEFAULT_TENANT_ID,
           userId,
           lastRecipeForExtraction,
+        ).catch((err) =>
+          logBackgroundError("[recipes] preference extraction failed", err),
         ),
       );
     }

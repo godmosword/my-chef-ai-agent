@@ -1,38 +1,28 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { suggestUseItUpRecipes } from "@/application/pantry/use-it-up";
+import { UseItUpBodySchema } from "@/domain/pantry/pantry-api-schemas";
 import { isUseItUpEnabled } from "@/platform/config/notification-config";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
-import { isDatabaseConfigured } from "@/platform/db/client";
 import {
   findExpiringSoon,
   getPantryItem,
   listPantryItems,
 } from "@/platform/db/pantry";
-import { getSessionUserId } from "@/platform/identity/session";
 import { recordUserEngagement } from "@/application/notifications/engagement-signals";
 import { defaultExpiryWarnDays } from "@/platform/config/notification-config";
-
-const BodySchema = z.object({
-  priority_item_ids: z.array(z.number().int().positive()).optional(),
-  max_suggestions: z.number().int().min(1).max(5).optional(),
-  expand_suggestion_id: z.string().uuid().optional(),
-});
+import { readJsonBody, requireApiSession } from "@/lib/api/route-helpers";
 
 export async function POST(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "Database not configured" }, { status: 503 });
-  }
+  const session = await requireApiSession({
+    databaseError: "Database not configured",
+  });
+  if (session instanceof NextResponse) return session;
   if (!isUseItUpEnabled()) {
     return NextResponse.json({ ok: false, error: "Feature disabled" }, { status: 503 });
   }
 
-  const body = await request.json().catch(() => ({}));
-  const parsed = BodySchema.safeParse(body);
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+  const parsed = UseItUpBodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { ok: false, error: parsed.error.flatten() },
@@ -41,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const warnDays = defaultExpiryWarnDays();
-  let priority = await findExpiringSoon(DEFAULT_TENANT_ID, userId, {
+  let priority = await findExpiringSoon(session.tenantId, session.userId, {
     days_ahead: warnDays,
   });
   const today = new Date().toISOString().slice(0, 10);
@@ -50,13 +40,13 @@ export async function POST(request: Request) {
   if (parsed.data.priority_item_ids?.length) {
     const picked: typeof priority = [];
     for (const id of parsed.data.priority_item_ids) {
-      const row = await getPantryItem(id, DEFAULT_TENANT_ID, userId);
+      const row = await getPantryItem(id, session.tenantId, session.userId);
       if (row) picked.push(row);
     }
     if (picked.length) priority = picked;
   }
 
-  const all = await listPantryItems(DEFAULT_TENANT_ID, userId, {
+  const all = await listPantryItems(session.tenantId, session.userId, {
     include_expired: false,
     min_confidence: 0.5,
   });
@@ -74,15 +64,19 @@ export async function POST(request: Request) {
   }
 
   const suggestions = await suggestUseItUpRecipes({
-    tenant_id: DEFAULT_TENANT_ID,
-    user_id: userId,
+    tenant_id: session.tenantId,
+    user_id: session.userId,
     priority_ingredients: priority,
     other_available: other,
     max_suggestions: parsed.data.max_suggestions ?? 3,
     trigger: parsed.data.priority_item_ids?.length ? "reminder" : "web",
   });
 
-  await recordUserEngagement(DEFAULT_TENANT_ID, userId, "use_it_up_clicked");
+  await recordUserEngagement(
+    session.tenantId,
+    session.userId,
+    "use_it_up_clicked",
+  );
 
   return NextResponse.json({
     ok: true,

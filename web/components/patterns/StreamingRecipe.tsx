@@ -14,8 +14,8 @@ import type { RecipePayload } from "@chef/shared-types";
 import { formatStepForPantry } from "@/domain/pantry/step-note";
 import { isPantryMatch, pantryNameKeys } from "@/domain/pantry/tonight";
 import { formatIngredient, formatStep, formatStepTip } from "@/domain/recipe/recipe-steps";
-import { dietaryAvoidDisplayLabels } from "@/platform/db/dietary-preferences";
-import type { DietaryPreferences } from "@/platform/db/dietary-preferences";
+import { dietaryAvoidDisplayLabels } from "@/domain/settings/dietary-preferences";
+import type { DietaryPreferences } from "@/domain/settings/dietary-preferences";
 
 function isQuotaError(message: string): boolean {
   return message.includes("額度") || message.includes("429");

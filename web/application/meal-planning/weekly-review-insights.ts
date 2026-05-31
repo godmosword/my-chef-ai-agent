@@ -1,7 +1,7 @@
 /**
  * MP-4: deterministic weekly review metrics from plan + slots + pantry.
  */
-import type { MealPlanRow, MealSlotRow } from "@/platform/db/meal-planning";
+import type { MealSlotRow } from "@/platform/db/meal-planning";
 import {
   getMealPlan,
   getPantrySnapshot,

@@ -98,7 +98,7 @@ export default function TodayPage() {
             : undefined,
       });
     },
-    [pantryItems, runGenerate],
+    [pantryItems, router, runGenerate],
   );
 
   useEffect(() => {
@@ -175,7 +175,7 @@ export default function TodayPage() {
                       void reportRegenerateFeedback(
                         recipe.recipe_name,
                         recipe.cuisine,
-                      );
+                      ).catch(() => {});
                     }
                     reset();
                   }}
@@ -216,7 +216,7 @@ export default function TodayPage() {
                   clean_fridge_items: lines,
                 });
               }
-            })();
+            })().catch(() => {});
           } else if (pendingMessage) {
             runGenerate({
               message: pendingMessage,

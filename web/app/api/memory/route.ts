@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { clearUserMemory, memoryAvailable } from "@/platform/db/memory";
-import { getSessionUserId } from "@/platform/identity/session";
+import { requireApiSession } from "@/lib/api/route-helpers";
 
 export async function DELETE() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
+  const session = await requireApiSession({ requireDatabase: false });
+  if (session instanceof NextResponse) return session;
+
   if (!memoryAvailable()) {
     return NextResponse.json({
       ok: true,
@@ -15,6 +13,6 @@ export async function DELETE() {
       message: "未設定 DATABASE_URL，無需清除。",
     });
   }
-  await clearUserMemory(userId, DEFAULT_TENANT_ID);
+  await clearUserMemory(session.userId, session.tenantId);
   return NextResponse.json({ ok: true, cleared: true });
 }

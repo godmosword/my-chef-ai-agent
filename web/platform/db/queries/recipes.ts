@@ -1,5 +1,5 @@
 import { and, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
-import type { AiRecipePayload } from "@/domain/recipe/generate-recipe";
+import type { AiRecipePayload } from "@/domain/recipe/ai-recipe-payload";
 import {
   aiRecipeToPayload,
   buildTagsFromContext,
@@ -13,10 +13,11 @@ import type {
   RecipeTag,
   RecipeWithLatestVersion,
 } from "@chef/shared-types";
-import { ensureStoredSteps } from "@/application/hero/step-storage";
+import { ensureStoredSteps } from "@/domain/recipe/stored-step";
 import { displayDateKey } from "@/lib/locale/datetime";
 import { isMissingRecipeVersionStatsColumns } from "../relation-errors";
 import { getDb } from "../drizzle";
+import { countUserRecipes } from "./recipe-counts";
 import {
   favoritesV2,
   recipeTags,
@@ -540,21 +541,7 @@ export async function countRecipesForUser(
   userId: string,
   tenantId: string,
 ): Promise<number> {
-  const db = getDb();
-  if (!db) return 0;
-
-  const rows = await db
-    .select({ id: recipes.id })
-    .from(recipes)
-    .where(
-      and(
-        eq(recipes.userId, userId),
-        eq(recipes.tenantId, tenantId),
-        isNull(recipes.deletedAt),
-      ),
-    );
-
-  return rows.length;
+  return countUserRecipes(userId, tenantId);
 }
 
 export type RecipeActivity = {

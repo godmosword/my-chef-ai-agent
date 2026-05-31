@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { tokenColors } from "@/lib/design/token-colors";
 import { getPublicRecipeByToken } from "@/platform/db/queries/sharing";
 import { getSiteUrl } from "@/platform/config/site-url";
 
@@ -15,6 +16,7 @@ export default async function OGImage({ params }: Props) {
   const cuisine = recipe?.cuisine ?? "";
   const summary = recipe?.summary?.slice(0, 80) ?? "";
   const site = getSiteUrl();
+  const c = tokenColors;
 
   return new ImageResponse(
     (
@@ -24,25 +26,25 @@ export default async function OGImage({ params }: Props) {
           flexDirection: "column",
           width: "100%",
           height: "100%",
-          background: "#FFFAF5",
+          background: c.background,
           padding: 80,
           fontFamily: "serif",
         }}
       >
-        <div style={{ fontSize: 28, color: "#6B6259" }}>職人料理大腦</div>
+        <div style={{ fontSize: 28, color: c.textBody }}>職人料理大腦</div>
         <div
           style={{
             fontSize: 72,
             fontWeight: 600,
             marginTop: 40,
-            color: "#1F1B16",
+            color: c.textInk,
             lineHeight: 1.1,
           }}
         >
           {title}
         </div>
         {cuisine ? (
-          <div style={{ fontSize: 32, color: "#C8881A", marginTop: 20 }}>
+          <div style={{ fontSize: 32, color: c.brandPrimaryDark, marginTop: 20 }}>
             {cuisine}
           </div>
         ) : null}
@@ -50,7 +52,7 @@ export default async function OGImage({ params }: Props) {
           <div
             style={{
               fontSize: 24,
-              color: "#6B6259",
+              color: c.textBody,
               marginTop: 48,
               lineHeight: 1.4,
             }}
@@ -58,7 +60,7 @@ export default async function OGImage({ params }: Props) {
             {summary}
           </div>
         ) : null}
-        <div style={{ marginTop: "auto", fontSize: 22, color: "#A39A8E" }}>
+        <div style={{ marginTop: "auto", fontSize: 22, color: c.textMuted }}>
           {site.replace(/^https?:\/\//, "")}/r/{token}
         </div>
       </div>

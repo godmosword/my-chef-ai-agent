@@ -65,17 +65,3 @@ export function getMealPlanningMetricsSnapshot(): Record<string, unknown> {
     otel_last_span: otelLastSpan,
   };
 }
-
-export function resetMealPlanningMetricsForTests(): void {
-  for (const o of [
-    generationTotal,
-    repairIterations,
-    violationsTotal,
-    reuseScoreBuckets,
-    expansionTotal,
-  ]) {
-    for (const key of Object.keys(o)) delete o[key];
-  }
-  lastGenerationDurationMs = 0;
-  otelLastSpan = null;
-}

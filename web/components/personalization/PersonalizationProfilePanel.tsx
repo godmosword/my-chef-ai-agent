@@ -10,14 +10,14 @@ import {
   fetchPersonalization,
   patchPersonalization,
 } from "@/application/api/personalization";
-import type { HouseholdMember, TasteProfile } from "@/platform/db/personalization";
+import type { HouseholdMember, TasteProfile } from "@/domain/personalization/profile-types";
 import {
   CUISINE_OPTIONS,
   DIETARY_RESTRICTION_OPTIONS,
   SCALE_LABELS_ZH,
   SKILL_LABELS,
   COOK_TIME_OPTIONS,
-} from "@/platform/db/personalization-types";
+} from "@/domain/personalization/profile-options";
 import { Button } from "@/components/primitives/Button";
 import { Chip } from "@/components/primitives/Chip";
 import { Dialog } from "@/components/primitives/Dialog";
@@ -25,6 +25,7 @@ import { Input } from "@/components/primitives/Input";
 import { ProgressBar } from "@/components/primitives/ProgressBar";
 import { Skeleton } from "@/components/primitives/Skeleton";
 import { useToast } from "@/components/providers/ToastProvider";
+import { useMountAsync } from "@/hooks/useMountAsync";
 
 function parseTags(text: string): string[] {
   return text
@@ -70,26 +71,26 @@ export function PersonalizationProfilePanel() {
   const [wipePhrase, setWipePhrase] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     setLoading(true);
     try {
       const data = await fetchPersonalization();
+      if (!isActive()) return;
       setProfile(data.taste_profile);
       setMembers(data.household_members);
     } catch (e) {
+      if (!isActive()) return;
       toast({
         title: "無法載入口味檔案",
         description: e instanceof Error ? e.message : "請稍後再試",
         variant: "error",
       });
     } finally {
-      setLoading(false);
+      if (isActive()) setLoading(false);
     }
   }, [toast]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useMountAsync((isActive) => load(isActive), [load]);
 
   const scheduleSave = useCallback(
     (patch: Partial<TasteProfile>) => {

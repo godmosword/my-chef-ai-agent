@@ -20,6 +20,7 @@ type RecipeDetailSectionsProps = {
 };
 
 const SCALE_OPTIONS = [0.5, 1, 2, 4] as const;
+const EMPTY_LIST: unknown[] = [];
 
 export function RecipeDetailSections({
   recipeId,
@@ -29,8 +30,8 @@ export function RecipeDetailSections({
 }: RecipeDetailSectionsProps) {
   const { items: pantryItems } = useTonightPantry();
   const pantry = FLAGS.pantryTonight ? pantryItems : [];
-  const ingList = ingredients ?? [];
-  const stepList = steps ?? [];
+  const ingList = ingredients ?? EMPTY_LIST;
+  const stepList = steps ?? EMPTY_LIST;
   const [scale, setScale] = useState(1);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(() => new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => new Set());

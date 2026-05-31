@@ -11,7 +11,7 @@ function getClient(): OpenAI {
   });
 }
 
-export function imageToDataUrl(bytes: Buffer, mimeType: string): string {
+function imageToDataUrl(bytes: Buffer, mimeType: string): string {
   const b64 = bytes.toString("base64");
   const mime = mimeType || "image/jpeg";
   return `data:${mime};base64,${b64}`;

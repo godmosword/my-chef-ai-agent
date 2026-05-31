@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 export const MOCK_RECIPE_ID = "11111111-1111-4111-8111-111111111111";
 
-export const MOCK_RECIPE = {
+const MOCK_RECIPE = {
   id: MOCK_RECIPE_ID,
   version_no: 1,
   recipe_name: "E2E 測試咖哩",

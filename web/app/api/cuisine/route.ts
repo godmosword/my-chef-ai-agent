@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { CUISINE_OPTIONS, cuisineLabel } from "@/domain/recipe/cuisines";
 import {
   getUserCuisineContext,
   updateUserCuisineContext,
 } from "@/platform/db/cuisine";
 import { isDatabaseConfigured } from "@/platform/db/client";
-import { getSessionUserId } from "@/platform/identity/session";
+import {
+  readJsonBody,
+  requireApiSession,
+} from "@/lib/api/route-helpers";
 
 export async function GET() {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  const ctx = await getUserCuisineContext(userId, DEFAULT_TENANT_ID);
+  const session = await requireApiSession({ requireDatabase: false });
+  if (session instanceof NextResponse) return session;
+
+  const ctx = await getUserCuisineContext(session.userId, session.tenantId);
   return NextResponse.json({
     ok: true,
     db_configured: isDatabaseConfigured(),
@@ -24,30 +25,24 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
-  }
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { ok: false, error: "菜系情境需要 DATABASE_URL" },
-      { status: 503 },
-    );
-  }
+  const session = await requireApiSession({
+    databaseError: "菜系情境需要 DATABASE_URL",
+  });
+  if (session instanceof NextResponse) return session;
 
-  let body: { cuisine?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
+  const json = await readJsonBody(request);
+  if (json instanceof NextResponse) return json;
+  const body = json as { cuisine?: string };
 
   const cuisine = (body.cuisine || "").trim();
   if (!cuisine) {
-    return NextResponse.json({ ok: false, error: "cuisine required" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "cuisine required" },
+      { status: 400 },
+    );
   }
 
-  await updateUserCuisineContext(userId, DEFAULT_TENANT_ID, cuisine);
+  await updateUserCuisineContext(session.userId, session.tenantId, cuisine);
   return NextResponse.json({
     ok: true,
     active_cuisine: cuisine,

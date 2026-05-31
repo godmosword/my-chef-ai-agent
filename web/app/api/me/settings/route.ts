@@ -9,6 +9,7 @@ import { countRecipesForUser } from "@/platform/db/queries/recipes";
 import { countSharedRecipesForUser } from "@/platform/db/queries/sharing";
 import { getSessionUserId } from "@/platform/identity/session";
 import { UpdateUserSettingsSchema } from "@chef/shared-types";
+import { readJsonBody } from "@/lib/api/route-helpers";
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -39,7 +40,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing session" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
   const parsed = UpdateUserSettingsSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

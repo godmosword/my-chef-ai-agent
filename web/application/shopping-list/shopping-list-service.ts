@@ -123,24 +123,6 @@ async function getShoppingListByPlanDraft(
   );
 }
 
-/** Called after MP-2 slot swap; non-blocking for callers. */
-export async function regenerateOnPlanChange(
-  planId: number,
-  tenantId: string,
-  userId: string,
-): Promise<void> {
-  try {
-    await regenerateFromPlan(planId, tenantId, userId);
-    recordShoppingListGeneration("plan_swap", "ok", 0, 0, 0);
-  } catch (err) {
-    console.error("[shopping-list] regenerateOnPlanChange failed", {
-      planId,
-      message: err instanceof Error ? err.message : String(err),
-    });
-    recordShoppingListGeneration("plan_swap", "error", 0, 0, 0);
-  }
-}
-
 /** Initial list after meal plan generation. */
 export async function ensureShoppingListForPlan(
   planId: number,

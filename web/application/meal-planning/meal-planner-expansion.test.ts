@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/domain/recipe/generate-recipe", () => ({
-  generateRecipe: vi.fn().mockResolvedValue({
+vi.mock("@/application/recipe/llm-generate-recipe", () => ({
+  generateRecipeWithLlm: vi.fn().mockResolvedValue({
     recipe: { recipe_name: "番茄炒蛋", steps: ["炒"] },
   }),
 }));
@@ -26,7 +26,7 @@ vi.mock("@/platform/db/meal-planning", () => ({
 }));
 
 import { expandSlotToFullRecipe } from "./meal-planner-expansion";
-import { generateRecipe } from "@/domain/recipe/generate-recipe";
+import { generateRecipeWithLlm } from "@/application/recipe/llm-generate-recipe";
 
 describe("expandSlotToFullRecipe", () => {
   it("returns cached when full_recipe_json exists", async () => {
@@ -37,7 +37,7 @@ describe("expandSlotToFullRecipe", () => {
       key_ingredients: [],
     });
     const result = await expandSlotToFullRecipe(1, "default", "u1");
-    expect(generateRecipe).not.toHaveBeenCalled();
+    expect(generateRecipeWithLlm).not.toHaveBeenCalled();
     expect(result?.full_recipe_json).toEqual({ recipe_name: "cached" });
   });
 
@@ -63,7 +63,7 @@ describe("expandSlotToFullRecipe", () => {
       full_recipe_json: { recipe_name: "蒜炒菠菜" },
     });
     const result = await expandSlotToFullRecipe(2, "default", "u1");
-    expect(generateRecipe).toHaveBeenCalled();
+    expect(generateRecipeWithLlm).toHaveBeenCalled();
     expect(saveRecipe).toHaveBeenCalled();
     expect(result?.full_recipe_json).toBeTruthy();
   });

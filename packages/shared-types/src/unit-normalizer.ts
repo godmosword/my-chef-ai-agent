@@ -85,7 +85,10 @@ export function parseAmountUnit(
   const numMatch = combined.match(/^([\d.]+)(.*)$/);
   if (!numMatch) return { kind: "text", display: combined };
 
-  const value = parseFloat(numMatch[1]);
+  const numericText = numMatch[1];
+  if (!numericText) return { kind: "text", display: combined };
+
+  const value = parseFloat(numericText);
   const u = (numMatch[2] || unit || "").trim();
   if (!Number.isFinite(value)) return { kind: "text", display: combined };
 
@@ -143,7 +146,11 @@ export function mergeParsedItems(inputs: MergeInput[]): {
   if (!inputs.length) {
     return { name: "", amount: "", category: "other" };
   }
-  const name = inputs[0].name;
+  const first = inputs[0];
+  if (!first) {
+    return { name: "", amount: "", category: "other" };
+  }
+  const name = first.name;
   const hasFuzzy = inputs.some((i) => i.parsed.kind === "fuzzy");
   if (hasFuzzy) {
     return { name, amount: "適量", category: "other" };
@@ -152,8 +159,9 @@ export function mergeParsedItems(inputs: MergeInput[]): {
   const numeric = inputs.filter((i) => i.parsed.kind === "numeric") as Array<
     MergeInput & { parsed: { kind: "numeric"; value: number; unit: string; family: "weight" | "volume" } }
   >;
-  if (numeric.length === inputs.length && numeric.length > 0) {
-    const family = numeric[0].parsed.family;
+  const firstNumeric = numeric[0];
+  if (numeric.length === inputs.length && firstNumeric) {
+    const family = firstNumeric.parsed.family;
     const sameFamily = numeric.every((n) => n.parsed.family === family);
     if (sameFamily) {
       const total = numeric.reduce((s, n) => s + n.parsed.value, 0);
@@ -165,8 +173,9 @@ export function mergeParsedItems(inputs: MergeInput[]): {
   const countable = inputs.filter((i) => i.parsed.kind === "countable") as Array<
     MergeInput & { parsed: { kind: "countable"; value: number; unit: string } }
   >;
-  if (countable.length === inputs.length && countable.length > 0) {
-    const unit = countable[0].parsed.unit;
+  const firstCountable = countable[0];
+  if (countable.length === inputs.length && firstCountable) {
+    const unit = firstCountable.parsed.unit;
     const sameUnit = countable.every((c) => c.parsed.unit === unit);
     if (sameUnit) {
       const total = countable.reduce((s, c) => s + c.parsed.value, 0);

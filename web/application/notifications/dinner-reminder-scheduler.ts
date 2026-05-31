@@ -4,10 +4,14 @@ import {
 } from "@/application/notifications/dinner-reminder";
 import { capture } from "@/platform/analytics/events";
 import { DEFAULT_DISPLAY_TIMEZONE } from "@/lib/locale/datetime";
+import {
+  DINNER_REMINDER_NOTIFICATION_TITLE,
+  dinnerReminderNotificationOptions,
+} from "@/domain/notifications/dinner-reminder-notification";
+import { dinnerReminderPartsInTimeZone } from "@/domain/notifications/dinner-reminder-time";
 
 const META_CACHE = "chef-meta-v1";
 const META_KEY = "/dinner-reminder-settings";
-const NOTIFICATION_TAG = "chef-dinner-reminder";
 const PERIODIC_SYNC_TAG = "dinner-reminder";
 
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -23,24 +27,6 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 
 let clientTimeout: ReturnType<typeof setTimeout> | null = null;
 
-function partsInTimeZone(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value ?? 0);
-  return {
-    hour: get("hour"),
-    minute: get("minute"),
-  };
-}
-
 function msUntilNextFire(hour: number, minute: number, timeZone: string): number {
   const now = Date.now();
   let probe = now;
@@ -48,10 +34,13 @@ function msUntilNextFire(hour: number, minute: number, timeZone: string): number
   let scanned = 0;
 
   while (scanned < maxMs) {
-    const p = partsInTimeZone(new Date(probe), timeZone);
+    const p = dinnerReminderPartsInTimeZone(new Date(probe), timeZone);
     if (p.hour === hour && p.minute === minute) {
       while (probe > now) {
-        const prev = partsInTimeZone(new Date(probe - 1000), timeZone);
+        const prev = dinnerReminderPartsInTimeZone(
+          new Date(probe - 1000),
+          timeZone,
+        );
         if (prev.hour !== hour || prev.minute !== minute) break;
         probe -= 1000;
       }
@@ -127,13 +116,8 @@ async function persistForServiceWorker(settings: DinnerReminderSettings): Promis
 async function showDinnerNotification(): Promise<void> {
   if (typeof window === "undefined" || Notification.permission !== "granted") return;
 
-  const title = "今晚想吃什麼？";
-  const options: NotificationOptions = {
-    body: "點開職人料理，3 分鐘內想出晚餐",
-    tag: NOTIFICATION_TAG,
-    icon: "/icons/icon-192.png",
-    data: { url: "/app" },
-  };
+  const title = DINNER_REMINDER_NOTIFICATION_TITLE;
+  const options = dinnerReminderNotificationOptions();
 
   try {
     const reg = await navigator.serviceWorker?.ready;
@@ -163,18 +147,20 @@ function scheduleClientAlarm(settings: DinnerReminderSettings): void {
   );
 
   clientTimeout = setTimeout(() => {
-    void showDinnerNotification().then(() => {
-      capture("dinner_reminder_fired", { channel: "client" });
-      const next = readDinnerReminder();
-      if (next.enabled) scheduleClientAlarm(next);
-    });
+    void showDinnerNotification()
+      .then(() => {
+        capture("dinner_reminder_fired", { channel: "client" });
+        const next = readDinnerReminder();
+        if (next.enabled) scheduleClientAlarm(next);
+      })
+      .catch(() => {});
   }, delay);
 }
 
 /** Arm daily dinner reminder (client timer + SW metadata). */
 export function armDinnerReminderSchedule(settings?: DinnerReminderSettings): void {
   const s = settings ?? readDinnerReminder();
-  void persistForServiceWorker(s);
+  void persistForServiceWorker(s).catch(() => {});
   scheduleClientAlarm(s);
 }
 
@@ -183,6 +169,8 @@ export function disarmDinnerReminderSchedule(): void {
     clearTimeout(clientTimeout);
     clientTimeout = null;
   }
-  void persistForServiceWorker({ enabled: false, hour: 17, minute: 30 });
-  void unregisterPeriodicSync();
+  void persistForServiceWorker({ enabled: false, hour: 17, minute: 30 }).catch(
+    () => {},
+  );
+  void unregisterPeriodicSync().catch(() => {});
 }

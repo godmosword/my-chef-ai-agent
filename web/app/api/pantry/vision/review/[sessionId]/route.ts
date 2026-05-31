@@ -5,6 +5,8 @@ import {
   itemsEligibleForCommit,
 } from "@/application/pantry/vision/review-commit";
 import type { PantryReviewSessionPayload } from "@/application/pantry/vision/review-types";
+import { PantryReviewPatchSchema } from "@/domain/pantry/pantry-api-schemas";
+import { readJsonBody } from "@/lib/api/route-helpers";
 import { DEFAULT_TENANT_ID } from "@/platform/config/app-config";
 import { isDatabaseConfigured } from "@/platform/db/client";
 import {
@@ -56,46 +58,49 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "審核已過期" }, { status: 410 });
   }
 
-  const body = (await request.json()) as {
-    items?: PantryReviewSessionPayload["items"];
-    toggle_index?: number;
-    remove_index?: number;
-    edit_index?: number;
-    edit_text?: string;
-  };
+  const body = await readJsonBody(request);
+  if (body instanceof NextResponse) return body;
+
+  const parsed = PantryReviewPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Invalid body", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
 
   let payload: PantryReviewSessionPayload = { ...existing };
   let edits = payload.user_edits_count;
 
-  if (body.items) {
-    payload.items = body.items;
+  if (parsed.data.items) {
+    payload.items = parsed.data.items;
     edits += 1;
   }
 
-  if (typeof body.toggle_index === "number") {
-    const item = payload.items[body.toggle_index];
+  if (typeof parsed.data.toggle_index === "number") {
+    const item = payload.items[parsed.data.toggle_index];
     if (item) {
       item.selected = item.selected === false;
       edits += 1;
     }
   }
 
-  if (typeof body.remove_index === "number") {
-    payload.items = payload.items.filter((_, i) => i !== body.remove_index);
+  if (typeof parsed.data.remove_index === "number") {
+    payload.items = payload.items.filter((_, i) => i !== parsed.data.remove_index);
     edits += 1;
   }
 
-  if (typeof body.edit_index === "number" && body.edit_text) {
+  if (typeof parsed.data.edit_index === "number" && parsed.data.edit_text) {
     const item = enrichPantryInput({
-      raw_name: body.edit_text,
+      raw_name: parsed.data.edit_text,
       source: "manual",
       confidence: 1,
     });
     item.user_edited = true;
-    payload.items[body.edit_index] = {
-      ...payload.items[body.edit_index],
+    payload.items[parsed.data.edit_index] = {
+      ...payload.items[parsed.data.edit_index],
       ...item,
-      raw_name: body.edit_text,
+      raw_name: parsed.data.edit_text,
       user_edited: true,
     };
     edits += 1;

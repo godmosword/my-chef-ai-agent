@@ -36,7 +36,6 @@ export async function annotateRecipeIngredients(
   ];
 
   let map: Record<string, PantryItem[]> = {};
-  let timed_out = false;
   try {
     map = await Promise.race([
       findByItemKey(tenantId, userId, keys),
@@ -45,7 +44,6 @@ export async function annotateRecipeIngredients(
       ),
     ]);
   } catch {
-    timed_out = true;
     return {
       annotations: names.map((name) => ({ name, in_pantry: false })),
       match_count: 0,

@@ -280,6 +280,3 @@ const entries: Array<[string, IngredientDictEntry]> = [
 /** Lookup by exact surface form after trim (not lowercased for CJK). */
 export const INGREDIENT_DICTIONARY: Record<string, IngredientDictEntry> =
   Object.fromEntries(entries);
-
-/** Dictionary key count (surface forms / aliases). */
-export const INGREDIENT_DICTIONARY_SIZE = entries.length;

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { assembleRecipeSystemPrompt } from "./assemble-system-prompt";
 import { buildPersonalizationBlock } from "@/application/personalization/personalization-context";
 import type { TasteProfile } from "@/platform/db/personalization";

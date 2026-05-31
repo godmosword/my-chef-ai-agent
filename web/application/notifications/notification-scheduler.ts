@@ -123,18 +123,3 @@ export function shouldSendWeeklyDigest(
 
   return { send: true, reason: "digest_ok" };
 }
-
-export function listUsersDueForReminderFilter(
-  prefs: NotificationPreferences,
-  nowUtc: Date,
-): boolean {
-  if (!prefs.expiry_reminders_enabled) return false;
-  if (prefs.snooze_until && new Date(prefs.snooze_until) > nowUtc) return false;
-  if (prefs.backoff_until && new Date(prefs.backoff_until) > nowUtc) return false;
-  const local = getLocalParts(nowUtc, prefs.timezone);
-  if (isInQuietHours(local.hour, prefs.quiet_hours_start, prefs.quiet_hours_end)) {
-    return false;
-  }
-  if (prefs.expiry_reminder_frequency === "off") return false;
-  return true;
-}
