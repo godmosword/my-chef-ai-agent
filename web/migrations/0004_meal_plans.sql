@@ -16,8 +16,21 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   UNIQUE (user_id, tenant_id, plan_date, slot)
 );
 
-CREATE INDEX IF NOT EXISTS idx_meal_plans_user_week
-  ON meal_plans (user_id, tenant_id, plan_date);
+-- Guard the index on plan_date: migration 0016 renames the legacy plan_date
+-- table to meal_calendar_entries and recreates meal_plans without plan_date,
+-- so re-running 0004 on a post-0016 database must skip this index.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'meal_plans'
+      AND column_name = 'plan_date'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_meal_plans_user_week
+      ON meal_plans (user_id, tenant_id, plan_date);
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION touch_meal_plans_updated_at() RETURNS TRIGGER AS $$
 BEGIN

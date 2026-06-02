@@ -63,7 +63,19 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   UNIQUE (user_id, tenant_id, plan_date, slot)
 );
 
-CREATE INDEX IF NOT EXISTS idx_meal_plans_user_week
-  ON meal_plans (user_id, tenant_id, plan_date);
+-- Guard on plan_date: migration 0016 recreates meal_plans without plan_date,
+-- so re-running this ensure-migration on a post-0016 database must skip it.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'meal_plans'
+      AND column_name = 'plan_date'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_meal_plans_user_week
+      ON meal_plans (user_id, tenant_id, plan_date);
+  END IF;
+END $$;
 
 COMMIT;
