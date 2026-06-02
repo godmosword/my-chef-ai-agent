@@ -144,17 +144,27 @@ export async function installRecipeApiMocks(page: Page) {
     await route.continue();
   });
 
+  // Response shapes must match the @chef/shared-types schemas the api-client
+  // validates against (ListFavorites/AddFavorite/RemoveFavoriteResponseSchema),
+  // otherwise apiFetch throws and useFavoriteToggle rolls back the optimistic
+  // state — which previously broke the "收藏 → 取消收藏" assertion.
   await page.route("**/api/favorites**", async (route) => {
     const method = route.request().method();
     if (method === "GET") {
-      await route.fulfill({ json: { ok: true, items: [], favoriteIds: [] } });
+      await route.fulfill({
+        json: { ok: true, items: [], db_configured: true },
+      });
       return;
     }
     if (method === "POST") {
       await route.fulfill({
         status: 201,
-        json: { ok: true, id: "fav-1", recipe_id: MOCK_RECIPE_ID },
+        json: { ok: true, saved: true, recipe_id: MOCK_RECIPE_ID },
       });
+      return;
+    }
+    if (method === "DELETE") {
+      await route.fulfill({ json: { ok: true, deleted: true } });
       return;
     }
     await route.fulfill({ json: { ok: true } });
