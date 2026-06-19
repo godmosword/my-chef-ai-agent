@@ -2,6 +2,8 @@
 
 ## Cursor Cloud specific instructions
 
+- Agent 編排：[`docs/AGENT-WORKFLOW.md`](docs/AGENT-WORKFLOW.md) · Domain：[`docs/AGENT-DOMAIN.md`](docs/AGENT-DOMAIN.md)
+
 ### Overview
 
 **職人料理大腦**（Chef AI Brain）為 **pnpm monorepo**，現行產品僅 **Web**：

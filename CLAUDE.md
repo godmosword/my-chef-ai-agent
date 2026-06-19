@@ -46,6 +46,7 @@ The general "ask before destructive actions" rule still applies: confirm before 
 
 ## Cursor / 其他 Agent
 
+- Agent 編排：[`docs/AGENT-WORKFLOW.md`](docs/AGENT-WORKFLOW.md) · Domain：[`docs/AGENT-DOMAIN.md`](docs/AGENT-DOMAIN.md)
 - 同等條文（繁中、always-on）：[`.cursor/rules/vercel-main-ship.mdc`](.cursor/rules/vercel-main-ship.mdc)
 - 里程碑文件同步：[`.cursor/rules/plan-ship-docs.mdc`](.cursor/rules/plan-ship-docs.mdc)
 
